@@ -80,18 +80,18 @@ def run_dowhy_refutation(model):
 
 def main():
     parser = argparse.ArgumentParser(description="DoWhy를 사용하여 인과 모델을 생성하고 내장 검증 기능을 수행합니다.")
-    parser.add_argument("--graph_file", type=str, required=True, help="GML 형식의 인과 그래프 파일 경로")
-    parser.add_argument("--data_file", type=str, required=True, help="CSV 형식의 데이터 파일 경로")
+    parser.add_argument("--graph", type=str, required=True, help="GML 형식의 인과 그래프 파일 경로")
+    parser.add_argument("--data", type=str, required=True, help="CSV 형식의 데이터 파일 경로")
     args = parser.parse_args()
 
     print("입력된 파일:")
-    print(f"  - 그래프 파일: {args.graph_file}")
-    print(f"  - 데이터 파일: {args.data_file}")
+    print(f"  - 그래프 파일: {args.graph}")
+    print(f"  - 데이터 파일: {args.data}")
 
-    with open(args.graph_file, 'r', encoding='utf-8') as f:
+    with open(args.graph, 'r', encoding='utf-8') as f:
         causal_graph_gml = f.read()
     
-    df = pd.read_csv(args.data_file)
+    df = pd.read_csv(args.data)
 
     try:
         model = CausalModel(
