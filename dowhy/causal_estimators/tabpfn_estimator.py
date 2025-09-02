@@ -102,6 +102,27 @@ class TabpfnEstimator(CausalEstimator):
             from tabpfn import TabPFNRegressor
             return TabPFNRegressor, "Regressor"
 
+    def _prepare_data_and_model(self, data: pd.DataFrame):
+        """데이터 준비와 모델 클래스 결정을 한 번에 처리하는 헬퍼 메서드."""
+        # 결과 변수 추출
+        outcome_data = data[self._outcome_name].iloc[:, 0]
+        
+        # 모델 클래스 결정
+        model_class, model_type = self._get_model_class(outcome_data)
+        
+        # 피처 준비
+        all_feature_names = (
+            self._observed_common_causes_names + self._treatment_name + self._effect_modifier_names
+        )
+        features_df = data[all_feature_names]
+        encoded_features_df = self._encode(features_df, "features")
+        
+        # 텐서 변환
+        X_tensor = torch.from_numpy(encoded_features_df.to_numpy(dtype=np.float32)).to(self._device)
+        y_tensor = torch.from_numpy(outcome_data.to_numpy(dtype=np.float32)).to(self._device)
+        
+        return X_tensor, y_tensor, model_class, model_type, all_feature_names
+
     def fit(
         self,
         data: pd.DataFrame,
@@ -109,7 +130,7 @@ class TabpfnEstimator(CausalEstimator):
         **kwargs,
     ):
         """Preprocesses data and fits the TabPFN model."""
-        self.reset_encoders()
+        self.reset_encoders() # Forget any existing encoders
         
         self._data = data
         self._set_effect_modifiers(data, effect_modifier_names)
@@ -121,37 +142,36 @@ class TabpfnEstimator(CausalEstimator):
         if self._target_estimand.identifier_method != "backdoor":
             raise NotImplementedError("TabPFNEstimator only supports the backdoor identification method.")
 
-        # 1. 모델에 입력될 모든 피처 컬럼 이름을 정의합니다.
+        # 1. 결과 변수를 먼저 추출하여 모델 클래스 결정
+        outcome_data = self._data[self._outcome_name].iloc[:, 0]
+        model_class, model_type = self._get_model_class(outcome_data)
+        
+        # 2. 모델에 입력될 모든 피처 컬럼 이름을 정의
         self.all_feature_names = (
             self._observed_common_causes_names + self._treatment_name + self._effect_modifier_names
         )
         
-        # 2. 해당 피처들로 데이터프레임을 만듭니다.
+        # 3. 해당 피처들로 데이터프레임 생성
         features_df = self._data[self.all_feature_names]
         
-        # 3. dowhy의 내장 _encode 메소드를 사용하여 원-핫 인코딩을 수행합니다.
-        # 이 메소드는 내부적으로 categorical 변수를 감지하여 처리합니다.
-        # "features"라는 이름으로 인코더를 저장하여 나중에 재사용합니다.
+        # 4. dowhy의 내장 _encode 메소드를 사용하여 원-핫 인코딩
         encoded_features_df = self._encode(features_df, "features")
         
-        # 4. PyTorch 텐서로 변환합니다.
+        # 5. PyTorch 텐서로 변환
         self.X_tensor = torch.from_numpy(encoded_features_df.to_numpy(dtype=np.float32)).to(self._device)
-        self.y_tensor = torch.from_numpy(self._data[self._outcome_name].to_numpy(dtype=np.float32)).to(self._device)
+        self.y_tensor = torch.from_numpy(outcome_data.to_numpy(dtype=np.float32)).to(self._device)
 
-
-        # Initialize and fit TabPFN model
-        model_class, model_type = self._get_model_class(self._data[self._outcome_name].iloc[:, 0])
-        
+        # 6. TabPFN 모델 초기화 및 학습
         tabpfn_params = {
             "device": self._device,
         }
 
-        if "n_ensemble_configurations" in self.method_params:
-            tabpfn_params["n_ensemble_configurations"] = self.method_params["n_ensemble_configurations"]
+        if "N_ensemble_configurations" in self.method_params:
+            tabpfn_params["N_ensemble_configurations"] = self.method_params["N_ensemble_configurations"]
 
         self.tabpfn_model = model_class(**tabpfn_params)
         
-        # Check and warn about dataset limitations
+        # 7. 데이터셋 제한사항 경고
         num_samples, num_features = self.X_tensor.shape
         if num_samples > 5000:
             self.logger.warning(
@@ -168,70 +188,91 @@ class TabpfnEstimator(CausalEstimator):
         self.logger.info(f"TabPFN {model_type} model has been fitted successfully.")
 
         self.symbolic_estimator = self.construct_symbolic_estimator(self._target_estimand)
+        self.logger.info(self.symbolic_estimator)  # 로깅 추가
 
         return self
 
-    def estimate_effect(self, data: pd.DataFrame=None, control_value=None, treatment_value=None, target_units=None, **kwargs):
-            """
-            Estimates the causal effect (ATE) using the fitted TabPFN model.
-            Supports estimating effects on custom target units.
-            """
-            self._control_value = control_value
-            self._treatment_value = treatment_value
+    def estimate_effect(
+        self,
+        data: pd.DataFrame = None,
+        treatment_value: Any = 1,
+        control_value: Any = 0,
+        target_units=None,
+        need_conditional_estimates: bool = None,
+        **kwargs
+    ):
+        """
+        Estimates the causal effect (ATE) using the fitted TabPFN model.
+        Supports estimating effects on custom target units.
+        """
+        # 1. 파라미터 저장 및 검증
+        self._control_value = control_value
+        self._treatment_value = treatment_value
+        self._target_units = target_units
+        
+        if data is None:
+            data = self._data
             
-            if data is None:
-                data = self._data
-
-            # 1. 효과를 추정할 대상 데이터를 결정합니다.
+        if need_conditional_estimates is None:
+            need_conditional_estimates = self.need_conditional_estimates
+        
+        # 2. 대상 데이터 결정 (중복 제거)
+        if target_units is None:
             data_to_predict_on = data
-            if target_units is None:
-                data_to_predict_on = data
-            elif isinstance(target_units, pd.DataFrame):
-                # 새로운 데이터프레임이 주어지면, 그 데이터에 대해 예측합니다.
-                data_to_predict_on = target_units
-            elif callable(target_units):
-                # 함수가 주어지면, 조건을 만족하는 데이터 부분집합을 선택합니다.
-                data_to_predict_on = data.loc[target_units]
+        elif isinstance(target_units, pd.DataFrame):
+            data_to_predict_on = target_units
+        elif callable(target_units):
+            data_to_predict_on = data.loc[target_units]
+        else:
+            raise ValueError("target_units must be None, DataFrame, or callable")
 
-            # 2. 결정된 대상 데이터(data_to_predict_on)에 대해 counterfactuals를 생성합니다.
-            control_data = data_to_predict_on.copy()
-            treatment_data = data_to_predict_on.copy()
+        # 3. Counterfactual 데이터 생성
+        control_data = data_to_predict_on.copy()
+        treatment_data = data_to_predict_on.copy()
 
-            for treatment in self._treatment_name:
-                control_data[treatment] = self._control_value
-                treatment_data[treatment] = self._treatment_value
-            
-            control_features_df = control_data[self.all_feature_names]
-            treatment_features_df = treatment_data[self.all_feature_names]
+        for treatment in self._treatment_name:
+            control_data[treatment] = self._control_value
+            treatment_data[treatment] = self._treatment_value
+        
+        # 4. 피처 인코딩 및 텐서 변환
+        control_features_df = control_data[self.all_feature_names]
+        treatment_features_df = treatment_data[self.all_feature_names]
 
-            encoded_control_df = self._encode(control_features_df, "features")
-            encoded_treatment_df = self._encode(treatment_features_df, "features")
+        encoded_control_df = self._encode(control_features_df, "features")
+        encoded_treatment_df = self._encode(treatment_features_df, "features")
 
-            X_control = torch.from_numpy(encoded_control_df.to_numpy(dtype=np.float32)).to(self._device)
-            X_treatment = torch.from_numpy(encoded_treatment_df.to_numpy(dtype=np.float32)).to(self._device)
+        X_control = torch.from_numpy(encoded_control_df.to_numpy(dtype=np.float32)).to(self._device)
+        X_treatment = torch.from_numpy(encoded_treatment_df.to_numpy(dtype=np.float32)).to(self._device)
 
-            if isinstance(self.tabpfn_model, importlib.import_module("tabpfn").TabPFNClassifier):
-                predictions_control = self.tabpfn_model.predict_proba(X_control)[:, 1]
-                predictions_treatment = self.tabpfn_model.predict_proba(X_treatment)[:, 1]
-            else:
-                predictions_control = self.tabpfn_model.predict(X_control)
-                predictions_treatment = self.tabpfn_model.predict(X_treatment)
+        # 5. 모델 예측 (개선된 타입 체크)
+        if hasattr(self.tabpfn_model, 'predict_proba'):
+            predictions_control = self.tabpfn_model.predict_proba(X_control)[:, 1]
+            predictions_treatment = self.tabpfn_model.predict_proba(X_treatment)[:, 1]
+        else:
+            predictions_control = self.tabpfn_model.predict(X_control)
+            predictions_treatment = self.tabpfn_model.predict(X_treatment)
 
-            cate_estimates = predictions_treatment - predictions_control
-            ate = np.mean(cate_estimates)
+        # 6. 효과 계산
+        cate_estimates = predictions_treatment - predictions_control
+        ate = np.mean(cate_estimates)
 
-            estimate = CausalEstimate(
-                data=data, # 원본 데이터를 전달
-                treatment_name=self._treatment_name,
-                outcome_name=self._outcome_name,
-                estimate=ate,
-                control_value=self._control_value,
-                treatment_value=self._treatment_value,
-                # CATE는 예측이 수행된 데이터의 인덱스를 사용해야 합니다.
-                conditional_estimates=pd.Series(cate_estimates, index=data_to_predict_on.index),
-                target_estimand=self._target_estimand,
-                realized_estimand_expr=self.symbolic_estimator,
-            )
-            
-            estimate.add_estimator(self)
-            return estimate
+        # 7. 조건부 추정 처리
+        conditional_estimates = None
+        if need_conditional_estimates:
+            conditional_estimates = pd.Series(cate_estimates, index=data_to_predict_on.index)
+
+        # 8. CausalEstimate 객체 생성
+        estimate = CausalEstimate(
+            data=data,
+            treatment_name=self._treatment_name,
+            outcome_name=self._outcome_name,
+            estimate=ate,
+            control_value=self._control_value,
+            treatment_value=self._treatment_value,
+            conditional_estimates=conditional_estimates,
+            target_estimand=self._target_estimand,
+            realized_estimand_expr=self.symbolic_estimator,
+        )
+        
+        estimate.add_estimator(self)
+        return estimate
