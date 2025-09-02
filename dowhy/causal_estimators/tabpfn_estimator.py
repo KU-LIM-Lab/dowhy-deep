@@ -199,7 +199,7 @@ class TabpfnEstimator(CausalEstimator):
         control_value: Any = 0,
         target_units=None,
         need_conditional_estimates: bool = None,
-        **kwargs
+        **_,
     ):
         """
         Estimates the causal effect (ATE) using the fitted TabPFN model.
@@ -217,7 +217,7 @@ class TabpfnEstimator(CausalEstimator):
             need_conditional_estimates = self.need_conditional_estimates
         
         # 2. 대상 데이터 결정 (중복 제거)
-        if target_units is None:
+        if target_units is None or target_units == "ate":
             data_to_predict_on = data
         elif isinstance(target_units, pd.DataFrame):
             data_to_predict_on = target_units
