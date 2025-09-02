@@ -59,7 +59,7 @@ def test_tabpfn_estimator_ate(outcome_is_binary, num_common_causes):
     estimate = model.estimate_effect(
             identified_estimand,
             method_name="backdoor.tabpfn",
-            method_params={"n_ensemble_configurations": 8}
+            method_params={"N_ensemble_configurations": 8}
         )
 
     # 5. 결과 검증
