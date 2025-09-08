@@ -116,10 +116,23 @@ class TabpfnEstimator(CausalEstimator):
         )
         features_df = data[all_feature_names]
         encoded_features_df = self._encode(features_df, "features")
-        
-        # 텐서 변환
-        X_tensor = torch.from_numpy(encoded_features_df.to_numpy(dtype=np.float32)).to(self._device)
-        y_tensor = torch.from_numpy(outcome_data.to_numpy(dtype=np.float32)).to(self._device)
+
+        # .fit은 sklearn base로 numpy 배열을 기대하므로 numpy 배열로 변환
+        X_np = encoded_features_df.to_numpy(dtype=np.float32)
+
+        if model_type == "Classifier":
+            # factorize로 안전하게 레이블 인코딩
+            y_np, _ = pd.factorize(outcome_data)
+            y_np = y_np.astype(np.int64)
+        else:
+            y_np = outcome_data.to_numpy(dtype=np.float32)
+                
+        # torch.Tensor도 보관
+        self.X_tensor = torch.from_numpy(X_np).to(self._device)
+        self.y_tensor = torch.from_numpy(y_np).to(self._device)
+
+        X_tensor = encoded_features_df.to_numpy(dtype=np.float32).to(self._device)
+        y_tensor = outcome_data.to_numpy(dtype=np.float32).to(self._device)
         
         return X_tensor, y_tensor, model_class, model_type, all_feature_names
 
@@ -157,6 +170,15 @@ class TabpfnEstimator(CausalEstimator):
         # 4. dowhy의 내장 _encode 메소드를 사용하여 원-핫 인코딩
         encoded_features_df = self._encode(features_df, "features")
         
+        # NumPy 버전 (fit에 넣을 값)
+        X_np = encoded_features_df.to_numpy(dtype=np.float32)
+
+        if model_type == "Classifier":
+            y_np, _ = pd.factorize(outcome_data)  # 라벨 인코딩
+            y_np = y_np.astype(np.int64)
+        else:
+            y_np = outcome_data.to_numpy(dtype=np.float32)
+
         # 5. PyTorch 텐서로 변환
         self.X_tensor = torch.from_numpy(encoded_features_df.to_numpy(dtype=np.float32)).to(self._device)
         self.y_tensor = torch.from_numpy(outcome_data.to_numpy(dtype=np.float32)).to(self._device)
@@ -184,7 +206,7 @@ class TabpfnEstimator(CausalEstimator):
                 "Your dataset has %d features.", num_features
             )
 
-        self.tabpfn_model.fit(self.X_tensor, self.y_tensor.view(-1))
+        self.tabpfn_model.fit(X_np, y_np)
         self.logger.info(f"TabPFN {model_type} model has been fitted successfully.")
 
         self.symbolic_estimator = self.construct_symbolic_estimator(self._target_estimand)
@@ -241,11 +263,12 @@ class TabpfnEstimator(CausalEstimator):
         encoded_control_df = self._encode(control_features_df, "features")
         encoded_treatment_df = self._encode(treatment_features_df, "features")
 
-        X_control = torch.from_numpy(encoded_control_df.to_numpy(dtype=np.float32)).to(self._device)
-        X_treatment = torch.from_numpy(encoded_treatment_df.to_numpy(dtype=np.float32)).to(self._device)
+        # 4. 피처 인코딩 후 NumPy 변환 (sklearn API용)
+        X_control = encoded_control_df.to_numpy(dtype=np.float32)
+        X_treatment = encoded_treatment_df.to_numpy(dtype=np.float32)
 
-        # 5. 모델 예측 (개선된 타입 체크)
-        if hasattr(self.tabpfn_model, 'predict_proba'):
+        # 5. 모델 예측 (Classifier/Regressor 구분)
+        if hasattr(self.tabpfn_model, "predict_proba"):
             predictions_control = self.tabpfn_model.predict_proba(X_control)[:, 1]
             predictions_treatment = self.tabpfn_model.predict_proba(X_treatment)[:, 1]
         else:
