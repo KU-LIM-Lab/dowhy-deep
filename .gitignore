@@ -117,3 +117,6 @@ dowhy-docs
 
 *.DS_Store
 dowhy_env/
+
+# ignore data info
+/kubig_experiments/data/code_info.xlsx

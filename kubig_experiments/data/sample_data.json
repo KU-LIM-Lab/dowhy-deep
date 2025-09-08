@@ -1,0 +1,57 @@
+{
+  "SEEK_CUST_NO": "1234567890123",
+  "TMPL_SEQNO": 1,
+  "RESUME_TITLE": "OOO님의 이력서입니다.",
+  "BASIC_RESUME_YN": "Y",
+  "SEQNO": 1,
+  "RESUME_SECTIONS": [
+    {
+      "RESUME_ITEM_CLCD": "1",
+      "DS_RESUME_ITEM_CLCD": "자격면허",
+      "RESUME_ITEM_1_CD": "6005902",
+      "DS_RESUME_ITEM_1_CD": "운전면허"
+    },
+    {
+      "RESUME_ITEM_CLCD": "2",
+      "DS_RESUME_ITEM_CLCD": "훈련",
+      "RESUME_ITEM_1_CD": "00000000",
+      "DS_RESUME_ITEM_1_CD": null
+    },
+    {
+      "RESUME_ITEM_CLCD": "3",
+      "DS_RESUME_ITEM_CLCD": "논문",
+      "RESUME_ITEM_1_CD": "00000000",
+      "DS_RESUME_ITEM_1_CD": null
+    },
+    {
+      "RESUME_ITEM_CLCD": "7",
+      "DS_RESUME_ITEM_CLCD": "전산능력",
+      "RESUME_ITEM_1_CD": "1",
+      "DS_RESUME_ITEM_1_CD": "문서작성 (워드프로세스 활용)"
+    },
+    {
+      "RESUME_ITEM_CLCD": "8",
+      "DS_RESUME_ITEM_CLCD": "외국어능력",
+      "RESUME_ITEM_1_CD": "01",
+      "DS_RESUME_ITEM_1_CD": "영어"
+    },
+    {
+      "RESUME_ITEM_CLCD": "9",
+      "DS_RESUME_ITEM_CLCD": "학력",
+      "RESUME_ITEM_1_CD": "4",
+      "DS_RESUME_ITEM_1_CD": "대학교(4년제)"
+    },
+    {
+      "RESUME_ITEM_CLCD": "10",
+      "DS_RESUME_ITEM_CLCD": "봉사활동",
+      "RESUME_ITEM_1_CD": "00000000",
+      "DS_RESUME_ITEM_1_CD": null
+    },
+    {
+      "RESUME_ITEM_CLCD": "12",
+      "DS_RESUME_ITEM_CLCD": "참여프로젝트",
+      "RESUME_ITEM_1_CD": "00000000",
+      "DS_RESUME_ITEM_1_CD": null
+    }
+  ]
+} 
