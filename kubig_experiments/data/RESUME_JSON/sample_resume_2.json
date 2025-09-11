@@ -1,0 +1,93 @@
+{
+  "SEEK_CUST_NO": "1234567891234",
+  "CONTENTS" : [
+    {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "RESUME_ITEM_CLCD": 1,
+        "DS_RESUME_ITEM_CLCD": "자격면허",
+        "SEQNO": 1,
+        "RESUME_ITEM_1_CD": "6005902",
+        "DS_RESUME_ITEM_1_CD": "운전면허",
+        "RESUME_ITEM_1_NM": "한국산업인력공단"
+    },
+    {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "RESUME_ITEM_CLCD": 2,
+        "DS_RESUME_ITEM_CLCD": "훈련",
+        "SEQNO": 2,
+        "RESUME_ITEM_2_CD": "00000000",
+        "DS_RESUME_ITEM_2_CD": "Y",
+        "RESUME_ITEM_2_NM": "캐드 기초 과정 수료"
+    },
+    {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "RESUME_ITEM_CLCD": 7,
+        "DS_RESUME_ITEM_CLCD": "전산능력",
+        "SEQNO": 3,
+        "RESUME_ITEM_3_CD": "1",
+        "DS_RESUME_ITEM_3_CD": "문서작성(워드프로세스 활용)",
+        "RESUME_ITEM_3_NM": "상"
+    },
+    {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "RESUME_ITEM_CLCD": 9,
+        "DS_RESUME_ITEM_CLCD": "학력",
+        "SEQNO": 4,
+        "RESUME_ITEM_4_CD": "020307",
+        "DS_RESUME_ITEM_4_CD": "경영학",
+        "RESUME_ITEM_4_NM": "00대학교"
+    },
+    {
+        "TMPL_SEQNO": 2,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "N",
+        "RESUME_ITEM_CLCD": 1,
+        "DS_RESUME_ITEM_CLCD": "자격면허",
+        "SEQNO": 1,
+        "RESUME_ITEM_1_CD": "6005902",
+        "DS_RESUME_ITEM_1_CD": "운전면허",
+        "RESUME_ITEM_1_NM": "한국산업인력공단"
+    },
+    {
+        "TMPL_SEQNO": 2,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "N",
+        "RESUME_ITEM_CLCD": 2,
+        "DS_RESUME_ITEM_CLCD": "훈련",
+        "SEQNO": 2,
+        "RESUME_ITEM_2_CD": "00000000",
+        "DS_RESUME_ITEM_2_CD": "Y",
+        "RESUME_ITEM_2_NM": "캐드 기초 과정 수료"
+    },
+    {
+        "TMPL_SEQNO": 2,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "N",
+        "RESUME_ITEM_CLCD": 7,
+        "DS_RESUME_ITEM_CLCD": "전산능력",
+        "SEQNO": 3,
+        "RESUME_ITEM_3_CD": "1",
+        "DS_RESUME_ITEM_3_CD": "문서작성(워드프로세스 활용)",
+        "RESUME_ITEM_3_NM": "상"
+    },
+    {
+        "TMPL_SEQNO": 2,
+        "RESUME_TITLE": "OOO님의 이력서입니다.",
+        "BASIC_RESUME_YN": "N",
+        "RESUME_ITEM_CLCD": 9,
+        "DS_RESUME_ITEM_CLCD": "학력",
+        "SEQNO": 4,
+        "RESUME_ITEM_4_CD": "020307",
+        "DS_RESUME_ITEM_4_CD": "경영학",
+        "RESUME_ITEM_4_NM": "00대학교"
+    }
+  ]
+}
