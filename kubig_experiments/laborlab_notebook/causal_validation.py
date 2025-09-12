@@ -6,23 +6,81 @@ DoWhy 라이브러리를 이용한 인과모델 구축, 추정, 검증 End-to-En
 """
 
 # =============================================================================
+# 라이브러리 임포트
+# =============================================================================
+
+import argparse
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # GUI 없이 작동하도록 설정
+import matplotlib.pyplot as plt
+import warnings
+from pathlib import Path
+import logging
+from datetime import datetime
+import os
+
+import dowhy
+from dowhy import CausalModel
+import networkx as nx
+
+# TabPFN 모델 사용 (필요한 라이브러리 확인 후 임포트)
+import sys
+import os
+# 로컬 DoWhy 라이브러리 경로 추가
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+try:
+    import tabpfn
+    import torch
+    from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
+    TABPFN_AVAILABLE = True
+    print("✓ TabPFN Estimator 사용 가능")
+except ImportError as e:
+    TABPFN_AVAILABLE = False
+    print(f"⚠️ TabPFN Estimator 사용 불가: {e}")
+    print("필요한 라이브러리 설치: pip install tabpfn torch")
+
+# 경고 메시지 무시
+warnings.filterwarnings("ignore")
+
+# DoWhy 특정 로거들의 INFO 메시지만 제거
+import logging as dowhy_logging
+# DoWhy의 반복적인 메시지들만 제거
+dowhy_logging.getLogger("dowhy.causal_estimator").setLevel(dowhy_logging.WARNING)
+dowhy_logging.getLogger("dowhy.causal_estimators").setLevel(dowhy_logging.WARNING)
+
+# 한글 폰트 설정 (시각화용)
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+# =============================================================================
 # CONFIG 설정 섹션
 # =============================================================================
 
 # 데이터 및 그래프 설정
+script_dir = Path(__file__).parent
 DATA_CONFIG = {
-    'data_file': 'dummy_data.csv',           # 사용할 데이터 파일
-    'graph_file': 'dummy_graph',             # 사용할 그래프 파일
+    'data_file': str(script_dir / 'data' / 'dummy_data.csv'),           # 사용할 데이터 파일
+    'graph_file': str(script_dir / 'data' / 'dummy_graph'),             # 사용할 그래프 파일
     'treatment': 'ACCR_CD',                  # 처치 변수 (학력코드)
     'outcome': 'ACQ_180_YN',                 # 결과 변수 (180일이내취업여부)
 }
 
-# 추정 방법 설정
-ESTIMATION_CONFIG = {
-    'method': 'backdoor.linear_regression',  # 추정 방법: linear regression
-    'test_significance': True,               # 통계적 유의성 검정 수행
-    'proceed_when_unidentifiable': True,     # 식별 불가능할 때도 진행
-}
+# 추정 방법 설정 (TabPFN 사용 가능 여부에 따라 결정)
+if 'TABPFN_AVAILABLE' in globals() and TABPFN_AVAILABLE:
+    ESTIMATION_CONFIG = {
+        'method': 'backdoor.tabpfn',  # 추정 방법: TabPFN
+        'test_significance': True,               # 통계적 유의성 검정 수행
+        'proceed_when_unidentifiable': True,     # 식별 불가능할 때도 진행
+    }
+else:
+    ESTIMATION_CONFIG = {
+        'method': 'backdoor.linear_regression',  # 추정 방법: linear regression (fallback)
+        'test_significance': True,               # 통계적 유의성 검정 수행
+        'proceed_when_unidentifiable': True,     # 식별 불가능할 때도 진행
+    }
 
 # 검증 설정 -> 추후 수정필요(현재 기본값 사용)
 VALIDATION_CONFIG = {
@@ -72,30 +130,6 @@ LOGGING_CONFIG = {
 }
 
 # =============================================================================
-# 라이브러리 임포트
-# =============================================================================
-
-import argparse
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import warnings
-from pathlib import Path
-import logging
-from datetime import datetime
-import os
-
-import dowhy
-from dowhy import CausalModel
-
-# 경고 메시지 무시
-warnings.filterwarnings("ignore")
-
-# 한글 폰트 설정 (시각화용)
-plt.rcParams['font.family'] = 'DejaVu Sans'
-plt.rcParams['axes.unicode_minus'] = False
-
-# =============================================================================
 # 로깅 설정 함수들
 # =============================================================================
 
@@ -114,28 +148,34 @@ def setup_logging(graph_file, treatment, config):
     if not config['save_logs']:
         return None
     
+    # log 폴더 생성 (스크립트가 있는 디렉토리 기준)
+    script_dir = Path(__file__).parent
+    log_dir = script_dir / "log"
+    log_dir.mkdir(exist_ok=True)
+    
     # 로그 파일명 생성: 그래프명_처치변수_날짜시간.log
     graph_name = Path(graph_file).stem  # 파일 확장자 제거
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_filename = f"{graph_name}_{treatment}_{timestamp}.log"
+    log_filepath = log_dir / log_filename
     
     # 로깅 설정
     logging.basicConfig(
         level=config['log_level'],
         format=config['log_format'],
         handlers=[
-            logging.FileHandler(log_filename, encoding='utf-8'),
+            logging.FileHandler(log_filepath, encoding='utf-8'),
             logging.StreamHandler()  # 콘솔에도 출력
         ]
     )
     
     logger = logging.getLogger(__name__)
-    logger.info(f"로깅 시작 - 로그 파일: {log_filename}")
+    logger.info(f"로깅 시작 - 로그 파일: {log_filepath}")
     logger.info(f"그래프 파일: {graph_file}")
     logger.info(f"처치 변수: {treatment}")
     logger.info(f"분석 시작 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    return log_filename
+    return str(log_filepath)
 
 def log_estimation_results(logger, estimate, method_name):
     """
@@ -269,64 +309,92 @@ def log_heatmap_info(logger, heatmap_path, config):
 # 유틸리티 함수들
 # =============================================================================
 
+def create_causal_graph():
+    """
+    NetworkX를 사용하여 인과 그래프를 직접 생성하는 함수
+    
+    Returns:
+        nx.DiGraph: 인과 그래프 객체
+    """
+    # 방향성 그래프 생성
+    G = nx.DiGraph()
+    
+    # 노드 추가 (실제 데이터에 있는 변수들만 사용)
+    G.add_node("ACCR_CD", label="학력코드")
+    G.add_node("ACQ_180_YN", label="180일이내취업여부")
+    G.add_node("HOPE_WAGE_SM_AMT", label="희망임금합계금액")
+    G.add_node("AVG_HOPE_WAGE_SM_AMT", label="평균희망임금합계금액")
+    
+    # 엣지 추가 (인과관계) - DAG 구조로 수정
+    G.add_edge("ACCR_CD", "HOPE_WAGE_SM_AMT")
+    G.add_edge("ACCR_CD", "AVG_HOPE_WAGE_SM_AMT")
+    G.add_edge("HOPE_WAGE_SM_AMT", "ACQ_180_YN")
+    G.add_edge("AVG_HOPE_WAGE_SM_AMT", "ACQ_180_YN")
+    
+    return G
+
+def preprocess_data(df):
+    """
+    데이터 전처리 함수
+    
+    Args:
+        df (pd.DataFrame): 원본 데이터프레임
+    
+    Returns:
+        pd.DataFrame: 전처리된 데이터프레임
+    """
+    df_processed = df.copy()
+    
+    # ACCR_CD를 숫자로 인코딩
+    accr_mapping = {
+        '고등학교': 1,
+        '(2/3년제) 대학': 2,
+        '4년제 대학': 3,
+        '대학원': 4,
+        '중퇴': 5
+    }
+    
+    df_processed['ACCR_CD'] = df_processed['ACCR_CD'].map(accr_mapping)
+    df_processed = df_processed.dropna(subset=['ACCR_CD', 'ACQ_180_YN'])
+    
+    return df_processed
+
 def load_data_and_graph(data_file, graph_file):
     """
-    데이터와 그래프를 로드하는 함수
+    데이터를 로드하는 함수
     
     Args:
         data_file (str): 데이터 파일 경로
-        graph_file (str): 그래프 파일 경로
+        graph_file (str): 그래프 파일 경로 (사용하지 않음)
     
     Returns:
-        tuple: (데이터프레임, 그래프 문자열)
+        tuple: (데이터프레임, 그래프 객체)
     """
-    try:
-        # 데이터 로드
-        df = pd.read_csv(data_file)
-        print(f"✓ 데이터 로드 완료: {data_file} ({len(df)} 행, {len(df.columns)} 열)")
-        
-        # 그래프 로드
-        with open(graph_file, 'r', encoding='utf-8') as f:
-            causal_graph_gml = f.read()
-        print(f"✓ 그래프 로드 완료: {graph_file}")
-        
-        return df, causal_graph_gml
-        
-    except FileNotFoundError as e:
-        print(f"❌ 파일을 찾을 수 없습니다: {e}")
-        raise
-    except Exception as e:
-        print(f"❌ 데이터/그래프 로드 중 오류 발생: {e}")
-        raise
+    df = pd.read_csv(data_file)
+    df_processed = preprocess_data(df)
+    causal_graph = create_causal_graph()
+    
+    return df_processed, causal_graph
 
-def create_causal_model(df, graph_gml, treatment, outcome):
+def create_causal_model(df, causal_graph, treatment, outcome):
     """
     인과모델을 생성하는 함수
     
     Args:
         df (pd.DataFrame): 데이터프레임
-        graph_gml (str): 그래프 GML 문자열
+        causal_graph (nx.DiGraph): NetworkX 그래프 객체
         treatment (str): 처치 변수명
         outcome (str): 결과 변수명
     
     Returns:
         CausalModel: DoWhy 인과모델 객체
     """
-    try:
-        model = CausalModel(
-            data=df,
-            treatment=treatment,
-            outcome=outcome,
-            graph=graph_gml
-        )
-        print(f"✓ 인과모델 생성 완료")
-        print(f"  - 처치 변수: {treatment}")
-        print(f"  - 결과 변수: {outcome}")
-        return model
-        
-    except Exception as e:
-        print(f"❌ 인과모델 생성 중 오류 발생: {e}")
-        raise
+    return CausalModel(
+        data=df,
+        treatment=treatment,
+        outcome=outcome,
+        graph=causal_graph
+    )
 
 def identify_effect(model, proceed_when_unidentifiable=True):
     """
@@ -339,19 +407,7 @@ def identify_effect(model, proceed_when_unidentifiable=True):
     Returns:
         IdentifiedEstimand: 식별된 추정량 객체
     """
-    try:
-        identified_estimand = model.identify_effect(
-            proceed_when_unidentifiable=proceed_when_unidentifiable
-        )
-        print("\n" + "="*60)
-        print("🔍 [단계 1] 인과 효과 식별 완료")
-        print("="*60)
-        print(identified_estimand)
-        return identified_estimand
-        
-    except Exception as e:
-        print(f"❌ 인과효과 식별 중 오류 발생: {e}")
-        raise
+    return model.identify_effect(proceed_when_unidentifiable=proceed_when_unidentifiable)
 
 def estimate_effect(model, identified_estimand, method_name, test_significance=True, logger=None):
     """
@@ -367,35 +423,16 @@ def estimate_effect(model, identified_estimand, method_name, test_significance=T
     Returns:
         CausalEstimate: 추정된 인과효과 객체
     """
-    try:
-        estimate = model.estimate_effect(
-            identified_estimand,
-            method_name=method_name,
-            test_significance=test_significance
-        )
-        
-        print("\n" + "="*60)
-        print("📊 [단계 2] 인과 효과 추정 완료")
-        print("="*60)
-        print(f"  - 추정 방법: {method_name}")
-        print(f"  - 추정된 인과 효과 (ATE): {estimate.value:.6f}")
-        
-        if hasattr(estimate, 'p_value') and estimate.p_value is not None:
-            print(f"  - P-value: {estimate.p_value:.6f}")
-            significance = "유의함" if estimate.p_value <= 0.05 else "유의하지 않음"
-            print(f"  - 통계적 유의성: {significance}")
-        
-        # 로깅
-        if logger:
-            log_estimation_results(logger, estimate, method_name)
-        
-        return estimate
-        
-    except Exception as e:
-        print(f"❌ 인과효과 추정 중 오류 발생: {e}")
-        if logger:
-            logger.error(f"인과효과 추정 중 오류 발생: {e}")
-        raise
+    estimate = model.estimate_effect(
+        identified_estimand,
+        method_name=method_name,
+        test_significance=test_significance
+    )
+    
+    if logger:
+        log_estimation_results(logger, estimate, method_name)
+    
+    return estimate
 
 def run_validation_tests(model, identified_estimand, estimate, config, logger=None):
     """
@@ -411,17 +448,10 @@ def run_validation_tests(model, identified_estimand, estimate, config, logger=No
     Returns:
         dict: 검증 결과 딕셔너리
     """
-    print("\n" + "="*60)
-    print("🔬 [단계 3] 추정치에 대한 강건성 검증 수행")
-    print("="*60)
-    
     validation_results = {}
     
     # 1. 가상 원인 테스트 (Placebo Treatment)
     try:
-        print("\n🧪 [검증 1] 가상 원인(Placebo Treatment) 테스트")
-        print("-" * 50)
-        
         placebo_config = config['placebo_treatment']
         refute_placebo = model.refute_estimate(
             identified_estimand,
@@ -430,28 +460,12 @@ def run_validation_tests(model, identified_estimand, estimate, config, logger=No
             placebo_type=placebo_config['placebo_type'],
             num_simulations=placebo_config['num_simulations']
         )
-        
-        print(f"  - 기존 추정치: {refute_placebo.estimated_effect:.6f}")
-        print(f"  - 가상처치 후 추정치: {refute_placebo.new_effect:.6f}")
-        
-        # 효과 크기 비교
-        effect_change = abs(refute_placebo.new_effect - refute_placebo.estimated_effect)
-        if effect_change < 0.01:
-            print("  - 해석: 가상 원인의 효과가 거의 0 → 추정이 강건함 👍")
-        else:
-            print("  - 해석: 가상 원인이 유의한 효과를 보임 → 추정 설정 재점검 필요 👎")
-        
         validation_results['placebo'] = refute_placebo
-        
     except Exception as e:
-        print(f"  - 오류 (가상 원인 테스트): {e}")
         validation_results['placebo'] = None
     
     # 2. 미관측 공통 원인 추가 테스트
     try:
-        print("\n🔍 [검증 2] 미관측 공통 원인(Unobserved Common Cause) 추가 테스트")
-        print("-" * 50)
-        
         unobserved_config = config['unobserved_confounder']
         refute_unobserved = model.refute_estimate(
             identified_estimand,
@@ -463,30 +477,12 @@ def run_validation_tests(model, identified_estimand, estimate, config, logger=No
             effect_strength_on_outcome=unobserved_config['effect_strength_on_outcome'],
             num_simulations=unobserved_config['num_simulations']
         )
-        
-        print(f"  - 기존 추정치: {refute_unobserved.estimated_effect:.6f}")
-        print(f"  - 교란 추가 후 추정치: {refute_unobserved.new_effect:.6f}")
-        
-        # 변화율 계산
-        change_rate = abs(refute_unobserved.new_effect - refute_unobserved.estimated_effect) / abs(refute_unobserved.estimated_effect)
-        print(f"  - 변화율: {change_rate:.2%}")
-        
-        if change_rate < 0.2:
-            print("  - 해석: 미관측 교란에 비교적 강건함 👍")
-        else:
-            print("  - 해석: 미관측 교란에 민감함 → 추가 분석 필요 👎")
-        
         validation_results['unobserved'] = refute_unobserved
-        
     except Exception as e:
-        print(f"  - 오류 (미관측 공통 원인 테스트): {e}")
         validation_results['unobserved'] = None
     
     # 3. 부분표본 안정성 테스트
     try:
-        print("\n📊 [검증 3] 부분표본 안정성(Data Subset) 테스트")
-        print("-" * 50)
-        
         subset_config = config['data_subset']
         refute_subset = model.refute_estimate(
             identified_estimand,
@@ -496,21 +492,12 @@ def run_validation_tests(model, identified_estimand, estimate, config, logger=No
             num_simulations=subset_config['num_simulations'],
             random_state=subset_config['random_state']
         )
-        
-        print(f"  - 기존 추정치: {refute_subset.estimated_effect:.6f}")
-        print(f"  - 부분표본 추정치: {refute_subset.new_effect:.6f}")
-        
         validation_results['subset'] = refute_subset
-        
     except Exception as e:
-        print(f"  - 오류 (부분표본 테스트): {e}")
         validation_results['subset'] = None
     
     # 4. 더미 결과 변수 테스트
     try:
-        print("\n🎲 [검증 4] 더미 결과 변수(Dummy Outcome) 테스트")
-        print("-" * 50)
-        
         dummy_config = config['dummy_outcome']
         refute_dummy = model.refute_estimate(
             identified_estimand,
@@ -518,14 +505,8 @@ def run_validation_tests(model, identified_estimand, estimate, config, logger=No
             method_name=dummy_config['method'],
             num_simulations=dummy_config['num_simulations']
         )
-        
-        print(f"  - 기존 추정치: {refute_dummy.estimated_effect:.6f}")
-        print(f"  - 더미 결과 추정치: {refute_dummy.new_effect:.6f}")
-        
         validation_results['dummy'] = refute_dummy
-        
     except Exception as e:
-        print(f"  - 오류 (더미 결과 테스트): {e}")
         validation_results['dummy'] = None
     
     # 로깅
@@ -548,22 +529,12 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, config, logge
     Returns:
         pd.DataFrame: 민감도 분석 결과 데이터프레임
     """
-    print("\n" + "="*60)
-    print("📈 [단계 4] 민감도 분석 수행")
-    print("="*60)
-    
     try:
-        # 효과 강도 그리드 생성
         effect_range = config['effect_strength_range']
         num_points = config['num_points']
         num_simulations = config['num_simulations']
         
         grid = np.linspace(effect_range[0], effect_range[1], num_points)
-        
-        print(f"  - 효과 강도 범위: {effect_range[0]} ~ {effect_range[1]}")
-        print(f"  - 그리드 포인트 수: {num_points}")
-        print(f"  - 시뮬레이션 수: {num_simulations}")
-        print("  - 분석 진행 중...")
         
         rows = []
         for i, et in enumerate(grid):
@@ -580,26 +551,20 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, config, logge
                     )
                     rows.append((et, eo, ref.new_effect))
                 except Exception as e:
-                    print(f"    - 오류 (et={et:.2f}, eo={eo:.2f}): {e}")
                     rows.append((et, eo, np.nan))
         
-        # 결과를 DataFrame으로 변환
         sensitivity_df = pd.DataFrame(rows, columns=[
             "effect_strength_on_treatment", 
             "effect_strength_on_outcome", 
             "new_effect"
         ])
         
-        print(f"✓ 민감도 분석 완료: {len(sensitivity_df)} 개 조합 분석")
-        
-        # 로깅
         if logger:
             log_sensitivity_analysis(logger, sensitivity_df, config)
         
         return sensitivity_df
         
     except Exception as e:
-        print(f"❌ 민감도 분석 중 오류 발생: {e}")
         if logger:
             logger.error(f"민감도 분석 중 오류 발생: {e}")
         return pd.DataFrame()
@@ -617,11 +582,9 @@ def create_sensitivity_heatmap(sensitivity_df, config, logger=None):
         tuple: (matplotlib.figure.Figure, str) 생성된 그림 객체와 파일 경로
     """
     if sensitivity_df.empty:
-        print("❌ 민감도 분석 데이터가 없어 히트맵을 생성할 수 없습니다.")
         return None
     
     try:
-        print("\n🎨 민감도 분석 히트맵 생성 중...")
         
         # 피벗 테이블 생성
         pivot = sensitivity_df.pivot(
@@ -678,14 +641,22 @@ def create_sensitivity_heatmap(sensitivity_df, config, logger=None):
         
         plt.tight_layout()
         
-        # 그림 저장
+        # 그림 저장 (log 폴더에 저장)
         output_path = None
         if config['save_plots']:
-            output_path = f"sensitivity_heatmap.{config['plot_format']}"
+            # log 폴더 경로 생성
+            script_dir = Path(__file__).parent
+            log_dir = script_dir / "log"
+            log_dir.mkdir(exist_ok=True)
+            
+            # 파일명에 타임스탬프 추가
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"sensitivity_heatmap_{timestamp}.{config['plot_format']}"
+            output_path = log_dir / filename
+            
             plt.savefig(output_path, dpi=config['dpi'], bbox_inches='tight')
-            print(f"✓ 히트맵 저장 완료: {output_path}")
         
-        plt.show()
+        # plt.show()  # GUI 환경이 아닌 경우 주석 처리
         
         # 로깅
         if logger:
@@ -694,7 +665,6 @@ def create_sensitivity_heatmap(sensitivity_df, config, logger=None):
         return fig, output_path
         
     except Exception as e:
-        print(f"❌ 히트맵 생성 중 오류 발생: {e}")
         if logger:
             logger.error(f"히트맵 생성 중 오류 발생: {e}")
         return None, None
@@ -760,9 +730,6 @@ def main():
     """
     메인 실행 함수
     """
-    print("🚀 DoWhy 인과모델 분석 파이프라인 시작")
-    print("="*80)
-    
     # 로깅 설정
     log_filename = setup_logging(
         DATA_CONFIG['graph_file'], 
@@ -773,7 +740,7 @@ def main():
     
     try:
         # 1. 데이터 및 그래프 로드
-        df, causal_graph_gml = load_data_and_graph(
+        df, causal_graph = load_data_and_graph(
             DATA_CONFIG['data_file'], 
             DATA_CONFIG['graph_file']
         )
@@ -781,7 +748,7 @@ def main():
         # 2. 인과모델 생성
         model = create_causal_model(
             df, 
-            causal_graph_gml, 
+            causal_graph, 
             DATA_CONFIG['treatment'], 
             DATA_CONFIG['outcome']
         )
@@ -839,7 +806,6 @@ def main():
                 logger.info(f"히트맵 파일: {heatmap_path}")
         
     except Exception as e:
-        print(f"❌ 분석 중 오류 발생: {e}")
         if logger:
             logger.error(f"분석 중 오류 발생: {e}")
         raise
