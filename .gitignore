@@ -120,3 +120,15 @@ dowhy_env/
 
 # ignore data info
 /kubig_experiments/data/code_info.xlsx
+
+# ignore synthetic json files
+/kubig_experiments/data/COVERLETTERS_JSON/ver1/
+/kubig_experiments/data/COVERLETTERS_JSON/ver2/
+
+/kubig_experiments/data/LICENSES_JSON/output/
+
+/kubig_experiments/data/RESUME_JSON/ver1/
+/kubig_experiments/data/RESUME_JSON/ver2/
+/kubig_experiments/data/RESUME_JSON/ver3/
+
+/kubig_experiments/data/TRAININGS_JSON/output/
