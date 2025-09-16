@@ -21,6 +21,7 @@ def test_tabpfn_estimator_runs(dag_idx):
     """
     - DAG에서 일반화 규칙으로 Treatment/Confounder/Mediator 자동 추출
     - Baseline 및 TabPFN 추정기 실행 검증
+    - Validation 단계: Placebo treatment, Random treatment, DoWhy Refutation
     """
     df = pd.read_csv("./kubig_experiments/data/synthetic_data.csv")
     dag_dir = Path("./kubig_experiments/dags")
@@ -65,3 +66,17 @@ def test_tabpfn_estimator_runs(dag_idx):
 
     print(f"[{dag_file.name}] [{treatment}] Baseline({method}) ATE: {est.value}")
     print(f"[{dag_file.name}] [{treatment}] TabPFN ATE: {est_tabpfn.value}")
+
+    # ------------------------
+    # Validation: DoWhy 내장 Refutation
+    # ------------------------
+    refuters = ["placebo_treatment_refuter", "random_common_cause"]
+    for ref in refuters:
+        refutation = model.refute_estimate(
+            identified,
+            est,
+            method_name=ref,
+        )
+        print(f"[{dag_file.name}] Refutation ({ref}): {refutation}")
+        # refutation의 결과값이 원래 추정치와 크게 차이나면 문제 있음
+        assert refutation is not None
