@@ -9,6 +9,7 @@ from dowhy import CausalModel
 from dowhy.datasets import linear_dataset
 from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 def run_case(outcome_is_binary: bool, num_common_causes: int, debug: bool = False) -> tuple:
@@ -183,7 +184,7 @@ def run_batch_regression(
 
     results = []  # (case_idx, true_ate, tabpfn_ate, linear_ate, diff_tabpfn, diff_linear)
 
-    for i in range(1, num_cases + 1):
+    for i in tqdm(range(1, num_cases + 1), total=num_cases, desc="Batch regression", unit="case"):
         # Different true ATE per case
         true_ate = float(rng.uniform(0.5, 18.0))
 
@@ -236,7 +237,7 @@ def run_batch_regression(
         )
 
         if verbose_every and (i % verbose_every == 0):
-            print(
+            tqdm.write(
                 f"[Batch] {i}/{num_cases}  true={true_ate:.2f}  tabpfn={tabpfn_ate:.2f}  linear={linear_ate:.2f}"
             )
 
