@@ -132,3 +132,6 @@ dowhy_env/
 /kubig_experiments/data/RESUME_JSON/ver3/
 
 /kubig_experiments/data/TRAININGS_JSON/output/
+
+# ignore dags
+/kubig_experiments/dags/output/

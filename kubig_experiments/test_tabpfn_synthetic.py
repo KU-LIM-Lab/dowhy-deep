@@ -21,7 +21,7 @@ def test_tabpfn_estimator_runs(dag_idx):
     """
     - DAG에서 일반화 규칙으로 Treatment/Confounder/Mediator 자동 추출
     - Baseline 및 TabPFN 추정기 실행 검증
-    - Validation 단계: Placebo treatment, Random treatment, DoWhy Refutation
+    - Validation 단계: Placebo treatment, Random treatment
     """
     df = pd.read_csv("./kubig_experiments/data/synthetic_data.csv")
     dag_dir = Path("./kubig_experiments/dags")
