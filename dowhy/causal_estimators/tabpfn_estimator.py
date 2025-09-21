@@ -4,6 +4,8 @@ from typing import Any, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.utils import resample
+
 import torch
 
 from dowhy.causal_estimator import CausalEstimate, CausalEstimator, IdentifiedEstimand
@@ -102,27 +104,6 @@ class TabpfnEstimator(CausalEstimator):
             from tabpfn import TabPFNRegressor
             return TabPFNRegressor, "Regressor"
 
-    def _prepare_data_and_model(self, data: pd.DataFrame):
-        """데이터 준비와 모델 클래스 결정을 한 번에 처리하는 헬퍼 메서드."""
-        # 결과 변수 추출
-        outcome_data = data[self._outcome_name].iloc[:, 0]
-        
-        # 모델 클래스 결정
-        model_class, model_type = self._get_model_class(outcome_data)
-        
-        # 피처 준비
-        all_feature_names = (
-            self._observed_common_causes_names + self._treatment_name + self._effect_modifier_names
-        )
-        features_df = data[all_feature_names]
-        encoded_features_df = self._encode(features_df, "features")
-        
-        # 텐서 변환
-        X_tensor = torch.from_numpy(encoded_features_df.to_numpy(dtype=np.float32)).to(self._device)
-        y_tensor = torch.from_numpy(outcome_data.to_numpy(dtype=np.float32)).to(self._device)
-        
-        return X_tensor, y_tensor, model_class, model_type, all_feature_names
-
     def fit(
         self,
         data: pd.DataFrame,
@@ -141,6 +122,9 @@ class TabpfnEstimator(CausalEstimator):
 
         if self._target_estimand.identifier_method != "backdoor":
             raise NotImplementedError("TabPFNEstimator only supports the backdoor identification method.")
+        
+        self.symbolic_estimator = self.construct_symbolic_estimator(self._target_estimand)
+        self.logger.info(self.symbolic_estimator)
 
         # 1. 결과 변수를 먼저 추출하여 모델 클래스 결정
         outcome_data = self._data[self._outcome_name].iloc[:, 0]
@@ -157,9 +141,14 @@ class TabpfnEstimator(CausalEstimator):
         # 4. dowhy의 내장 _encode 메소드를 사용하여 원-핫 인코딩
         encoded_features_df = self._encode(features_df, "features")
         
-        # 5. PyTorch 텐서로 변환
-        self.X_tensor = torch.from_numpy(encoded_features_df.to_numpy(dtype=np.float32)).to(self._device)
-        self.y_tensor = torch.from_numpy(outcome_data.to_numpy(dtype=np.float32)).to(self._device)
+        # 5. Numpy 배열로 변환
+        X = encoded_features_df.to_numpy(dtype=np.float32)
+
+        if model_type == "Classifier":
+            y, _ = pd.factorize(outcome_data)
+            y = y.astype(np.int64) 
+        else:
+            y = outcome_data.to_numpy(dtype=np.float32)
 
         # 6. TabPFN 모델 초기화 및 학습
         tabpfn_params = {
@@ -167,15 +156,15 @@ class TabpfnEstimator(CausalEstimator):
         }
 
         if "N_ensemble_configurations" in self.method_params:
-            tabpfn_params["N_ensemble_configurations"] = self.method_params["N_ensemble_configurations"]
+            tabpfn_params["n_estimators"] = self.method_params["N_ensemble_configurations"]
 
         self.tabpfn_model = model_class(**tabpfn_params)
         
-        # 7. 데이터셋 제한사항 경고
-        num_samples, num_features = self.X_tensor.shape
-        if num_samples > 5000:
+        # 7. 데이터셋 제한사항 경고 (sample size, feature size, class size)
+        num_samples, num_features = X.shape
+        if num_samples > 10000:
             self.logger.warning(
-                "WARNING: TabPFN performs best on datasets with up to 5,000 samples. "
+                "WARNING: TabPFN performs best on datasets with up to 10,000 samples. "
                 "Your dataset has %d samples.", num_samples
             )
         if num_features > 500:
@@ -183,12 +172,15 @@ class TabpfnEstimator(CausalEstimator):
                 "WARNING: TabPFN performs best on datasets with up to 500 features. "
                 "Your dataset has %d features.", num_features
             )
+        if model_type == "Classifier":
+            num_classes = len(outcome_data.unique())
+            if num_classes > 10:
+                raise ValueError(
+                    f"Number of classes {num_classes} exceeds the maximal number of classes supported by TabPFN(10). Consider reducing the number of classes."
+                )
 
-        self.tabpfn_model.fit(self.X_tensor, self.y_tensor.view(-1))
+        self.tabpfn_model.fit(X, y)
         self.logger.info(f"TabPFN {model_type} model has been fitted successfully.")
-
-        self.symbolic_estimator = self.construct_symbolic_estimator(self._target_estimand)
-        self.logger.info(self.symbolic_estimator)  # 로깅 추가
 
         return self
 
@@ -206,9 +198,9 @@ class TabpfnEstimator(CausalEstimator):
         Supports estimating effects on custom target units.
         """
         # 1. 파라미터 저장 및 검증
-        self._control_value = control_value
-        self._treatment_value = treatment_value
         self._target_units = target_units
+        self._treatment_value = treatment_value
+        self._control_value = control_value
         
         if data is None:
             data = self._data
@@ -216,7 +208,7 @@ class TabpfnEstimator(CausalEstimator):
         if need_conditional_estimates is None:
             need_conditional_estimates = self.need_conditional_estimates
         
-        # 2. 대상 데이터 결정 (중복 제거)
+        # 2. 대상 데이터 결정
         if target_units is None or target_units == "ate":
             data_to_predict_on = data
         elif isinstance(target_units, pd.DataFrame):
@@ -224,7 +216,7 @@ class TabpfnEstimator(CausalEstimator):
         elif callable(target_units):
             data_to_predict_on = data.loc[target_units]
         else:
-            raise ValueError("target_units must be None, DataFrame, or callable")
+            raise ValueError("target_units must be None, 'ate', DataFrame, or callable")
 
         # 3. Counterfactual 데이터 생성
         control_data = data_to_predict_on.copy()
@@ -241,10 +233,10 @@ class TabpfnEstimator(CausalEstimator):
         encoded_control_df = self._encode(control_features_df, "features")
         encoded_treatment_df = self._encode(treatment_features_df, "features")
 
-        X_control = torch.from_numpy(encoded_control_df.to_numpy(dtype=np.float32)).to(self._device)
-        X_treatment = torch.from_numpy(encoded_treatment_df.to_numpy(dtype=np.float32)).to(self._device)
+        X_control = encoded_control_df.to_numpy(dtype=np.float32)
+        X_treatment = encoded_treatment_df.to_numpy(dtype=np.float32)
 
-        # 5. 모델 예측 (개선된 타입 체크)
+        # 5. 모델 예측 (Classifier/Regressor)
         if hasattr(self.tabpfn_model, 'predict_proba'):
             predictions_control = self.tabpfn_model.predict_proba(X_control)[:, 1]
             predictions_treatment = self.tabpfn_model.predict_proba(X_treatment)[:, 1]
@@ -255,13 +247,18 @@ class TabpfnEstimator(CausalEstimator):
         # 6. 효과 계산
         cate_estimates = predictions_treatment - predictions_control
         ate = np.mean(cate_estimates)
-
+        
         # 7. 조건부 추정 처리
         conditional_estimates = None
         if need_conditional_estimates:
             conditional_estimates = pd.Series(cate_estimates, index=data_to_predict_on.index)
+            
+        # 8. Confidence intervals 처리
+        effect_intervals = None
+        if self._confidence_intervals:
+            effect_intervals = self._estimate_confidence_intervals(ate)
 
-        # 8. CausalEstimate 객체 생성
+        # 9. CausalEstimate 객체 생성
         estimate = CausalEstimate(
             data=data,
             treatment_name=self._treatment_name,
@@ -272,7 +269,64 @@ class TabpfnEstimator(CausalEstimator):
             conditional_estimates=conditional_estimates,
             target_estimand=self._target_estimand,
             realized_estimand_expr=self.symbolic_estimator,
+            effect_intervals=effect_intervals
         )
         
         estimate.add_estimator(self)
-        return estimate
+        return estimate    
+
+    def _estimate_confidence_intervals(self, estimate_value, confidence_level=None, method=None, **kwargs):
+        """
+        Confidence intervals 구현(DoWhy CausalEstimator 클래스 참고)
+        """
+        if confidence_level is None:
+            confidence_level = self.confidence_level
+        
+        return self._estimate_confidence_intervals_with_bootstrap(
+            self._data,
+            estimate_value=estimate_value,
+            confidence_level=confidence_level,
+            num_simulations=self.num_simulations,
+            sample_size_fraction=self.sample_size_fraction,
+        )
+    
+    def _generate_bootstrap_estimates(self, data, num_bootstrap_simulations, sample_size_fraction):
+        """
+        Bootstrap 구현
+        CausalEstimator._generate_bootstrap_estimates() 오버라이드
+        """
+        simulation_results = np.zeros(num_bootstrap_simulations)
+        sample_size = int(sample_size_fraction * len(data))
+        
+        self.logger.info(f"TabPFN Bootstrap: {num_bootstrap_simulations} simulations, sample_size: {sample_size}")
+        
+        for index in range(num_bootstrap_simulations):
+            # Bootstrap 샘플 생성
+            new_data = resample(data, n_samples=sample_size)
+            
+            # 새 estimator 생성 및 학습
+            new_estimator = self.get_new_estimator_object(
+                self._target_estimand,
+                test_significance=False,
+                evaluate_effect_strength=False,
+                confidence_intervals=False,
+            )
+            
+            new_estimator.fit(new_data, effect_modifier_names=self._effect_modifier_names)
+            
+            # 각 샘플에 대해 effect 추정
+            new_effect = new_estimator.estimate_effect(
+                new_data,
+                treatment_value=self._treatment_value,
+                control_value=self._control_value,
+                target_units=self._target_units,
+            )
+            
+            simulation_results[index] = new_effect.value
+        
+        # BootstrapEstimates 반환
+        return CausalEstimator.BootstrapEstimates(
+            simulation_results,
+            {"num_simulations": num_bootstrap_simulations, "sample_size_fraction": sample_size_fraction}
+        )
+    
