@@ -276,9 +276,17 @@ class TabpfnEstimator(RegressionEstimator):
         self.method_params = method_params if method_params is not None else {}
         self.tabpfn_model = None
         self._use_multi_gpu = bool(self.method_params.get("use_multi_gpu", False))
-        self._gpu_ids: List[int] = self.method_params.get("gpu_ids", [])
+        
+        # Get device_ids from method_params (prefer device_ids over gpu_ids for consistency)
+        self.device_ids = self.method_params.get("device_ids", [])
         
         self._check_tabpfn_dependencies()
+        
+        # Auto-detect GPUs if use_multi_gpu is True but device_ids is not specified
+        if self._use_multi_gpu and not self.device_ids and torch.cuda.is_available():
+            self.device_ids = list(range(torch.cuda.device_count()))
+            self.logger.info(f"INFO: Auto-detected {len(self.device_ids)} GPUs for multi-processing: {self.device_ids}")
+        
         self._device = self._get_device()
 
     def _check_tabpfn_dependencies(self):
@@ -303,6 +311,7 @@ class TabpfnEstimator(RegressionEstimator):
                 "WARNING: No GPU found. TabPFN will run on CPU, which can be very slow."
                 "For better performance, consider using a GPU instance."
             )
+        
         return torch.device(device)
 
     def construct_symbolic_estimator(self, estimand):
@@ -387,7 +396,13 @@ class TabpfnEstimator(RegressionEstimator):
 
         effect_intervals = None
         if self._confidence_intervals:
-            effect_intervals = self._estimate_confidence_intervals(effect_estimate, data=data)
+            effect_intervals = self._estimate_confidence_intervals_with_bootstrap(
+                data, 
+                effect_estimate, 
+                self.confidence_level,
+                num_simulations=self.num_simulations,
+                sample_size_fraction=self.sample_size_fraction
+            )
 
         estimate = CausalEstimate(
             data=data,
@@ -429,7 +444,7 @@ class TabpfnEstimator(RegressionEstimator):
             model_type_param=self.method_params.get("model_type", "auto"),
             model_kwargs=model_kwargs,
             max_num_classes=self.method_params.get("max_num_classes", 10),
-            device_ids=(self._gpu_ids if (self._use_multi_gpu and torch.cuda.is_available() and len(self._gpu_ids) > 1) else []),
+            device_ids=self.device_ids,
         )
         wrapper.prepare(tabpfn_features, outcome_series, self.logger)
         if wrapper.device_ids:
@@ -455,21 +470,6 @@ class TabpfnEstimator(RegressionEstimator):
         # Regressor
         return model.predict(tabpfn_features)
 
-    def _estimate_confidence_intervals(self, estimate_value, data, confidence_level=None, method=None, **kwargs):
-        """
-        Confidence intervals 구현(DoWhy CausalEstimator 클래스 참고)
-        """
-        if confidence_level is None:
-            confidence_level = self.confidence_level
-        
-        return self._estimate_confidence_intervals_with_bootstrap(
-            data,
-            estimate_value=estimate_value,
-            confidence_level=confidence_level,
-            num_simulations=self.num_simulations,
-            sample_size_fraction=self.sample_size_fraction,
-        )
-    
     def _generate_bootstrap_estimates(self, data, num_bootstrap_simulations, sample_size_fraction):
         """
         Bootstrap 구현

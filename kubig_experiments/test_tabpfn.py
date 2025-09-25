@@ -2,14 +2,28 @@ import sys
 import pandas as pd
 import numpy as np
 
-import tabpfn 
-import torch 
+import warnings
+warnings.filterwarnings('ignore')
 
 from dowhy import CausalModel
 from dowhy.datasets import linear_dataset
 from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+
+# GPU 정보 확인
+try:
+    import torch
+    if torch.cuda.is_available():
+        gpu_count = torch.cuda.device_count()
+        print(f"🚀 [GPU INFO] Found {gpu_count} GPU(s) available:")
+        for i in range(gpu_count):
+            gpu_name = torch.cuda.get_device_name(i)
+            print(f"   GPU {i}: {gpu_name}")
+    else:
+        print("⚠️  [GPU INFO] No GPU available, will use CPU")
+except ImportError:
+    print("⚠️  [GPU INFO] PyTorch not available")
 
 
 def run_case(outcome_is_binary: bool, num_common_causes: int, debug: bool = False) -> tuple:
@@ -88,7 +102,9 @@ def run_case(outcome_is_binary: bool, num_common_causes: int, debug: bool = Fals
             "estimator": TabpfnEstimator, 
             "n_estimators": 8,
             "model_type": "auto",  # "auto", "classifier", "regressor"
-            "max_num_classes": 10
+            "max_num_classes": 10,
+            "use_multi_gpu": True,  # 멀티 GPU 사용 활성화
+            "device_ids": [0, 1] if debug else None  # 디버그 모드에서만 특정 GPU 지정
         },
         confidence_intervals=True,  # confidence intervals 활성화
     )
@@ -227,7 +243,9 @@ def run_batch_regression(
             method_params={
                 "estimator": TabpfnEstimator, 
                 "n_estimators": 8,
-                "model_type": "auto"
+                "model_type": "auto",
+                "use_multi_gpu": True,  # 멀티 GPU 사용 활성화
+                "device_ids": None  # 자동으로 사용 가능한 GPU 감지
             },
             confidence_intervals=compute_ci,
         )
