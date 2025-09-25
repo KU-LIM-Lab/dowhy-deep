@@ -4,12 +4,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
+
         {
-            "name": "Python Debugger: test_tabpfn.py as module",
+            "name": "Python Debugger: test_tabpfn.py --single",
             "type": "debugpy",
             "request": "launch",
-            "module": "kubig_experiments.test_tabpfn",
+            "program": "${workspaceFolder}/kubig_experiments/test_tabpfn.py",
+            "args": ["--single"],
             "console": "integratedTerminal",
             "justMyCode": false
         }

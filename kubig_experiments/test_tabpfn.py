@@ -84,7 +84,12 @@ def run_case(outcome_is_binary: bool, num_common_causes: int, debug: bool = Fals
     estimate = model.estimate_effect(
         identified_estimand,
         method_name="backdoor.tabpfn",
-        method_params={"estimator": TabpfnEstimator, "N_ensemble_configurations": 8},
+        method_params={
+            "estimator": TabpfnEstimator, 
+            "n_estimators": 8,
+            "model_type": "auto",  # "auto", "classifier", "regressor"
+            "max_num_classes": 10
+        },
         confidence_intervals=True,  # confidence intervals 활성화
     )
 
@@ -219,7 +224,11 @@ def run_batch_regression(
         tabpfn_est = model.estimate_effect(
             identified_estimand,
             method_name="backdoor.tabpfn",
-            method_params={"estimator": TabpfnEstimator, "N_ensemble_configurations": 8},
+            method_params={
+                "estimator": TabpfnEstimator, 
+                "n_estimators": 8,
+                "model_type": "auto"
+            },
             confidence_intervals=compute_ci,
         )
 

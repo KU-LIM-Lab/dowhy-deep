@@ -387,7 +387,7 @@ class TabpfnEstimator(RegressionEstimator):
 
         effect_intervals = None
         if self._confidence_intervals:
-            effect_intervals = self._estimate_confidence_intervals(effect_estimate)
+            effect_intervals = self._estimate_confidence_intervals(effect_estimate, data=data)
 
         estimate = CausalEstimate(
             data=data,
@@ -455,7 +455,7 @@ class TabpfnEstimator(RegressionEstimator):
         # Regressor
         return model.predict(tabpfn_features)
 
-    def _estimate_confidence_intervals(self, estimate_value, confidence_level=None, method=None, **kwargs):
+    def _estimate_confidence_intervals(self, estimate_value, data, confidence_level=None, method=None, **kwargs):
         """
         Confidence intervals 구현(DoWhy CausalEstimator 클래스 참고)
         """
@@ -463,7 +463,7 @@ class TabpfnEstimator(RegressionEstimator):
             confidence_level = self.confidence_level
         
         return self._estimate_confidence_intervals_with_bootstrap(
-            self._data,
+            data,
             estimate_value=estimate_value,
             confidence_level=confidence_level,
             num_simulations=self.num_simulations,
