@@ -147,7 +147,7 @@ class Preprocessor:
                               - ['이력서', '자기소개서', '직업훈련', '자격증'] 등
 
         Returns:
-            pd.DataFrame: SEEK_CUST_NO 기준으로 조인된 데이터프레임
+            pd.DataFrame: SEEK_CUST_NO 기준으로 조인된 데이터프레임 -> repeat 처리 필요
         """
         self.df_list = []
         result = None
