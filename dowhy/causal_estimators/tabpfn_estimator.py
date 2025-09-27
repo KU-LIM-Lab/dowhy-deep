@@ -130,7 +130,6 @@ class TabPFNModelWrapper:
             self.train_y = outcome_series.to_numpy(dtype=np.float32)
         self.train_X = features
 
-        # Warnings for pretraining limits
         self._advise_pretraining_limits(self.train_X, self.train_y, logger)
         return self
 
@@ -180,12 +179,13 @@ class TabPFNModelWrapper:
         """
         if not self.device_ids:
             raise ValueError("No device_ids provided for multiprocessing path.")
-        # contiguous chunking indexes
+
         num_devices = len(self.device_ids)
         num_samples = self.train_X.shape[0]
         chunk_size = max(1, num_samples // num_devices)
         out_queue = mp.Queue()
         procs: List[mp.Process] = []
+        
         for i, device_id in enumerate(self.device_ids):
             start_idx = i * chunk_size
             end_idx = (i + 1) * chunk_size if i < num_devices - 1 else num_samples
@@ -209,7 +209,7 @@ class TabPFNModelWrapper:
             p.join()
         if errors:
             raise RuntimeError(f"TabPFN multiprocessing prediction errors: {errors}")
-        return np.mean(preds, axis=0)
+        return np.mean(preds, axis=0) # average predictions across devices
 
 
 class TabpfnEstimator(RegressionEstimator):
@@ -256,7 +256,18 @@ class TabpfnEstimator(RegressionEstimator):
         :param predict_score: For models that have a binary output, whether
             to output the model's score or the binary output based on the score.
         :param kwargs: (optional) Additional estimator-specific parameters
-
+        :param method_params: (optional) Dictionary of additional estimator-specific parameters for TabPFN.
+            - model_type: "auto" | "classifier" | "regressor", default: "auto"
+                Specifies the type of model to use. 
+                If "auto", the estimator will infer whether to use a classifier or regressor based on the outcome variable.
+            - n_estimators: int, default: 8
+                The number of TabPFN models to ensemble (ensemble size).
+            - max_num_classes: int, default: 10
+                When model_type is "auto", this sets the threshold for the number of unique outcome classes to treat the task as classification.
+            - use_multi_gpu: bool, default: False
+                Whether to use multiple GPUs for parallel prediction.
+            - device_ids: list or None, default: []
+                List of GPU device IDs to use for multi-GPU processing. If not specified or empty, all available GPUs will be used automatically when use_multi_gpu is True.
 
         """
         super().__init__(
@@ -325,15 +336,6 @@ class TabpfnEstimator(RegressionEstimator):
         )
         return expr
     
-    def _init_model_kwargs(self) -> dict:
-        """Prepare keyword arguments for underlying TabPFN model from method_params.
-
-        :returns: Dict of kwargs (e.g., {'n_estimators': N}).
-        """
-        model_kwargs = {}
-        if "N_ensemble_configurations" in self.method_params:
-            model_kwargs["n_estimators"] = self.method_params["N_ensemble_configurations"]
-        return model_kwargs
 
     def fit(
         self,
@@ -399,7 +401,7 @@ class TabpfnEstimator(RegressionEstimator):
             effect_intervals = self._estimate_confidence_intervals_with_bootstrap(
                 data, 
                 effect_estimate, 
-                self.confidence_level,
+                confidence_level=self.confidence_level,
                 num_simulations=self.num_simulations,
                 sample_size_fraction=self.sample_size_fraction
             )
@@ -433,16 +435,16 @@ class TabpfnEstimator(RegressionEstimator):
         :param data: DataFrame containing treatment, outcome and confounders.
         :returns: Tuple of (design-matrix with intercept, model-wrapper instance).
         """
-        # Build features, then prepare TabPFN wrapper
         features = self._build_features(data)
         tabpfn_features = features[:, 1:]  # remove intercept column for TabPFN
         outcome_col = self._target_estimand.outcome_variable[0]
         outcome_series = data[outcome_col]
 
-        model_kwargs = self._init_model_kwargs()
+        n_estimators = self.method_params.get("n_estimators", 8)
+        
         wrapper = TabPFNModelWrapper(
             model_type_param=self.method_params.get("model_type", "auto"),
-            model_kwargs=model_kwargs,
+            model_kwargs={"n_estimators": n_estimators},
             max_num_classes=self.method_params.get("max_num_classes", 10),
             device_ids=self.device_ids,
         )
@@ -453,13 +455,11 @@ class TabpfnEstimator(RegressionEstimator):
             wrapper.fit_single(self._device)
             model = wrapper
 
-        # Keep a direct reference for potential downstream uses
         self.tabpfn_model = model
         return (features, model)
     
     def predict_fn(self, data: pd.DataFrame, model, features):
         tabpfn_features = features[:, 1:]
-        # Decide proba vs. predict based on model type;
         is_classifier = getattr(model, "resolved_model_type", None) == "Classifier"
         if is_classifier:
             proba = model.predict_proba(tabpfn_features)
@@ -467,7 +467,6 @@ class TabpfnEstimator(RegressionEstimator):
                 return proba[:, 1] if proba.ndim == 2 else proba
             # Fallback to labels if proba unavailable
             return model.predict(tabpfn_features)
-        # Regressor
         return model.predict(tabpfn_features)
 
     def _generate_bootstrap_estimates(self, data, num_bootstrap_simulations, sample_size_fraction):
@@ -481,10 +480,8 @@ class TabpfnEstimator(RegressionEstimator):
         self.logger.info(f"TabPFN Bootstrap: {num_bootstrap_simulations} simulations, sample_size: {sample_size}")
         
         for index in range(num_bootstrap_simulations):
-            # Bootstrap 샘플 생성
             new_data = resample(data, n_samples=sample_size)
             
-            # 새 estimator 생성 및 학습
             new_estimator = self.get_new_estimator_object(
                 self._target_estimand,
                 test_significance=False,
@@ -494,7 +491,6 @@ class TabpfnEstimator(RegressionEstimator):
             
             new_estimator.fit(new_data, effect_modifier_names=self._effect_modifier_names)
             
-            # 각 샘플에 대해 effect 추정
             new_effect = new_estimator.estimate_effect(
                 new_data,
                 treatment_value=self._treatment_value,
@@ -504,7 +500,6 @@ class TabpfnEstimator(RegressionEstimator):
             
             simulation_results[index] = new_effect.value
         
-        # BootstrapEstimates 반환
         return CausalEstimator.BootstrapEstimates(
             simulation_results,
             {"num_simulations": num_bootstrap_simulations, "sample_size_fraction": sample_size_fraction}

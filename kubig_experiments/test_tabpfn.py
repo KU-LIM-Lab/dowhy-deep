@@ -100,9 +100,9 @@ def run_case(outcome_is_binary: bool, num_common_causes: int, debug: bool = Fals
         method_name="backdoor.tabpfn",
         method_params={
             "estimator": TabpfnEstimator, 
-            "n_estimators": 8,
+            "n_estimators": 8, # TabPFN 앙상블 크기, default: 8
             "model_type": "auto",  # "auto", "classifier", "regressor"
-            "max_num_classes": 10,
+            "max_num_classes": 10, # 분류 태스크의 판별 임계치, default: 10
             "use_multi_gpu": True,  # 멀티 GPU 사용 활성화
             "device_ids": [0, 1] if debug else None  # 디버그 모드에서만 특정 GPU 지정
         },
