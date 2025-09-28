@@ -77,4 +77,5 @@ def test_tabpfn_estimator_ate(outcome_is_binary, num_common_causes):
         print(f"  - True ATE: {true_ate}")
         print(f"  - Estimated ATE: {estimate.value:.4f}")
     else:
+        print(f"  - True ATE: {true_ate}")
         print(f"  - Estimated ATE (propensity difference): {estimate.value:.4f}")

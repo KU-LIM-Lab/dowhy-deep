@@ -16,16 +16,16 @@ def _dot_to_nx(graph_txt: str) -> nx.DiGraph:
     g.add_edges_from(parse_edges_from_dot(graph_txt))
     return g
 
-@pytest.mark.parametrize("dag_idx", [0, 1])  # sample_dag_1.txt, sample_dag_2.txt
+@pytest.mark.parametrize("dag_idx", range(1, 30))  # sample_dag_1.txt, sample_dag_2.txt
 def test_tabpfn_estimator_runs(dag_idx):
     """
     - DAG에서 일반화 규칙으로 Treatment/Confounder/Mediator 자동 추출
     - Baseline 및 TabPFN 추정기 실행 검증
     - Validation 단계: Placebo treatment, Random treatment
     """
-    df = pd.read_csv("./kubig_experiments/data/synthetic_data.csv")
-    dag_dir = Path("./kubig_experiments/dags")
-    dag_files = sorted(dag_dir.glob("sample_dag_*.txt"))
+    df = pd.read_csv("./kubig_experiments/data/data_preprocessed.csv")
+    dag_dir = Path("./kubig_experiments/dags/output")
+    dag_files = sorted(dag_dir.glob("dag_*.txt"))
     dag_file = dag_files[dag_idx]
     graph_txt = dag_file.read_text(encoding="utf-8")
 
