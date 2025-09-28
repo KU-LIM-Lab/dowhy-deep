@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import pytest
 import pandas as pd
 import numpy as np
@@ -16,7 +13,7 @@ def _dot_to_nx(graph_txt: str) -> nx.DiGraph:
     g.add_edges_from(parse_edges_from_dot(graph_txt))
     return g
 
-@pytest.mark.parametrize("dag_idx", range(1, 30))  # sample_dag_1.txt, sample_dag_2.txt
+@pytest.mark.parametrize("dag_idx", range(1, 30))
 def test_tabpfn_estimator_runs(dag_idx):
     """
     - DAG에서 일반화 규칙으로 Treatment/Confounder/Mediator 자동 추출
@@ -67,9 +64,6 @@ def test_tabpfn_estimator_runs(dag_idx):
     print(f"[{dag_file.name}] [{treatment}] Baseline({method}) ATE: {est.value}")
     print(f"[{dag_file.name}] [{treatment}] TabPFN ATE: {est_tabpfn.value}")
 
-    # ------------------------
-    # Validation: DoWhy 내장 Refutation
-    # ------------------------
     refuters = ["placebo_treatment_refuter", "random_common_cause"]
     for ref in refuters:
         refutation = model.refute_estimate(
@@ -78,5 +72,4 @@ def test_tabpfn_estimator_runs(dag_idx):
             method_name=ref,
         )
         print(f"[{dag_file.name}] Refutation ({ref}): {refutation}")
-        # refutation의 결과값이 원래 추정치와 크게 차이나면 문제 있음
         assert refutation is not None
