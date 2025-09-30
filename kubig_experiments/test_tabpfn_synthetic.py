@@ -85,6 +85,11 @@ def test_tabpfn_estimator_runs(dag_idx, test_logger):
     - Validation: Placebo treatment, Random treatment
     """
     df = pd.read_csv("./kubig_experiments/data/data_preprocessed.csv")
+    # 범주형/불리언 라벨 인코딩
+    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
+                      for c in df.select_dtypes(include=['object','category']).columns}) \
+           .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+
     dag_dir = Path("./kubig_experiments/dags/output")
     dag_file = dag_dir / f"dag_{dag_idx}.txt"
     graph_txt = dag_file.read_text(encoding="utf-8")
