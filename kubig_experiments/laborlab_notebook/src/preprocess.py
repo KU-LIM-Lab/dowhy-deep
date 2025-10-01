@@ -61,37 +61,9 @@ class Preprocessor:
         Returns:
             pd.DataFrame: 기본 전처리된 데이터프레임
         """
-        available_vars = [var for var in self.variable_mapping.keys() if var in df.columns]
-        df = df[available_vars]
-        # df = df.dropna()
 
-        if "BFR_OCTR_YN" in df.columns and "BFR_OCTR_CT" in df.columns:
-            df = df.drop(columns=["BFR_OCTR_YN"])
-
-        agree_var_names = [
-            "EMAIL_RCYN", "SAEIL_CNTC_AGRE_YN", "SHRS_IDIF_AOFR_YN", "SULC_IDIF_AOFR_YN",
-            "IDIF_IQRY_AGRE_YN", "SMS_RCYN", "EMAIL_OTPB_YN", "MPNO_OTPB_YN"
-        ]
-        agree_vars = [col for col in agree_var_names if col in df.columns]
-        if agree_vars:
-            # 예 개수 세기
-            agree_count = (df[agree_vars] == "예").sum(axis=1)
-
-            # 범주 매핑
-            def map_level(x):
-                if x <= 2:
-                    return "하"
-                elif x <= 5:
-                    return "중"
-                else:
-                    return "상"
-
-            df["AGREE_LEVEL"] = agree_count.map(map_level)
-
-            # 기존 8개 변수 제거
-            df = df.drop(columns=agree_vars)
-        return df
-
+        df_processed = df
+        return df_processed
 
     def nlp_preprocessing(self, data, json_name=None):
         """
@@ -199,23 +171,3 @@ class Preprocessor:
                 result = result.merge(df, on="SEEK_CUST_NO", how="outer", suffixes=('', f'_df{idx+1}'))
         
         return result
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
