@@ -11,6 +11,10 @@ import logging
 from pathlib import Path
 from datetime import datetime
 import os
+import sys
+
+# 로컬 DoWhy 라이브러리 경로 추가
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 def log_estimation_results(logger, estimate, method_name):
     """
@@ -38,6 +42,11 @@ def log_estimation_results(logger, estimate, method_name):
 
 def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
     """인과효과를 추정하는 함수"""
+    if logger:
+        logger.info("="*60)
+        logger.info("인과효과 추정 시작")
+        logger.info("="*60)
+    
     method_map = {
         'linear_regression': 'backdoor.linear_regression',
         'tabpfn': 'backdoor.tabpfn',
@@ -47,19 +56,45 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
     
     method = method_map.get(estimator, 'backdoor.linear_regression')
     
-    estimate = model.estimate_effect(
-        identified_estimand,
-        method_name=method,
-        test_significance=True
-    )
-    
     if logger:
-        logger.info(f"추정 방법: {method}")
-        logger.info(f"추정된 인과 효과 (ATE): {estimate.value:.6f}")
-        if hasattr(estimate, 'p_value') and estimate.p_value is not None:
-            logger.info(f"P-value: {estimate.p_value:.6f}")
+        logger.info(f"사용할 추정 방법: {method}")
+        logger.info(f"요청된 추정기: {estimator}")
     
-    return estimate
+    try:
+        # TabPFN의 경우 특별한 파라미터 설정
+        if estimator == 'tabpfn':
+            from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
+            estimate = model.estimate_effect(
+                identified_estimand,
+                method_name=method,
+                method_params={"estimator": TabpfnEstimator, "N_ensemble_configurations": 8},
+                test_significance=True
+            )
+        else:
+            estimate = model.estimate_effect(
+                identified_estimand,
+                method_name=method,
+                test_significance=True
+            )
+        
+        if logger:
+            logger.info("✅ 인과효과 추정 성공")
+            logger.info(f"추정된 인과 효과 (ATE): {estimate.value:.6f}")
+            if hasattr(estimate, 'p_value') and estimate.p_value is not None:
+                logger.info(f"P-value: {estimate.p_value:.6f}")
+                significance = "유의함" if estimate.p_value <= 0.05 else "유의하지 않음"
+                logger.info(f"통계적 유의성: {significance}")
+            
+            # 신뢰구간 정보
+            if hasattr(estimate, 'confidence_intervals'):
+                logger.info(f"신뢰구간: {estimate.confidence_intervals}")
+        
+        return estimate
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"❌ 인과효과 추정 실패: {e}")
+        raise
 
 def log_validation_results(logger, validation_results):
     """
@@ -109,9 +144,17 @@ def log_validation_results(logger, validation_results):
 
 def run_validation_tests(model, identified_estimand, estimate, logger=None):
     """검증 테스트를 실행하는 함수"""
+    if logger:
+        logger.info("="*60)
+        logger.info("검증 테스트 실행 시작")
+        logger.info("="*60)
+    
     validation_results = {}
     
     # 가상 원인 테스트
+    if logger:
+        logger.info("1️⃣ 가상 원인 테스트 실행 중...")
+    
     try:
         refute_placebo = model.refute_estimate(
             identified_estimand, estimate,
@@ -120,12 +163,25 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             num_simulations=100
         )
         validation_results['placebo'] = refute_placebo
+        
+        if logger:
+            logger.info("✅ 가상 원인 테스트 성공")
+            effect_change = abs(refute_placebo.new_effect - refute_placebo.estimated_effect)
+            status = "통과" if effect_change < 0.01 else "실패"
+            logger.info(f"테스트 결과: {status}")
+            logger.info(f"기존 추정치: {refute_placebo.estimated_effect:.6f}")
+            logger.info(f"가상처치 후 추정치: {refute_placebo.new_effect:.6f}")
+            logger.info(f"효과 변화: {effect_change:.6f}")
+            
     except Exception as e:
         validation_results['placebo'] = None
         if logger:
-            logger.warning(f"가상 원인 테스트 실패: {e}")
+            logger.error(f"❌ 가상 원인 테스트 실패: {e}")
     
     # 미관측 교란 테스트
+    if logger:
+        logger.info("2️⃣ 미관측 교란 테스트 실행 중...")
+    
     try:
         refute_unobserved = model.refute_estimate(
             identified_estimand, estimate,
@@ -137,10 +193,25 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             num_simulations=100
         )
         validation_results['unobserved'] = refute_unobserved
+        
+        if logger:
+            logger.info("✅ 미관측 교란 테스트 성공")
+            change_rate = abs(refute_unobserved.new_effect - refute_unobserved.estimated_effect) / abs(refute_unobserved.estimated_effect)
+            status = "강건함" if change_rate < 0.2 else "민감함"
+            logger.info(f"테스트 결과: {status}")
+            logger.info(f"기존 추정치: {refute_unobserved.estimated_effect:.6f}")
+            logger.info(f"교란 추가 후 추정치: {refute_unobserved.new_effect:.6f}")
+            logger.info(f"변화율: {change_rate:.2%}")
+            
     except Exception as e:
         validation_results['unobserved'] = None
         if logger:
-            logger.warning(f"미관측 교란 테스트 실패: {e}")
+            logger.error(f"❌ 미관측 교란 테스트 실패: {e}")
+    
+    if logger:
+        logger.info("="*60)
+        logger.info("검증 테스트 완료")
+        logger.info("="*60)
     
     return validation_results
 
@@ -260,12 +331,29 @@ def log_heatmap_info(logger, heatmap_path, config):
 
 def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
     """민감도 분석을 실행하는 함수"""
+    if logger:
+        logger.info("="*60)
+        logger.info("민감도 분석 실행 시작")
+        logger.info("="*60)
+        logger.info("효과 강도 범위: 0.0 ~ 0.5")
+        logger.info("그리드 포인트 수: 11x11 = 121개")
+        logger.info("시뮬레이션 수: 200회")
+    
     try:
         grid = np.linspace(0.0, 0.5, 11)
         rows = []
+        total_combinations = len(grid) * len(grid)
+        processed = 0
         
-        for et in grid:
-            for eo in grid:
+        if logger:
+            logger.info(f"총 {total_combinations}개 조합 분석 시작...")
+        
+        for i, et in enumerate(grid):
+            for j, eo in enumerate(grid):
+                processed += 1
+                if logger and processed % 20 == 0:
+                    logger.info(f"진행률: {processed}/{total_combinations} ({processed/total_combinations*100:.1f}%)")
+                
                 try:
                     ref = model.refute_estimate(
                         identified_estimand, estimate,
@@ -279,6 +367,8 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
                     rows.append((et, eo, ref.new_effect))
                 except Exception as e:
                     rows.append((et, eo, np.nan))
+                    if logger:
+                        logger.warning(f"그리드 포인트 ({et:.2f}, {eo:.2f}) 실행 실패: {e}")
         
         sensitivity_df = pd.DataFrame(rows, columns=[
             "effect_strength_on_treatment", 
@@ -287,29 +377,56 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
         ])
         
         if logger:
-            logger.info(f"민감도 분석 완료: {len(sensitivity_df)}개 조합")
+            logger.info("✅ 민감도 분석 완료")
+            logger.info(f"분석된 조합 수: {len(sensitivity_df)}")
+            
+            if not sensitivity_df.empty:
+                valid_effects = sensitivity_df.dropna()
+                logger.info(f"유효한 결과 수: {len(valid_effects)}")
+                logger.info(f"효과 범위: {valid_effects['new_effect'].min():.6f} ~ {valid_effects['new_effect'].max():.6f}")
+                
+                # 효과가 0에 가까운 지점 찾기
+                min_abs_effect = valid_effects.loc[valid_effects['new_effect'].abs().idxmin()]
+                logger.info(f"최소 절대 효과 지점: et={min_abs_effect['effect_strength_on_treatment']:.2f}, eo={min_abs_effect['effect_strength_on_outcome']:.2f}")
+                logger.info(f"최소 절대 효과값: {min_abs_effect['new_effect']:.6f}")
+                
+                # 음수 효과 비율
+                negative_effects = len(valid_effects[valid_effects['new_effect'] < 0])
+                logger.info(f"음수 효과 조합: {negative_effects}개 ({negative_effects/len(valid_effects)*100:.1f}%)")
         
         return sensitivity_df
         
     except Exception as e:
         if logger:
-            logger.error(f"민감도 분석 실패: {e}")
+            logger.error(f"❌ 민감도 분석 실패: {e}")
         return pd.DataFrame()
 
 def create_sensitivity_heatmap(sensitivity_df, logger=None):
     """민감도 분석 결과를 히트맵으로 시각화하는 함수"""
+    if logger:
+        logger.info("="*60)
+        logger.info("히트맵 생성 시작")
+        logger.info("="*60)
+    
     if sensitivity_df.empty:
         if logger:
-            logger.warning("민감도 분석 결과가 비어있어 히트맵을 생성할 수 없습니다.")
+            logger.warning("❌ 민감도 분석 결과가 비어있어 히트맵을 생성할 수 없습니다.")
         return None
     
     try:
+        if logger:
+            logger.info("피벗 테이블 생성 중...")
+        
         # 피벗 테이블 생성
         pivot = sensitivity_df.pivot(
             index="effect_strength_on_treatment",
             columns="effect_strength_on_outcome",
             values="new_effect"
         ).sort_index(ascending=True)
+        
+        if logger:
+            logger.info(f"피벗 테이블 크기: {pivot.shape}")
+            logger.info("히트맵 시각화 생성 중...")
         
         # 히트맵 생성
         fig, ax = plt.subplots(figsize=(10, 8), dpi=100)
@@ -341,6 +458,9 @@ def create_sensitivity_heatmap(sensitivity_df, logger=None):
         
         plt.tight_layout()
         
+        if logger:
+            logger.info("히트맵 저장 중...")
+        
         # 그림 저장
         script_dir = Path(__file__).parent.parent
         log_dir = script_dir / "log"
@@ -353,13 +473,20 @@ def create_sensitivity_heatmap(sensitivity_df, logger=None):
         plt.savefig(output_path, dpi=100, bbox_inches='tight')
         
         if logger:
-            logger.info(f"히트맵 저장: {output_path}")
+            logger.info("✅ 히트맵 생성 성공")
+            logger.info(f"저장 경로: {output_path}")
+            
+            # 파일 정보
+            if os.path.exists(output_path):
+                file_size = os.path.getsize(output_path)
+                logger.info(f"파일 크기: {file_size:,} bytes")
+                logger.info(f"이미지 해상도: 10x8 inches, DPI: 100")
         
         return output_path
         
     except Exception as e:
         if logger:
-            logger.error(f"히트맵 생성 실패: {e}")
+            logger.error(f"❌ 히트맵 생성 실패: {e}")
         return None
 
 def print_summary_report(estimate, validation_results, sensitivity_df):

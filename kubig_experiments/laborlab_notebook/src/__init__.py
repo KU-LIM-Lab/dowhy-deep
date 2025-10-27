@@ -7,9 +7,8 @@ DoWhy 인과추론 분석 패키지
 __version__ = "1.0.0"
 __author__ = "LaborLab Team"
 
-# 모듈 임포트
-from . import main
+# 모듈 임포트 (main은 제외하여 순환 임포트 방지)
 from . import preprocess
 from . import estimation
 
-__all__ = ['main', 'preprocess', 'estimation']
+__all__ = ['preprocess', 'estimation']

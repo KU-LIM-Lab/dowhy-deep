@@ -21,7 +21,7 @@ from dowhy import CausalModel
 import networkx as nx
 
 # 로컬 DoWhy 라이브러리 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 # 모듈 임포트
 from . import preprocess
@@ -39,29 +39,48 @@ dowhy_logging.getLogger("dowhy.causal_estimators").setLevel(dowhy_logging.WARNIN
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
-def create_causal_graph():
+def create_causal_graph(graph_file):
     """
-    NetworkX를 사용하여 인과 그래프를 직접 생성하는 함수
+    그래프 파일을 읽어서 NetworkX 인과 그래프를 생성하는 함수
+    
+    Args:
+        graph_file (str): 그래프 파일 경로 (DOT 형식)
     
     Returns:
         nx.DiGraph: 인과 그래프 객체
     """
-    # 방향성 그래프 생성
-    G = nx.DiGraph()
-    
-    # 노드 추가 (실제 데이터에 있는 변수들만 사용)
-    G.add_node("ACCR_CD", label="학력코드")
-    G.add_node("ACQ_180_YN", label="180일이내취업여부")
-    G.add_node("HOPE_WAGE_SM_AMT", label="희망임금합계금액")
-    G.add_node("AVG_HOPE_WAGE_SM_AMT", label="평균희망임금합계금액")
-    
-    # 엣지 추가 (인과관계) - DAG 구조로 수정
-    G.add_edge("ACCR_CD", "HOPE_WAGE_SM_AMT")
-    G.add_edge("ACCR_CD", "AVG_HOPE_WAGE_SM_AMT")
-    G.add_edge("HOPE_WAGE_SM_AMT", "ACQ_180_YN")
-    G.add_edge("AVG_HOPE_WAGE_SM_AMT", "ACQ_180_YN")
-    
-    return G
+    try:
+        # DOT 파일을 읽어서 NetworkX 그래프로 변환
+        G = nx.drawing.nx_pydot.read_dot(graph_file)
+        
+        # 문자열 노드명을 정리 (따옴표 제거)
+        node_mapping = {}
+        for node in list(G.nodes()):
+            if isinstance(node, str):
+                clean_node = node.strip('"\'')
+                if clean_node != node:
+                    node_mapping[node] = clean_node
+        
+        # 노드명 변경
+        G = nx.relabel_nodes(G, node_mapping)
+        
+        # 방향성 그래프로 변환 (DOT 파일이 무방향일 수 있음)
+        if not G.is_directed():
+            G = G.to_directed()
+        
+        return G
+        
+    except Exception as e:
+        print(f"⚠️ 그래프 파일 읽기 실패: {e}")
+        print("기본 그래프를 사용합니다.")
+        
+        # 기본 그래프 생성 (fallback)
+        G = nx.DiGraph()
+        G.add_node("ACCR_CD", label="학력코드")
+        G.add_node("ACQ_180_YN", label="180일이내취업여부")
+        G.add_edge("ACCR_CD", "ACQ_180_YN")
+        
+        return G
 
 def setup_logging(args):
     """로깅을 설정하는 통합 함수"""
@@ -146,12 +165,26 @@ def main():
         print(f"\n🚀 DoWhy 인과추론 분석 시작")
         print(f"📊 데이터: {args.data}, 🕸️ 그래프: {args.graph}")
         print(f"🎯 처치: {args.treatment}, 📈 결과: {args.outcome}, 🔧 추정방법: {args.estimator}")
+        print(f"📦 DoWhy 버전: {dowhy.__version__}")
+        print(f"📁 DoWhy 경로: {dowhy.__file__}")
         print("="*60)
         
         # 1. 데이터 로드 및 전처리
         print("1️⃣ 데이터 로드 및 전처리 중...")
         df = preprocess.load_and_preprocess_data(args.data)
-        causal_graph = create_causal_graph()
+        
+        print("1️⃣ 인과 그래프 생성 중...")
+        causal_graph = create_causal_graph(args.graph)
+        
+        if logger:
+            logger.info("="*60)
+            logger.info("인과 그래프 생성 완료")
+            logger.info("="*60)
+            logger.info(f"그래프 파일: {args.graph}")
+            logger.info(f"노드 수: {causal_graph.number_of_nodes()}")
+            logger.info(f"엣지 수: {causal_graph.number_of_edges()}")
+            logger.info(f"노드 목록: {list(causal_graph.nodes())}")
+            logger.info(f"엣지 목록: {list(causal_graph.edges())}")
         
         # 2. 인과모델 생성 및 분석
         print("2️⃣ 인과모델 생성 중...")
