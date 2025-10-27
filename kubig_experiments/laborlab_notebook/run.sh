@@ -3,8 +3,8 @@
 # DoWhy 인과추론 분석 실행 스크립트
 
 # 기본 설정
-DATA_FILE="${1:-data/dummy_data.csv}"
-GRAPH_FILE="${2:-data/dummy_graph}"
+DATA_DIR="${1:-data}"
+GRAPH_FILE="${2:-data/main_graph}"
 TREATMENT="${3:-ACCR_CD}"
 OUTCOME="${4:-ACQ_180_YN}"
 
@@ -25,7 +25,7 @@ for ESTIMATOR in "${ESTIMATORS[@]}"; do
     
     # Python 스크립트 실행
     python3 -m src.main \
-        --data "$DATA_FILE" \
+        --data-dir "$DATA_DIR" \
         --graph "$GRAPH_FILE" \
         --estimator "$ESTIMATOR" \
         --treatment "$TREATMENT" \
