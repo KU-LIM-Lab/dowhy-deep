@@ -76,7 +76,7 @@ def test_logger():
     return logger
 
 
-@pytest.mark.parametrize("dag_idx", range(1, 30))
+@pytest.mark.parametrize("dag_idx", range(30, 43))
 def test_tabpfn_estimator_runs(dag_idx, test_logger):
     """
     - DAG에서 일반화 규칙으로 Treatment/Confounder/Mediator 자동 추출
@@ -90,27 +90,43 @@ def test_tabpfn_estimator_runs(dag_idx, test_logger):
                       for c in df.select_dtypes(include=['object','category']).columns}) \
            .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
 
-    dag_dir = Path("./kubig_experiments/dags/output")
+    dag_dir = Path("./kubig_experiments/dags/output2/")
     dag_file = dag_dir / f"dag_{dag_idx}.txt"
     graph_txt = dag_file.read_text(encoding="utf-8")
 
     roles = extract_roles_general(graph_txt, outcome="ACQ_180_YN")
-    treatment = roles["treatment"]
+    dag_treatment = roles["treatment"] 
 
-    test_logger.info(
-        "[%s] Roles | X=%s | M=%s | C=%s",
-        dag_file.name, roles["treatment"], roles["mediators"], roles["confounders"]
-    )
+    data_treatment = dag_treatment
+    if data_treatment not in df.columns:
+        data_treatment = f"{data_treatment}_1"
 
-    if treatment not in df.columns:
-        msg = f"[skip] treatment '{treatment}' not found in dataframe."
+    if data_treatment not in df.columns:
+        msg = f"[skip] treatment '{dag_treatment}' or '{data_treatment}' not found in dataframe."
         test_logger.info("[%s] %s", dag_file.name, msg)
         pytest.skip(msg)
 
+    test_logger.info(
+        "[%s] Roles | X=%s | M=%s | C=%s",
+        dag_file.name, dag_treatment, roles["mediators"], roles["confounders"]
+    )
+
     nx_graph = _dot_to_nx(graph_txt)
+
+    if dag_treatment != data_treatment:
+        if dag_treatment in nx_graph:
+            nx.relabel_nodes(nx_graph, {dag_treatment: data_treatment}, copy=False)
+        else:
+             pass
+    
+    for var in roles["mediators"] + roles["confounders"]:
+        if var not in df.columns and f"{var}_1" in df.columns:
+            data_var = f"{var}_1"
+            nx.relabel_nodes(nx_graph, {var: data_var}, copy=False)
+    
     model = CausalModel(
         data=df,
-        treatment=treatment,
+        treatment=data_treatment,
         outcome="ACQ_180_YN",
         graph=nx_graph,
     )
@@ -141,7 +157,7 @@ def test_tabpfn_estimator_runs(dag_idx, test_logger):
         pytest.skip(msg)
 
     # test_logger.info("[%s] [%s] Baseline(linear_regression) ATE: %s", dag_file.name, treatment, est.value)
-    test_logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, treatment, est_tabpfn.value)
+    test_logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, data_treatment, est_tabpfn.value)
 
     refuters = ["placebo_treatment_refuter", "random_common_cause"]
     for ref in refuters:

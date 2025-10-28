@@ -137,3 +137,4 @@ dowhy_env/
 
 # ignore dags
 /kubig_experiments/dags/output/
+/kubig_experiments/dags/output2/

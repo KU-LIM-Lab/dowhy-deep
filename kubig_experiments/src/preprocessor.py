@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 ROOT = Path("data")   
 RAW_CSV = ROOT / "synthetic_data_raw.csv"
 
-RESUME_DIR   = ROOT / "RESUME_JSON"
-COVER_DIR    = ROOT / "COVERLETTERS_JSON"
+RESUME_DIR   = ROOT / "RESUME_JSON/ver1"
+COVER_DIR    = ROOT / "COVERLETTERS_JSON/ver1"
 TRAINING_DIR = ROOT / "TRAININGS_JSON"
 LICENSE_DIR  = ROOT / "LICENSES_JSON"
 
