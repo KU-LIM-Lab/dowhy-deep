@@ -1,0 +1,209 @@
+import pandas as pd
+import numpy as np
+import sys
+from pathlib import Path
+import networkx as nx
+import logging
+import warnings
+import uuid
+from datetime import datetime
+
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
+
+from dowhy import CausalModel
+from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
+
+from kubig_experiments.src.dag_parser import parse_edges_from_dot, extract_roles_general
+
+
+def _dot_to_nx(graph_txt: str) -> nx.DiGraph:
+    """DOT 형식 문자열에서 NetworkX Directed Graph 객체를 생성합니다."""
+    g = nx.DiGraph()
+    # kubig_experiments.src.dag_parser의 parse_edges_from_dot 함수 사용
+    g.add_edges_from(parse_edges_from_dot(graph_txt))
+    return g
+
+
+def setup_logger():
+    """테스트 로깅 설정을 초기화하고 LoggerAdapter 객체를 반환합니다. (원래의 test_logger fixture)"""
+    # 1) warnings 전부 무시 + 브릿지 차단
+    warnings.filterwarnings("ignore")
+    logging.captureWarnings(False)
+
+    # 2) 외부 로거 경고 숨기기
+    for name in [
+        "py.warnings",
+        "dowhy",
+        "dowhy.causal_model",
+        "dowhy.causal_identifier",
+        "dowhy.causal_estimator",
+    ]:
+        lg = logging.getLogger(name)
+        lg.setLevel(logging.ERROR)
+        lg.propagate = False
+        for h in list(lg.handlers):
+            lg.removeHandler(h)
+
+    # 3) 고유 run_id (timestamp + uuid8)
+    run_ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_uid = uuid.uuid4().hex[:8]
+    run_id = f"{run_ts}_{run_uid}"
+
+    # 4) 로그 디렉토리: 현재 파일 위치 기준
+    # 일반 파이썬 파일로 실행 시 __file__은 현재 스크립트의 경로를 나타냄
+    log_dir = Path(__file__).resolve().parent / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"tabpfn_tests_{run_id}.log"
+
+    # 5) 로거 + 핸들러
+    base_logger = logging.getLogger("kubig.validation.tabpfn")
+    base_logger.setLevel(logging.INFO)
+    base_logger.propagate = False
+
+    if not base_logger.handlers:
+        fmt = logging.Formatter(
+            "%(asctime)s | %(levelname)s | %(name)s | run=%(run_id)s | %(message)s"
+        )
+
+        fh = logging.FileHandler(log_path, encoding="utf-8")
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(fmt)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        ch.setFormatter(fmt)
+
+        base_logger.addHandler(fh)
+        base_logger.addHandler(ch)
+
+    # 6) run_id를 필드로 주입하는 어댑터
+    logger = logging.LoggerAdapter(base_logger, extra={"run_id": run_id})
+    logger.info("Logging initialized. File: %s", str(log_path))
+    return logger
+
+
+def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter):
+    """
+    단일 DAG에 대해 Causal Estimation (TabPFN) 및 Refutation을 수행합니다.
+    - DAG에서 Treatment/Confounder/Mediator 자동 추출
+    - 비교: TabPFN 추정기
+    - Validation: Placebo treatment, Random common cause
+    """
+    # pytest.mark.parametrize 로직이 이 함수 내부에서 처리됨 (혹은 외부 반복문으로)
+
+    # 데이터 로딩 및 전처리
+    df = pd.read_csv("./kubig_experiments/data/data_preprocessed.csv")
+    # 범주형/불리언 라벨 인코딩
+    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
+                      for c in df.select_dtypes(include=['object','category']).columns}) \
+           .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+
+    # DAG 파일 로딩
+    dag_dir = Path("./kubig_experiments/dags/output2/")
+    dag_file = dag_dir / f"dag_{dag_idx}.txt"
+    if not dag_file.exists():
+        logger.warning("[%s] DAG file not found, skipping: %s", dag_file.name, str(dag_file))
+        return # 파일이 없으면 스킵
+
+    graph_txt = dag_file.read_text(encoding="utf-8")
+
+    # 역할 추출 (kubig_experiments.src.dag_parser의 extract_roles_general 함수 사용)
+    roles = extract_roles_general(graph_txt, outcome="ACQ_180_YN")
+    dag_treatment = roles["treatment"]
+
+    data_treatment = dag_treatment
+    if data_treatment not in df.columns:
+        data_treatment = f"{data_treatment}_1"
+
+    if data_treatment not in df.columns:
+        msg = f"[skip] treatment '{dag_treatment}' or '{data_treatment}' not found in dataframe."
+        logger.info("[%s] %s", dag_file.name, msg)
+        return # pytest.skip 대신 return 사용
+
+    logger.info(
+        "[%s] Roles | X=%s | M=%s | C=%s",
+        dag_file.name, dag_treatment, roles["mediators"], roles["confounders"]
+    )
+
+    # 그래프 생성 및 노드 이름 조정
+    nx_graph = _dot_to_nx(graph_txt)
+
+    if dag_treatment != data_treatment:
+        if dag_treatment in nx_graph:
+            nx.relabel_nodes(nx_graph, {dag_treatment: data_treatment}, copy=False)
+        else:
+            pass # 노드가 그래프에 없으면 릴레이블링 안 함
+
+    for var in roles["mediators"] + roles["confounders"]:
+        if var not in df.columns and f"{var}_1" in df.columns:
+            data_var = f"{var}_1"
+            # 노드가 그래프에 있는지 확인 후 릴레이블링
+            if var in nx_graph:
+                nx.relabel_nodes(nx_graph, {var: data_var}, copy=False)
+    
+    # DoWhy CausalModel 생성
+    model = CausalModel(
+        data=df,
+        treatment=data_treatment,
+        outcome="ACQ_180_YN",
+        graph=nx_graph,
+    )
+
+    # 식별
+    identified = model.identify_effect(proceed_when_unidentifiable=True)
+    if identified is None:
+        msg = "[skip] No valid identified estimand (식별 실패)."
+        logger.info("[%s] %s", dag_file.name, msg)
+        return # pytest.skip 대신 return 사용
+
+    # TabPFN 추정
+    try:
+        est_tabpfn = model.estimate_effect(
+            identified,
+            method_name="backdoor.tabpfn",
+            method_params={"estimator": TabpfnEstimator, "n_estimators": 8},
+        )
+    except Exception as e:
+        msg = f"[skip] TabPFN estimation failed with exception: {e}"
+        logger.error("[%s] %s", dag_file.name, msg)
+        return
+
+    # 추정 결과 검증
+    if est_tabpfn is None or est_tabpfn.value is None or not (
+        isinstance(est_tabpfn.value, (float, np.floating)) and np.isfinite(est_tabpfn.value)
+    ):
+        msg = f"[skip] TabPFN estimation returned invalid value: {getattr(est_tabpfn, 'value', None)}"
+        logger.info("[%s] %s", dag_file.name, msg)
+        return # pytest.skip 대신 return 사용
+
+    logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, data_treatment, est_tabpfn.value)
+
+    # 반박 (Refutation)
+    refuters = ["placebo_treatment_refuter", "random_common_cause"]
+    for ref in refuters:
+        try:
+            refutation = model.refute_estimate(identified, est_tabpfn, method_name=ref)
+            logger.info("[%s] Refutation (%s): %s", dag_file.name, ref, refutation)
+            # assert refutation is not None (일반 스크립트에서는 assert 대신 로깅 또는 예외 처리)
+            if refutation is None:
+                logger.error("[%s] Refutation failed for %s", dag_file.name, ref)
+        except Exception as e:
+            logger.error("[%s] Refutation (%s) failed with exception: %s", dag_file.name, ref, e)
+
+
+if __name__ == "__main__":
+    # 로거 초기화
+    main_logger = setup_logger()
+    main_logger.info("Starting validation runs.")
+
+    # pytest.mark.parametrize 로직을 일반 반복문으로 변환
+    dag_indices = range(30, 43)
+
+    for idx in dag_indices:
+        main_logger.info("-" * 50)
+        main_logger.info("Processing DAG index: %d", idx)
+        validate_tabpfn_estimator(idx, main_logger)
+
+    main_logger.info("-" * 50)
+    main_logger.info("Validation runs complete.")
