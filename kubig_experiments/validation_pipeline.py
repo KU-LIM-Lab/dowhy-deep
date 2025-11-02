@@ -156,6 +156,25 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         msg = "[skip] No valid identified estimand (식별 실패)."
         logger.info("[%s] %s", dag_file.name, msg)
         return 
+    
+    # Linear Regression (Baseline) 추정
+    try:
+        method_lr = "backdoor.linear_regression"
+        est_lr = model.estimate_effect(identified, method_name=method_lr, test_significance=True)
+        
+        # Linear Regression 결과 검증
+        if est_lr.value is None or not (isinstance(est_lr.value, (float, np.floating)) and np.isfinite(est_lr.value)):
+            msg = f"[skip] Baseline (LR) estimation returned invalid value: {est_lr.value}"
+            logger.warning("[%s] %s", dag_file.name, msg)
+            est_lr_value = "INVALID"
+        else:
+            est_lr_value = est_lr.value
+
+        logger.info("[%s] [%s] Baseline(Linear Regression) ATE: %s", dag_file.name, data_treatment, est_lr_value)
+        
+    except Exception as e:
+        logger.error(f"[%s] Baseline (LR) estimation failed with exception: %s", dag_file.name, e)
+        est_lr_value = "ERROR"
 
     # TabPFN 추정
     try:
@@ -193,10 +212,13 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
 
 
 if __name__ == "__main__":
+    BATCH_SIZE = 10000 
+    
     # 로거 초기화
     main_logger = setup_logger()
     main_logger.info("Starting Data Preprocessing Pipeline from imported functions.")
 
+    # --- 1. 전처리 실행 (데이터 전체에 대해 단 1회 실행) ---
     try:
         # 1) 와이드 포맷 조립 (JSON 파싱 및 CSV 병합)
         intermediate_df = build_pipeline_wide(main_logger)
@@ -210,16 +232,29 @@ if __name__ == "__main__":
         main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
         sys.exit(1)
     
-    main_logger.info("-" * 50)
-    main_logger.info("Starting validation runs.")
-
-    # pytest.mark.parametrize 로직을 일반 반복문으로 변환
+    # --- 2. 배치 분할 및 반복 실행 ---
+    total_rows = len(final_df)
+    num_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
     dag_indices = range(1, 43)
 
-    for idx in dag_indices:
-        main_logger.info("-" * 50)
-        main_logger.info("Processing DAG index: %d", idx)
-        validate_tabpfn_estimator(idx, main_logger, final_df)
+    main_logger.info("-" * 50)
+    main_logger.info("Starting batch validation runs.")
+    main_logger.info(f"Total rows: {total_rows}. Batch size: {BATCH_SIZE}. Total batches: {num_batches}.")
+
+    for i in range(num_batches):
+        start_idx = i * BATCH_SIZE
+        end_idx = min((i + 1) * BATCH_SIZE, total_rows)
+        
+        batch_df = final_df.iloc[start_idx:end_idx].copy()
+        
+        main_logger.info("=" * 70)
+        main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
+        main_logger.info("=" * 70)
+
+        for dag_idx in dag_indices:
+            main_logger.info("-" * 50)
+            main_logger.info(f"[Batch {i+1}] Processing DAG index: {dag_idx}")
+            validate_tabpfn_estimator(dag_idx, main_logger, batch_df)
 
     main_logger.info("-" * 50)
     main_logger.info("Validation runs complete.")
