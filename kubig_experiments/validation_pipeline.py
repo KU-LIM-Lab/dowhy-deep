@@ -112,12 +112,8 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     roles = extract_roles_general(graph_txt, outcome="ACQ_180_YN")
     dag_treatment = roles["treatment"]
 
-    data_treatment = dag_treatment
-    if data_treatment not in df.columns:
-        data_treatment = f"{data_treatment}_1"
-
-    if data_treatment not in df.columns:
-        msg = f"[skip] treatment '{dag_treatment}' or '{data_treatment}' not found in dataframe."
+    if dag_treatment not in df.columns:
+        msg = f"[skip] treatment '{dag_treatment}' not found in dataframe."
         logger.info("[%s] %s", dag_file.name, msg)
         return # pytest.skip 대신 return 사용
 
@@ -128,24 +124,11 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
 
     # 그래프 생성 및 노드 이름 조정
     nx_graph = _dot_to_nx(graph_txt)
-
-    if dag_treatment != data_treatment:
-        if dag_treatment in nx_graph:
-            nx.relabel_nodes(nx_graph, {dag_treatment: data_treatment}, copy=False)
-        else:
-            pass # 노드가 그래프에 없으면 릴레이블링 안 함
-
-    for var in roles["mediators"] + roles["confounders"]:
-        if var not in df.columns and f"{var}_1" in df.columns:
-            data_var = f"{var}_1"
-            # 노드가 그래프에 있는지 확인 후 릴레이블링
-            if var in nx_graph:
-                nx.relabel_nodes(nx_graph, {var: data_var}, copy=False)
     
     # DoWhy CausalModel 생성
     model = CausalModel(
         data=df,
-        treatment=data_treatment,
+        treatment=dag_treatment,
         outcome="ACQ_180_YN",
         graph=nx_graph,
     )
@@ -170,7 +153,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         else:
             est_lr_value = est_lr.value
 
-        logger.info("[%s] [%s] Baseline(Linear Regression) ATE: %s", dag_file.name, data_treatment, est_lr_value)
+        logger.info("[%s] [%s] Baseline(Linear Regression) ATE: %s", dag_file.name, dag_treatment, est_lr_value)
         
     except Exception as e:
         logger.error(f"[%s] Baseline (LR) estimation failed with exception: %s", dag_file.name, e)
@@ -196,7 +179,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         logger.info("[%s] %s", dag_file.name, msg)
         return
 
-    logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, data_treatment, est_tabpfn.value)
+    logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, dag_treatment, est_tabpfn.value)
 
     # 반박 (Refutation)
     refuters = ["placebo_treatment_refuter", "random_common_cause"]

@@ -6,14 +6,8 @@ import pandas as pd
 import numpy as np
 import logging
 
-# =========================
-# 로거 설정
-# =========================
 logger = logging.getLogger(__name__)
 
-# =========================
-# 경로 설정
-# =========================
 ROOT = Path(__file__).resolve().parent.parent / "data"
 
 RAW_CSV = ROOT / "synthetic_data_raw.csv"
@@ -23,11 +17,7 @@ COVER_DIR    = ROOT / "COVERLETTERS_JSON/ver1"
 TRAINING_DIR = ROOT / "TRAININGS_JSON"
 LICENSE_DIR  = ROOT / "LICENSES_JSON"
 
-OUT_CSV = ROOT / "data_preprocessed.csv"
 
-# =========================
-# 유틸
-# =========================
 def _read_json_safe(p: Path) -> Dict[str, Any]:
     with p.open("r", encoding="utf-8") as f:
         return json.load(f)
@@ -52,40 +42,27 @@ def _none(x):
 
 def _expand_list_columns(df_lists: pd.DataFrame, key_col: str, value_cols: List[str]) -> pd.DataFrame:
     """
-    df_lists: 각 셀에 list가 들어있는 DataFrame (key 단위 한 행)
-    value_cols: list가 들어있는 컬럼들(=key 제외 모든 컬럼)
-    규칙: 소스 전체에서 가장 긴 길이를 K로 잡고, 변수명_1..변수명_K 로 확장. 부족분은 NaN.
+    리스트 컬럼을 K개(_1.._K)로 확장하지 않고,
+    각 셀의 '첫 번째 값'만 남겨 '원래 컬럼명'으로 반환한다.
+      - 셀 값이 리스트면: 길이>0이면 lst[0], 비어있으면 NaN
+      - 리스트가 아니면: 원래 값을 그대로 사용
     """
     if df_lists.empty:
         return df_lists
 
-    # key별 길이(컬럼별 리스트 길이가 다를 수 있어 방어적으로 계산)
-    def _row_max_len(row):
-        lens = []
-        for c in value_cols:
-            v = row[c]
-            lens.append(len(v) if isinstance(v, list) else 0)
-        return max(lens) if lens else 0
-
-    per_row_max = df_lists.apply(_row_max_len, axis=1)
-    K = int(per_row_max.max() if len(per_row_max) else 0)
-
-    if K == 0:
-        # 값이 하나도 없으면 key만 반환
-        return df_lists[[key_col]].copy()
-
-    out = df_lists[[key_col]].copy()
+    # key 컬럼만 먼저 복사
+    out = df_lists[[key_col]].copy() if key_col in df_lists.columns else pd.DataFrame()
 
     for c in value_cols:
-        # 각 셀(list)을 길이 K로 패딩
-        padded = df_lists[c].apply(
-            lambda lst: (lst if isinstance(lst, list) else []) + [np.nan] * (K - (len(lst) if isinstance(lst, list) else 0))
+        col = df_lists[c].apply(
+            lambda v: (v[0] if isinstance(v, list) and len(v) > 0
+                       else (np.nan if isinstance(v, list) else v))
         )
-        # 리스트 → 여러 컬럼
-        expanded = pd.DataFrame(padded.tolist(), columns=[f"{c}_{i}" for i in range(1, K+1)], index=df_lists.index)
-        out = pd.concat([out, expanded], axis=1)
+        # 접미사 없이 '원래 컬럼명'으로 저장
+        out[c] = col
 
     return out
+
 
 # =========================
 # 1) 이력서 파서 (버전별)
@@ -482,7 +459,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
 
     # 데이터 병합
     if not resume_df.empty and "JHNT_MBN" in out.columns:
-        out = out.merge(resume_df, left_on="JHNT_MBN", right_on="SEEK_CUST_NO", how="left")
+        out = out.merge(resume_df, left_on="JHNT_MBN", right_on="SEEK_CUST_NO", how="left", suffixes=("", "_resume"))
         out = out.drop(columns=["SEEK_CUST_NO"], errors="ignore")
         logger.info(f"Merged resume data. Current shape: {out.shape}")
 
@@ -492,7 +469,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
         logger.info(f"Merged cover letter data. Current shape: {out.shape}")
 
     if not training_df.empty and "JHNT_CTN" in out.columns:
-        out = out.merge(training_df, on="JHNT_CTN", how="left")
+        out = out.merge(training_df, on="JHNT_CTN", how="left", suffixes=("", "_training"))
         logger.info(f"Merged training data. Current shape: {out.shape}")
 
     if not license_df.empty and "JHNT_CTN" in out.columns:
@@ -509,27 +486,54 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
     
     # ---- (1) 바이너리 매핑 ----
     bin_map = {"예":1, "아니오":0, "아니요":0, "필요":1, "불필요":0}
+    mapped_cols = [] 
+    
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].replace(bin_map)
+            if df[col].dtype != object:
+                mapped_cols.append(col)
+                
+    if mapped_cols:
+        logger.info(f"Successfully applied Binary Mapping to {len(mapped_cols)} columns: {', '.join(mapped_cols)}") 
+    else:
+        logger.info("No object columns were successfully converted by binary mapping.")
 
-    # ---- (2) 날짜 차이 계산 (앵커: JHCR_DE) ----
+    # ---- (2) 날짜 차이 계산  ----
+    date_diff_cols = [] 
     if "JHCR_DE" in df.columns:
         anchor = pd.to_datetime(df["JHCR_DE"], errors="coerce")
         date_cols = [c for c in df.columns if any(x in c.upper() for x in ["DE","DT","DATE","BGDE","ENDE","STDT","ENDT"])]
+        
         for col in date_cols:
             if col == "JHCR_DE":
                 continue
+            
             vals = pd.to_datetime(df[col], errors="coerce")
-            diff = (vals - anchor).dt.days
-            df[col] = diff.abs()
+            
+            if not anchor.isna().all() and not vals.isna().all():
+                diff = (vals - anchor).dt.days
+                df[col] = diff.abs()
+                date_diff_cols.append(col)
+            else:
+                 logger.warning(f"Skipped date diff for column '{col}' due to all-NaN anchor or all-NaN target date values.")
+
+        if date_diff_cols:
+            logger.info(f"Calculated Date Difference (days from JHCR_DE) for {len(date_diff_cols)} columns: {', '.join(date_diff_cols)}") # 🌟 로깅 추가
+        else:
+            logger.info("No date columns were processed for date difference calculation.")
+    else:
+        logger.warning("Anchor column 'JHCR_DE' not found. Skipping date difference calculation.")
 
     # ---- (3) 모든 값이 결측인 컬럼 제거 ----
     original_cols = df.shape[1]
+    cols_to_drop = df.columns[df.isnull().all()].tolist()
+    
     df = df.dropna(axis=1, how="all")
-    dropped_cols = original_cols - df.shape[1]
-    if dropped_cols > 0:
-        logger.info(f"Dropped {dropped_cols} columns that were entirely missing values.")
+    dropped_cols_count = original_cols - df.shape[1]
+    
+    if dropped_cols_count > 0:
+        logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}") # 🌟 로깅 추가
     
     logger.info("Postprocessing complete.")
     return df
