@@ -58,6 +58,7 @@ def descendants(G_out: Dict[str, Set[str]], node: str) -> Set[str]:
 _TAG_TRTS = ("(trt", "(treat", "(treatment")
 _TAG_OUTS = ("(outcome",)
 _TAG_MEDS = ("(med",)
+_TAG_ZTRT = ("(Z: trt-only", "(z: trt-only")   # 👈 추가됨
 
 def _lower(s: str) -> str:
     return s.strip().lower()
@@ -66,7 +67,7 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
     """
     DOT 라벨 태그 + 구조 규칙으로 Treatment/Mediator/Confounder 추출
     - Mediator = Desc(T) ∩ Anc(Y) − {T,Y}
-    - Confounder = Anc(T) ∩ Anc(Y) − {T,Y} − Mediator
+    - Confounder = Anc(T) ∩ Anc(Y) − {T,Y} − Mediator − Z_trt_only
     """
     nodes_labels = parse_nodes_from_dot(graph_txt)
     edges = parse_edges_from_dot(graph_txt)
@@ -74,7 +75,7 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
 
     # 0) outcome 확정: 인자 우선, 없으면 라벨에서 추론
     if not outcome:
-        outs = [n for n,l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_OUTS)]
+        outs = [n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_OUTS)]
         if len(outs) != 1:
             raise ValueError("Outcome not provided and cannot be uniquely inferred from labels.")
         outcome = outs[0]
@@ -82,20 +83,20 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
         raise ValueError(f"Outcome '{outcome}' not found in DAG.")
 
     # 1) 라벨 기반 treatment/mediator 우선
-    trt_tagged = [n for n,l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_TRTS)]
-    meds_tagged = set(n for n,l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_MEDS))
+    trt_tagged = [n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_TRTS)]
+    meds_tagged = set(n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_MEDS))
+
+    # 👇 (Z: trt-only) 라벨을 가진 노드들도 미리 추출
+    ztrt_only = set(n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_ZTRT))
 
     if len(trt_tagged) >= 1:
-        treatment = trt_tagged[0]  # 여러 개면 첫 번째 사용 (필요시 확장)
+        treatment = trt_tagged[0]
     else:
-        # 라벨이 없을 때만 구조적 후보 선택: Y에 도달 가능한 노드 중에서,
-        # Y의 직접부모는 제외(없으면 포함)하고, T=argmax |Desc(T)∩Anc(Y)|
         parents_y = set(G_in.get(outcome, set()))
         candidates = []
         def mediator_count(t):
             return len(descendants(G_out, t) & ancestors(G_in, outcome) - {outcome})
         pool = sorted(nodes - {outcome})
-        # 1차: 부모 제외
         pool1 = [t for t in pool if t not in parents_y and has_path(G_out, t, outcome)]
         if not pool1:
             pool1 = [t for t in pool if has_path(G_out, t, outcome)]
@@ -108,7 +109,11 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
     meds_struct = (descendants(G_out, treatment) & anc_y) - {treatment, outcome}
     mediators = sorted(meds_tagged | meds_struct)
 
-    confounders = sorted((ancestors(G_in, treatment) & anc_y) - {treatment, outcome} - set(mediators))
+    # 👇 confounder 계산 시 (Z: trt-only) 노드 제거 추가됨
+    confounders = sorted((ancestors(G_in, treatment) & anc_y)
+                         - {treatment, outcome}
+                         - set(mediators)
+                         - ztrt_only)
 
     return {
         "treatment": treatment,
@@ -127,3 +132,4 @@ if __name__ == "__main__":
         print("  X (treatment):", roles["treatment"])
         print("  M (mediators):", roles["mediators"])
         print("  C (confounders):", roles["confounders"])
+
