@@ -9,14 +9,13 @@ import logging
 # =========================
 # 로거 설정
 # =========================
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # =========================
 # 경로 설정
 # =========================
-ROOT = Path("data")   
+ROOT = Path(__file__).resolve().parent.parent / "data"
+
 RAW_CSV = ROOT / "synthetic_data_raw.csv"
 
 RESUME_DIR   = ROOT / "RESUME_JSON/ver1"
@@ -449,7 +448,7 @@ def parse_license_to_lists(paths: List[Path]) -> pd.DataFrame:
 # =========================
 # 5) 조립: CSV LEFT 기준
 # =========================
-def build_pipeline_wide() -> pd.DataFrame:
+def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info("Reading raw CSV data.")
     base = pd.read_csv(RAW_CSV, encoding="utf-8")
     for k in ["JHNT_MBN","JHNT_CTN"]:
@@ -505,7 +504,7 @@ def build_pipeline_wide() -> pd.DataFrame:
 # =========================
 # 6) 후처리 (옵션)
 # =========================
-def postprocess(df: pd.DataFrame) -> pd.DataFrame:
+def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info("Starting postprocessing: Binary mapping and date calculation.")
     
     # ---- (1) 바이너리 매핑 ----
@@ -534,13 +533,3 @@ def postprocess(df: pd.DataFrame) -> pd.DataFrame:
     
     logger.info("Postprocessing complete.")
     return df
-
-# =========================
-# 실행
-# =========================
-if __name__ == "__main__":
-    logger.info("--- Starting Data Preprocessing Pipeline ---")
-    final_df = build_pipeline_wide()
-    final_df = postprocess(final_df)
-    final_df.to_csv(OUT_CSV, index=False, encoding="utf-8-sig")
-    logger.info(f"[OK] saved -> {OUT_CSV}  shape={final_df.shape}")

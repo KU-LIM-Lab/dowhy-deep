@@ -14,6 +14,7 @@ sys.path.insert(0, str(project_root))
 from dowhy import CausalModel
 from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 
+from kubig_experiments.src.preprocessor import build_pipeline_wide, postprocess
 from kubig_experiments.src.dag_parser import parse_edges_from_dot, extract_roles_general
 
 
@@ -83,7 +84,8 @@ def setup_logger():
     return logger
 
 
-def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter):
+def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
+                              df: pd.DataFrame):
     """
     단일 DAG에 대해 Causal Estimation (TabPFN) 및 Refutation을 수행합니다.
     - DAG에서 Treatment/Confounder/Mediator 자동 추출
@@ -92,15 +94,13 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter):
     """
     # pytest.mark.parametrize 로직이 이 함수 내부에서 처리됨 (혹은 외부 반복문으로)
 
-    # 데이터 로딩 및 전처리
-    df = pd.read_csv("./kubig_experiments/data/data_preprocessed.csv")
     # 범주형/불리언 라벨 인코딩
     df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
                       for c in df.select_dtypes(include=['object','category']).columns}) \
            .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
 
     # DAG 파일 로딩
-    dag_dir = Path("./kubig_experiments/dags/output2/")
+    dag_dir = Path("./kubig_experiments/dags/output/")
     dag_file = dag_dir / f"dag_{dag_idx}.txt"
     if not dag_file.exists():
         logger.warning("[%s] DAG file not found, skipping: %s", dag_file.name, str(dag_file))
@@ -155,7 +155,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter):
     if identified is None:
         msg = "[skip] No valid identified estimand (식별 실패)."
         logger.info("[%s] %s", dag_file.name, msg)
-        return # pytest.skip 대신 return 사용
+        return 
 
     # TabPFN 추정
     try:
@@ -175,7 +175,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter):
     ):
         msg = f"[skip] TabPFN estimation returned invalid value: {getattr(est_tabpfn, 'value', None)}"
         logger.info("[%s] %s", dag_file.name, msg)
-        return # pytest.skip 대신 return 사용
+        return
 
     logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, data_treatment, est_tabpfn.value)
 
@@ -195,15 +195,31 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter):
 if __name__ == "__main__":
     # 로거 초기화
     main_logger = setup_logger()
+    main_logger.info("Starting Data Preprocessing Pipeline from imported functions.")
+
+    try:
+        # 1) 와이드 포맷 조립 (JSON 파싱 및 CSV 병합)
+        intermediate_df = build_pipeline_wide(main_logger)
+        main_logger.info(f"Wide pipeline complete. Intermediate shape: {intermediate_df.shape}")
+        
+        # 2) 후처리 (이진 매핑, 날짜 차이, 결측 컬럼 제거)
+        final_df = postprocess(intermediate_df, main_logger) 
+        main_logger.info(f"Preprocessing complete. Final DataFrame shape: {final_df.shape}")
+        
+    except Exception as e:
+        main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
+        sys.exit(1)
+    
+    main_logger.info("-" * 50)
     main_logger.info("Starting validation runs.")
 
     # pytest.mark.parametrize 로직을 일반 반복문으로 변환
-    dag_indices = range(30, 43)
+    dag_indices = range(1, 43)
 
     for idx in dag_indices:
         main_logger.info("-" * 50)
         main_logger.info("Processing DAG index: %d", idx)
-        validate_tabpfn_estimator(idx, main_logger)
+        validate_tabpfn_estimator(idx, main_logger, final_df)
 
     main_logger.info("-" * 50)
     main_logger.info("Validation runs complete.")
