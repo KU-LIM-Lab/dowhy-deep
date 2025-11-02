@@ -6,6 +6,7 @@ import logging
 import warnings
 import uuid
 from datetime import datetime
+import argparse
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
@@ -180,6 +181,13 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run Causal Validation Pipeline.")
+    parser.add_argument('-test', action='store_true', help='Enable test mode, sampling 1000 rows.')
+    args = parser.parse_args()
+    
+    IS_TEST_MODE = args.test
+    TEST_SAMPLE_SIZE = 100
+
     BATCH_SIZE = 10000 
     
     # 로거 초기화
@@ -201,6 +209,10 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # --- 2. 배치 분할 및 반복 실행 ---
+    if IS_TEST_MODE:
+        main_logger.info("Test mode enabled: sampling %d rows for quick validation.", TEST_SAMPLE_SIZE)
+        final_df = final_df.sample(n=TEST_SAMPLE_SIZE, random_state=42).reset_index(drop=True)
+
     total_rows = len(final_df)
     num_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
     dag_indices = range(1, 43)
