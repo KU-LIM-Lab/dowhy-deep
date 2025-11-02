@@ -17,6 +17,7 @@ from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 from kubig_experiments.src.preprocessor import build_pipeline_wide, postprocess
 from kubig_experiments.src.dag_parser import extract_roles_general, dot_to_nx
 
+RESULTS_DIR = None
 
 def setup_logger():
     """테스트 로깅 설정을 초기화하고 LoggerAdapter 객체를 반환합니다. (원래의 test_logger fixture)"""
@@ -45,12 +46,13 @@ def setup_logger():
 
 
     # 4) 로그 디렉토리: 현재 파일 위치 기준으로 새 폴더 생성 후 로그 파일 저장
+    global RESULTS_DIR
     log_base_dir = Path(__file__).resolve().parent / "logs"
     
-    run_folder = log_base_dir / run_id
-    run_folder.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR = log_base_dir / run_id
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     
-    log_path = run_folder / f"run_log_{run_id}.log"
+    log_path = RESULTS_DIR / f"run_log_{run_id}.log"
 
     # 5) 로거 + 핸들러
     base_logger = logging.getLogger("kubig.validation.tabpfn")
@@ -167,7 +169,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         msg = f"[skip] TabPFN estimation returned invalid value: {getattr(est_tabpfn, 'value', None)}"
         logger.info("[%s] %s", dag_file.name, msg)
         return
-
+    
     logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, dag_treatment, est_tabpfn.value)
 
     # 반박 (Refutation)
@@ -176,7 +178,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         try:
             refutation = model.refute_estimate(identified, est_tabpfn, method_name=ref)
             logger.info("[%s] Refutation (%s): %s", dag_file.name, ref, refutation)
-            # assert refutation is not None (일반 스크립트에서는 assert 대신 로깅 또는 예외 처리)
+
             if refutation is None:
                 logger.error("[%s] Refutation failed for %s", dag_file.name, ref)
         except Exception as e:
@@ -215,6 +217,7 @@ if __name__ == "__main__":
     if IS_TEST_MODE:
         main_logger.info("Test mode enabled: sampling %d rows for quick validation.", TEST_SAMPLE_SIZE)
         final_df = final_df.sample(n=TEST_SAMPLE_SIZE, random_state=42).reset_index(drop=True)
+        BATCH_SIZE = TEST_SAMPLE_SIZE
 
     total_rows = len(final_df)
     num_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
