@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import sys
 from pathlib import Path
-import networkx as nx
 import logging
 import warnings
 import uuid
@@ -15,15 +14,7 @@ from dowhy import CausalModel
 from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 
 from kubig_experiments.src.preprocessor import build_pipeline_wide, postprocess
-from kubig_experiments.src.dag_parser import parse_edges_from_dot, extract_roles_general
-
-
-def _dot_to_nx(graph_txt: str) -> nx.DiGraph:
-    """DOT 형식 문자열에서 NetworkX Directed Graph 객체를 생성합니다."""
-    g = nx.DiGraph()
-    # kubig_experiments.src.dag_parser의 parse_edges_from_dot 함수 사용
-    g.add_edges_from(parse_edges_from_dot(graph_txt))
-    return g
+from kubig_experiments.src.dag_parser import extract_roles_general, dot_to_nx
 
 
 def setup_logger():
@@ -92,12 +83,6 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     - 비교: TabPFN 추정기
     - Validation: Placebo treatment, Random common cause
     """
-    # pytest.mark.parametrize 로직이 이 함수 내부에서 처리됨 (혹은 외부 반복문으로)
-
-    # 범주형/불리언 라벨 인코딩
-    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
-                      for c in df.select_dtypes(include=['object','category']).columns}) \
-           .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
 
     # DAG 파일 로딩
     dag_dir = Path("./kubig_experiments/dags/output/")
@@ -123,7 +108,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     )
 
     # 그래프 생성 및 노드 이름 조정
-    nx_graph = _dot_to_nx(graph_txt)
+    nx_graph = dot_to_nx(graph_txt)
     
     # DoWhy CausalModel 생성
     model = CausalModel(

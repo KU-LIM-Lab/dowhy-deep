@@ -3,6 +3,7 @@
 
 from collections import defaultdict, deque
 from typing import Dict, List, Set, Tuple
+import networkx as nx
 import re
 
 # -------- DOT 파서 --------
@@ -58,10 +59,16 @@ def descendants(G_out: Dict[str, Set[str]], node: str) -> Set[str]:
 _TAG_TRTS = ("(trt", "(treat", "(treatment")
 _TAG_OUTS = ("(outcome",)
 _TAG_MEDS = ("(med",)
-_TAG_ZTRT = ("(Z: trt-only", "(z: trt-only")   # 👈 추가됨
+_TAG_ZTRT = ("(Z: trt-only", "(z: trt-only")   
 
 def _lower(s: str) -> str:
     return s.strip().lower()
+
+def dot_to_nx(graph_txt: str) -> nx.DiGraph:
+    """DOT 형식 문자열에서 NetworkX Directed Graph 객체를 생성합니다."""
+    g = nx.DiGraph()
+    g.add_edges_from(parse_edges_from_dot(graph_txt))
+    return g
 
 def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
     """
@@ -86,7 +93,6 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
     trt_tagged = [n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_TRTS)]
     meds_tagged = set(n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_MEDS))
 
-    # 👇 (Z: trt-only) 라벨을 가진 노드들도 미리 추출
     ztrt_only = set(n for n, l in nodes_labels.items() if any(t in _lower(l) for t in _TAG_ZTRT))
 
     if len(trt_tagged) >= 1:
@@ -109,7 +115,6 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
     meds_struct = (descendants(G_out, treatment) & anc_y) - {treatment, outcome}
     mediators = sorted(meds_tagged | meds_struct)
 
-    # 👇 confounder 계산 시 (Z: trt-only) 노드 제거 추가됨
     confounders = sorted((ancestors(G_in, treatment) & anc_y)
                          - {treatment, outcome}
                          - set(mediators)

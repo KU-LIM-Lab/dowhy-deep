@@ -519,7 +519,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
                  logger.warning(f"Skipped date diff for column '{col}' due to all-NaN anchor or all-NaN target date values.")
 
         if date_diff_cols:
-            logger.info(f"Calculated Date Difference (days from JHCR_DE) for {len(date_diff_cols)} columns: {', '.join(date_diff_cols)}") # 🌟 로깅 추가
+            logger.info(f"Calculated Date Difference (days from JHCR_DE) for {len(date_diff_cols)} columns: {', '.join(date_diff_cols)}")
         else:
             logger.info("No date columns were processed for date difference calculation.")
     else:
@@ -533,7 +533,12 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
     dropped_cols_count = original_cols - df.shape[1]
     
     if dropped_cols_count > 0:
-        logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}") # 🌟 로깅 추가
+        logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
+    
+    # ---- (4) label encoding ----
+    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
+                      for c in df.select_dtypes(include=['object','category']).columns}) \
+           .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
     
     logger.info("Postprocessing complete.")
     return df
