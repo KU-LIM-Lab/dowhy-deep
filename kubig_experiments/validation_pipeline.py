@@ -43,11 +43,14 @@ def setup_logger():
     run_uid = uuid.uuid4().hex[:8]
     run_id = f"{run_ts}_{run_uid}"
 
-    # 4) 로그 디렉토리: 현재 파일 위치 기준
-    # 일반 파이썬 파일로 실행 시 __file__은 현재 스크립트의 경로를 나타냄
-    log_dir = Path(__file__).resolve().parent / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / f"tabpfn_tests_{run_id}.log"
+
+    # 4) 로그 디렉토리: 현재 파일 위치 기준으로 새 폴더 생성 후 로그 파일 저장
+    log_base_dir = Path(__file__).resolve().parent / "logs"
+    
+    run_folder = log_base_dir / run_id
+    run_folder.mkdir(parents=True, exist_ok=True)
+    
+    log_path = run_folder / f"run_log_{run_id}.log"
 
     # 5) 로거 + 핸들러
     base_logger = logging.getLogger("kubig.validation.tabpfn")
@@ -56,7 +59,7 @@ def setup_logger():
 
     if not base_logger.handlers:
         fmt = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(name)s | run=%(run_id)s | %(message)s"
+            "%(asctime)s | %(levelname)s | run=%(run_id)s | %(message)s"
         )
 
         fh = logging.FileHandler(log_path, encoding="utf-8")
