@@ -290,10 +290,21 @@ if __name__ == "__main__":
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
 
-        main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
-        llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE)
-        main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
+        preds_dir = Path("./kubig_experiments/data/inference_outputs/")
+        
+        if IS_TEST_MODE:
+            preds_file = preds_dir / f"preds_test.csv"
+        else:
+            preds_file = preds_dir / f"preds_{i+1}.csv"
 
+        if not preds_file.exists():
+            main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
+            llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE)
+            main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
+        else:
+            main_logger.info(f"Loading existing LLM predictions from {preds_file.name} for BATCH {i+1}...")
+            llm_preds_df = pd.read_csv(preds_file, encoding="utf-8")
+        
         batch_df['JHNT_MBN'] = batch_df['JHNT_MBN'].astype(str)
         llm_preds_df['JHNT_MBN'] = llm_preds_df['JHNT_MBN'].astype(str)
 
@@ -303,7 +314,6 @@ if __name__ == "__main__":
             on='JHNT_MBN', 
             how='left'
         )
-
         main_logger.info(f"Merged LLM predictions into batch dataframe. New shape: {batch_df.shape}")
 
         batch_results = []
