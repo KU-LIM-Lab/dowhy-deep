@@ -1,0 +1,192 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    // ==== 노드 라벨 정의 ====
+    ACQ_180_YN                  [label="180일이내취업여부"];
+    AGREE_LEVEL                 [label="정보활용적극성"];
+    EMPL_STLE_CD                [label="고용형태코드"];
+    DSPT_LABR_YN                [label="파견근로여부"];
+    HOPE_WAGE_SM_AMT            [label="희망임금합계금액"];
+    HOPE_JSCD1                  [label="희망직종코드1"];
+    HOPE_JSCD2                  [label="희망직종코드2"];
+    HOPE_JSCD3                  [label="희망직종코드3"];
+    HPAR_CD1                    [label="희망지역코드1"];
+    HPAR_CD2                    [label="희망지역코드2"];
+    HPAR_CD3                    [label="희망지역코드3"];
+    HPAR_CSCY_SCOR              [label="희망지역일치도점수"];
+    CARR_MYCT1                  [label="경력월수1"];
+    ACCR_STCD                   [label="학력상태코드"];
+    ACCR_CD                     [label="학력코드"];
+    AGE                         [label="연령"];
+    AREA_CD                     [label="지역코드"];
+    DLY_LABR_HOPE_YN            [label="일용근로희망여부"];
+    SHSY_YN                     [label="교대제여부"];
+    MDTN_HOPE_YN                [label="알선희망여부"];
+    RQAG_HOPE_YN                [label="재신청희망여부"];
+    JHNT_PPOS_CD                [label="구직목적코드"];
+    SXDS_CD                     [label="성별코드"];
+    EMAIL_OTPB_YN               [label="이메일공개여부"];
+    MPNO_OTPB_YN                [label="휴대전화번호공개여부"];
+    BFR_WTM6_JHCR_CT            [label="이전6개월이내구직인증건수"];
+    BFR_EJAP_CT                 [label="이전이메일입사지원건수"];
+    BFR_UEPS_RECP_CT            [label="이전실업급여수급건수"];
+    IPS_VS_JBHT_RATE            [label="피보험자대비구직자비율"];
+    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
+    IPS_IRDS_NMPR               [label="피보험자증감인원수"];
+    NTR_HOPE_WAGE_SM_AMT        [label="중앙희망임금합계금액"];
+    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
+    SFID_IEM_NUM                [label="자기소개서항목개수"];
+    SFID_LTTR_NUM               [label="자기소개서글자개수"];
+
+    // ============================================================
+    // ==== Treatment definitions (메타데이터용 노드) ==============
+    // role="treatment_meta"로 태깅한 노드 안에 정보를 넣는다.
+    // 나중에 pygraphviz로 읽어서 DoWhy/TabPFN 파이프라인에 넘길 때
+    // 이 메타 정보를 이용해 treatment 변수를 자동 생성할 수 있다.
+
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        // T1: 정보활용 적극성 (high information use)
+        T1 [
+            label="T1: high_info_use",
+            role="treatment_meta",
+            treatment_var="AGREE_LEVEL",
+            treatment_name="high_info_use",
+            treatment_def="AGREE_LEVEL 상위 분위(예: 상위 30%)=1, 그 외 0",
+            treatment_question="정보 활용에 적극적인 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T2: 알선 희망 여부 (mediation request)
+        T2 [
+            label="T2: wants_mediation",
+            role="treatment_meta",
+            treatment_var="MDTN_HOPE_YN",
+            treatment_name="wants_mediation",
+            treatment_def="MDTN_HOPE_YN == 1",
+            treatment_question="알선을 희망하는 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T3: 적극적 구직자 (이전 이메일 입사지원 경험)
+        T3 [
+            label="T3: high_application_intensity",
+            role="treatment_meta",
+            treatment_var="BFR_EJAP_CT",
+            treatment_name="high_application_intensity",
+            treatment_def="BFR_EJAP_CT 상위 분위(예: 상위 30%)=1, 그 외 0",
+            treatment_question="이전 3개월 동안 이메일 입사지원을 많이 했던 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T4: 반복 구직인증 경험 (repeated job-seeking certification)
+        T4 [
+            label="T4: repeated_jobseek",
+            role="treatment_meta",
+            treatment_var="BFR_WTM6_JHCR_CT",
+            treatment_name="repeated_jobseek",
+            treatment_def="BFR_WTM6_JHCR_CT > 1",
+            treatment_question="과거 6개월 동안 구직인증을 여러 번 했던 구직자는 단 한 번만 했던 구직자에 비해 6개월 이내 취업 확률이 어떻게 다른가?"
+        ];
+
+        // T5: 실업급여 수급 경험 (unemployment benefit history)
+        T5 [
+            label="T5: has_ui_history",
+            role="treatment_meta",
+            treatment_var="BFR_UEPS_RECP_CT",
+            treatment_name="has_ui_history",
+            treatment_def="BFR_UEPS_RECP_CT > 0",
+            treatment_question="과거 실업급여 수급 경험이 있는 구직자는 경험이 없는 구직자에 비해 6개월 이내 취업 확률이 얼마나 다른가?"
+        ];
+    }
+
+    // ============================================================
+    // ==== Causal structure (DAG for job search & matching) ======
+
+    // --- 인구학적/배경 변수 ---
+    SXDS_CD -> ACCR_CD;                    // 성별에 따라 전공/학력 경로가 달라짐
+    SXDS_CD -> AGREE_LEVEL;                // 성별에 따라 정보 제공 동의 행태 차이
+    SXDS_CD -> EMPL_STLE_CD;               // 선호/차별로 고용형태가 달라질 수 있음
+
+    AGE -> ACCR_CD;                        // 나이가 많을수록 학력이 높을 가능성
+    AGE -> CARR_MYCT1;                     // 나이가 많을수록 경력월수 증가
+    AGE -> HOPE_WAGE_SM_AMT;               // 연령이 높을수록 희망임금 증가
+    AGE -> AGREE_LEVEL;                    // 연령대에 따라 정보활용 방식(온라인)이 다름
+    AGE -> ACQ_180_YN;                     // 나이가 높으면 전반적인 취업 확률에 영향
+
+    AREA_CD -> HPAR_CSCY_SCOR;             // 거주지역과 희망지역 일치도에 영향
+    AREA_CD -> NTR_BPLC_PSNT_WAGE_AMT;     // 지역에 따라 제시임금 수준이 다름
+    AREA_CD -> IPS_VS_RCIT_RATE;           // 지역에 따라 모집비율 다름
+    AREA_CD -> IPS_VS_JBHT_RATE;           // 지역에 따라 구직자비율 다름
+    AREA_CD -> ACQ_180_YN;                 // 지역별 노동시장 여건 차이
+
+    // --- 학력/경력 -> 임금 기대/고용형태/직종 선택 ---
+    ACCR_CD -> HOPE_WAGE_SM_AMT;           // 학력이 높으면 희망임금 상향
+    ACCR_CD -> HOPE_JSCD1;                 // 학력에 따라 진입 가능한 직종분포가 달라짐
+    ACCR_CD -> EMPL_STLE_CD;               // 학력에 따라 정규/비정규 선호와 기회가 다름
+
+    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;        // 경력이 많으면 희망임금 상향
+    CARR_MYCT1 -> HOPE_JSCD1;              // 경력직종에 머무르려는 경향
+    CARR_MYCT1 -> ACQ_180_YN;              // 경력이 많을수록 취업 가능성 증가
+
+    // --- 희망직종/지역 관련 구조 ---
+    HOPE_JSCD1 -> DLY_LABR_HOPE_YN;        // 일부 직종은 일용근로 비중이 높음
+    HOPE_JSCD1 -> SHSY_YN;                 // 직종에 따라 교대제가 요구됨
+    HOPE_JSCD1 -> HOPE_WAGE_SM_AMT;        // 직종 임금수준이 희망임금에 영향
+
+    HOPE_JSCD1 -> HPAR_CD1;                // 직종 특성에 따라 희망지역 선택 (산업단지 등)
+    HOPE_JSCD2 -> HPAR_CD2;
+    HOPE_JSCD3 -> HPAR_CD3;
+
+    HPAR_CD1 -> HPAR_CSCY_SCOR;            // 희망지역과 거주지 일치도 계산에 사용
+    HPAR_CD2 -> HPAR_CSCY_SCOR;
+    HPAR_CD3 -> HPAR_CSCY_SCOR;
+
+    HPAR_CSCY_SCOR -> ACQ_180_YN;          // 거주지와 희망지역의 일치도가 높으면 매칭 용이
+
+    // --- 정보 공개 및 활용 구조 ---
+    AGREE_LEVEL -> EMAIL_OTPB_YN;          // 정보활용적극성이 이메일 공개에 영향
+    AGREE_LEVEL -> MPNO_OTPB_YN;           // 정보활용적극성이 전화번호 공개에 영향
+    AGREE_LEVEL -> BFR_EJAP_CT;            // 정보활용적극성이 온라인 입사지원 횟수에 영향
+    AGREE_LEVEL -> MDTN_HOPE_YN;           // 적극적인 사람일수록 공공 알선 요청
+    AGREE_LEVEL -> RQAG_HOPE_YN;           // 구직인증 재신청 의사도 높을 수 있음
+
+    EMAIL_OTPB_YN -> ACQ_180_YN;           // 이메일을 공개하면 연락/매칭기회 증가
+    MPNO_OTPB_YN -> ACQ_180_YN;            // 휴대전화 공개 역시 매칭기회 증가
+
+    // --- 구직 목적 및 서비스 이용 행태 ---
+    JHNT_PPOS_CD -> MDTN_HOPE_YN;          // 구직 목적(실업급여, 실제 취업 등)에 따라 알선 희망 여부 달라짐
+    JHNT_PPOS_CD -> RQAG_HOPE_YN;          // 목적에 따라 재신청 의사 달라짐
+    JHNT_PPOS_CD -> EMPL_STLE_CD;          // 일부 목적은 특정 고용형태를 동반
+
+    MDTN_HOPE_YN -> ACQ_180_YN;            // 알선을 희망하면 매칭 서비스 이용으로 취업 가능성 증가
+    RQAG_HOPE_YN -> ACQ_180_YN;            // 재신청 의사가 강한 구직자는 장기적으로 취업 가능성이 높을 수 있음
+
+    // --- 과거 구직/실업 경험 ---
+    BFR_WTM6_JHCR_CT -> BFR_EJAP_CT;       // 구직인증을 자주 했던 사람은 입사지원도 자주 했을 가능성
+    BFR_WTM6_JHCR_CT -> RQAG_HOPE_YN;      // 과거 경험이 많을수록 재신청 희망에 영향
+    BFR_WTM6_JHCR_CT -> ACQ_180_YN;        // 빈번한 구직인증이 긍정/부정 신호(집요함 vs 장기실업) 모두 가능
+
+    BFR_EJAP_CT -> ACQ_180_YN;             // 입사지원을 많이 한 사람은 취업할 확률이 더 높을 수 있음
+
+    BFR_UEPS_RECP_CT -> HOPE_WAGE_SM_AMT;  // 실업급여 경험은 예약임금/희망임금에 영향
+    BFR_UEPS_RECP_CT -> ACQ_180_YN;        // 장기 실업/실업급여 경험이 취업 가능성에 영향
+
+    // --- 노동시장 상태 지표 ---
+    IPS_IRDS_NMPR -> IPS_VS_JBHT_RATE;     // 피보험자 증감이 구직자비율에 영향
+    IPS_IRDS_NMPR -> IPS_VS_RCIT_RATE;     // 피보험자 증감이 모집비율에도 영향
+
+    IPS_VS_JBHT_RATE -> ACQ_180_YN;        // 구직자비율이 높으면 경쟁 심화로 취업확률 감소
+    IPS_VS_RCIT_RATE -> ACQ_180_YN;        // 모집비율이 높으면 취업확률 증가
+
+    NTR_BPLC_PSNT_WAGE_AMT -> NTR_HOPE_WAGE_SM_AMT; // 제시임금 수준이 중앙 희망임금에 영향
+    NTR_BPLC_PSNT_WAGE_AMT -> HOPE_WAGE_SM_AMT;     // 개인의 희망임금에도 직접 영향
+    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;           // 제시임금이 너무 낮/높으면 매칭 실패 가능
+
+    // --- 자기소개서 및 서류 품질 ---
+    SFID_IEM_NUM -> SFID_LTTR_NUM;         // 항목 개수가 많으면 전체 글자수도 많아짐
+    SFID_IEM_NUM -> ACQ_180_YN;            // 자기소개서 구성(항목 수)이 평가에 영향
+    SFID_LTTR_NUM -> ACQ_180_YN;           // 자기소개서 분량이 취업 여부에 영향 (너무 짧거나 너무 길면 불리할 수 있음)
+}
