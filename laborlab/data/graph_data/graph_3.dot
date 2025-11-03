@@ -1,0 +1,163 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    // ==== 노드 라벨 정의 (Outcome + 기본 배경) ====
+    ACQ_180_YN                  [label="180일이내취업여부"];
+    AGE                         [label="연령"];
+    SXDS_CD                     [label="성별코드"];
+    ACCR_CD                     [label="학력코드"];
+    CARR_MYCT1                  [label="경력월수1"];
+    AREA_CD                     [label="지역코드"];
+    AGREE_LEVEL                 [label="정보활용적극성"];
+
+    // ==== 자기소개서 관련 변수 (structured + cover_letter) ====
+    SFID_IEM_NUM                [label="자기소개서항목개수"];         // structured
+    SFID_LTTR_NUM               [label="자기소개서글자개수"];         // structured
+    SFID_NO                     [label="자기소개서번호"];             // cover_letter
+    BASS_SFID_YN                [label="기본자기소개서여부"];         // cover_letter
+    SFID_IEM_SN                 [label="자기소개서항목순번"];         // cover_letter
+    SFID_SJNM                   [label="자기소개서항목제목명"];       // cover_letter
+    SFID_IEM_SECD               [label="자기소개서항목구분코드"];     // cover_letter
+    DS_SFID_IEM_SECD            [label="자기소개서항목구분코드명"];   // cover_letter
+    SFID_IEM_SJNM               [label="자기소개서항목제목명(세부)"]; // cover_letter (설명용)
+    SELF_INTRO_CONT             [label="자기소개내용"];               // cover_letter
+
+    // ==== 기타 취업 관련 변수 (약간만 포함) ====
+    EMPL_STLE_CD                [label="고용형태코드"];
+    HOPE_JSCD1                  [label="희망직종코드1"];
+    HOPE_WAGE_SM_AMT            [label="희망임금합계금액"];
+    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
+    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
+
+    // ============================================================
+    // ==== Treatment definitions (메타데이터용 노드) ==============
+    // role="treatment_meta"로 태깅한 노드에 treatment 정보를 저장한다.
+    // 파이프라인에서 pygraphviz로 읽어 DoWhy/TabPFN에 넘길 때 사용.
+
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN, focus: Cover Letter)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        // T1: 기본 자기소개서 보유 여부 (대표 자기소개서 설정)
+        T1 [
+            label="T1: has_basic_cover_letter",
+            role="treatment_meta",
+            treatment_var="BASS_SFID_YN",
+            treatment_name="has_basic_cover_letter",
+            treatment_def="BASS_SFID_YN == 1 (기본 자기소개서를 보유한 구직자)",
+            treatment_question="기본(대표) 자기소개서를 보유한 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T2: 자기소개서 작성 여부 (아예 작성했는지)
+        T2 [
+            label="T2: any_cover_letter",
+            role="treatment_meta",
+            treatment_var="SFID_IEM_NUM",
+            treatment_name="any_cover_letter",
+            treatment_def="SFID_IEM_NUM > 0 (하나 이상의 자기소개서 항목을 작성한 경우)",
+            treatment_question="자기소개서를 한 항목이라도 작성한 구직자는 자기소개서를 전혀 작성하지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T3: 자기소개서 항목 수가 많은 구직자
+        T3 [
+            label="T3: many_cover_items",
+            role="treatment_meta",
+            treatment_var="SFID_IEM_NUM",
+            treatment_name="many_cover_items",
+            treatment_def="SFID_IEM_NUM가 분포 상위 분위(예: 상위 30%)에 해당하면 1, 그 외 0",
+            treatment_question="자기소개서 항목을 많이 작성한 구직자는 항목 수가 적은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T4: 자기소개서 글자 수가 긴 구직자
+        T4 [
+            label="T4: long_cover_letter",
+            role="treatment_meta",
+            treatment_var="SFID_LTTR_NUM",
+            treatment_name="long_cover_letter",
+            treatment_def="SFID_LTTR_NUM이 분포 상위 분위(예: 상위 30%)에 해당하면 1, 그 외 0",
+            treatment_question="자기소개서 분량(글자 수)이 많은 구직자는 분량이 짧은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T5: 자기소개서 항목 구분의 다양성이 높은 구직자
+        T5 [
+            label="T5: diverse_cover_topics",
+            role="treatment_meta",
+            treatment_var="SFID_IEM_SECD",
+            treatment_name="diverse_cover_topics",
+            treatment_def="개인별 고유 SFID_IEM_SECD의 개수(항목구분 종류 수)가 상위 분위(예: 상위 30%)이면 1, 그 외 0",
+            treatment_question="자기소개서에서 다양한 항목(성격, 경험, 지원동기 등)을 골고루 다룬 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+    }
+
+    // ============================================================
+    // ==== Causal structure (DAG for Cover Letter quality) =======
+
+    // --- 인구학적/배경 변수 ---
+    SXDS_CD -> ACCR_CD;                    // 성별에 따라 학력 경로가 달라질 수 있음
+    SXDS_CD -> AGREE_LEVEL;                // 성별에 따른 정보 활용/동의 행태 차이
+    SXDS_CD -> EMPL_STLE_CD;               // 성별에 따른 고용형태 차별/선호
+
+    AGE -> ACCR_CD;                        // 나이가 많을수록 높은 학력일 가능성
+    AGE -> CARR_MYCT1;                     // 나이가 많을수록 경력월수 증가
+    AGE -> HOPE_WAGE_SM_AMT;               // 연령이 높을수록 희망임금 증가
+    AGE -> AGREE_LEVEL;                    // 연령대에 따라 온라인 정보 활용 태도 차이
+    AGE -> ACQ_180_YN;                     // 연령에 따른 취업확률 차이
+
+    AREA_CD -> NTR_BPLC_PSNT_WAGE_AMT;     // 지역에 따라 제시임금 수준 차이
+    AREA_CD -> IPS_VS_RCIT_RATE;           // 지역별 모집비율 차이
+    AREA_CD -> ACQ_180_YN;                 // 지역 노동시장 여건 차이
+
+    ACCR_CD -> HOPE_JSCD1;                 // 학력에 따라 선택 가능한 직종이 달라짐
+    ACCR_CD -> HOPE_WAGE_SM_AMT;           // 학력이 높을수록 희망임금 상향
+    ACCR_CD -> EMPL_STLE_CD;               // 학력에 따라 정규/비정규 고용형태 분포가 다름
+
+    CARR_MYCT1 -> HOPE_JSCD1;              // 경력 직종에 머무를 가능성
+    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;        // 경력이 많을수록 희망임금 증가
+    CARR_MYCT1 -> ACQ_180_YN;              // 경력 자체가 취업 가능성에 직접 영향
+
+    // --- 직종/임금/노동시장 구조 ---
+    HOPE_JSCD1 -> HOPE_WAGE_SM_AMT;        // 직종 수준이 희망임금에 영향
+    HOPE_JSCD1 -> EMPL_STLE_CD;            // 직종에 따라 고용형태(상용직/단기직 등) 달라짐
+
+    NTR_BPLC_PSNT_WAGE_AMT -> HOPE_WAGE_SM_AMT; // 시장에서 제시되는 임금 수준이 개인의 희망임금에 영향
+    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;       // 제시임금 수준이 너무 낮거나 높으면 매칭 실패 가능
+
+    IPS_VS_RCIT_RATE -> ACQ_180_YN;        // 모집비율이 높을수록 취업 가능성이 증가
+
+    // --- 정보활용 및 자기소개서 작성 행동 ---
+    AGREE_LEVEL -> SFID_NO;                // 정보활용에 적극적인 사람일수록 자기소개서를 만들 가능성이 높음
+    AGREE_LEVEL -> BASS_SFID_YN;           // 기본자기소개서를 등록할 가능성
+    AGREE_LEVEL -> SFID_IEM_NUM;           // 항목을 더 많이 채울 가능성
+    AGREE_LEVEL -> SFID_LTTR_NUM;          // 전체 분량도 많아질 가능성
+
+    ACCR_CD -> SFID_IEM_NUM;               // 학력이 높을수록 자기소개서를 더 구조화해서 작성할 가능성
+    ACCR_CD -> SFID_LTTR_NUM;              // 학력이 높을수록 분량/서술이 길어질 수 있음
+
+    CARR_MYCT1 -> SFID_IEM_NUM;            // 경력 많은 사람은 쓸 이야기(항목)가 많음
+    CARR_MYCT1 -> SFID_LTTR_NUM;           // 경력 서술로 인해 분량 증가
+
+    // --- 자기소개서 구조 -> 내용 -> 취업 ---
+    SFID_NO -> BASS_SFID_YN;               // 자기소개서가 있어야 기본 자기소개서로 설정 가능
+    SFID_NO -> SFID_IEM_SN;                // 한 자기소개서 내 여러 항목 순번
+    SFID_IEM_SN -> SFID_SJNM;              // 순번별 항목 제목
+    SFID_IEM_SN -> SFID_IEM_SECD;          // 순번별 항목 구분코드
+    SFID_IEM_SN -> SELF_INTRO_CONT;        // 각 항목의 실제 내용
+
+    SFID_IEM_SECD -> DS_SFID_IEM_SECD;     // 코드에 대응하는 한글 항목명
+    SFID_IEM_SECD -> SFID_IEM_SJNM;        // 세부 항목 제목과도 연결
+
+    // 항목 개수와 글자수는 셀프 컨텐츠의 집계치로 이해
+    SFID_IEM_NUM -> SFID_LTTR_NUM;         // 항목 수가 많을수록 전체 글자 수도 많아짐
+
+    // 자기소개서 구조/분량이 서류 평가와 취업 여부에 영향을 준다고 가정
+    BASS_SFID_YN -> ACQ_180_YN;            // 기본 자기소개서를 가지고 있으면 서류 평가에 유리할 수 있음
+    SFID_IEM_NUM -> ACQ_180_YN;            // 항목 구성(구조화 정도)이 취업 가능성에 영향
+    SFID_LTTR_NUM -> ACQ_180_YN;           // 자기소개서 분량이 너무 짧거나 지나치게 길면 불리/유리하게 작용
+
+    // 항목 내용(SELF_INTRO_CONT) 자체는 텍스트 분석으로 품질을 측정할 수 있지만,
+    // 여기서는 구조적 프록시(SFID_IEM_NUM, SFID_LTTR_NUM, 항목구분 다양성 등)를 통해
+    // 서류 품질이 ACQ_180_YN에 미치는 효과를 식별하고자 함.
+}
