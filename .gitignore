@@ -138,3 +138,6 @@ dowhy_env/
 # ignore dags
 /kubig_experiments/dags/output/
 /kubig_experiments/dags/output2/
+
+# ignore models
+/kubig_experiments/models/

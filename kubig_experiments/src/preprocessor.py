@@ -536,9 +536,14 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
         logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
     
     # ---- (4) label encoding ----
-    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
-                      for c in df.select_dtypes(include=['object','category']).columns}) \
-           .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+    cat_cols = [c for c in df.select_dtypes(include=['object','category']).columns if c != "SELF_INTRO_CONT"]
     
+    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
+                       for c in cat_cols}) \
+            .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+    
+    # 로깅 추가
+    if cat_cols:
+        logger.info(f"Applied Label Encoding to {len(cat_cols)} columns, excluding SELF_INTRO_CONT.")
     logger.info("Postprocessing complete.")
     return df

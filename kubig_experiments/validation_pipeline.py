@@ -16,6 +16,7 @@ from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 
 from kubig_experiments.src.preprocessor import build_pipeline_wide, postprocess
 from kubig_experiments.src.dag_parser import extract_roles_general, dot_to_nx
+from kubig_experiments.src.inference_top1 import llm_inference
 from kubig_experiments.src.interpretator import load_and_consolidate_data, analyze_results
 
 RESULTS_DIR = None
@@ -288,6 +289,22 @@ if __name__ == "__main__":
         main_logger.info("=" * 70)
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
+
+        main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
+        llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE)
+        main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
+
+        batch_df['JHNT_MBN'] = batch_df['JHNT_MBN'].astype(str)
+        llm_preds_df['JHNT_MBN'] = llm_preds_df['JHNT_MBN'].astype(str)
+
+        batch_df = pd.merge(
+            batch_df, 
+            llm_preds_df[['JHNT_MBN', 'SELF_INTRO_CONT_LABEL']], 
+            on='JHNT_MBN', 
+            how='left'
+        )
+
+        main_logger.info(f"Merged LLM predictions into batch dataframe. New shape: {batch_df.shape}")
 
         batch_results = []
 
