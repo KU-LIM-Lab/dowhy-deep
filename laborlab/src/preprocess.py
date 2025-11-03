@@ -72,33 +72,6 @@ class Preprocessor:
         return self.job_code_to_name.get(code_str, f"직종코드 {code}")
 
     @staticmethod
-    def _parse_date(s: Optional[str]) -> Optional[datetime]:
-        """날짜 문자열을 datetime 객체로 변환"""
-        if s in (None, "", "null"):
-            return None
-        try:
-            return datetime.strptime(str(s)[:10], DEFAULT_DATE_FORMAT)
-        except Exception:
-            return None
-
-    @staticmethod
-    def _days_between(d1: Optional[datetime], d2: Optional[datetime]) -> Optional[int]:
-        """두 날짜 사이의 일수 계산"""
-        if d1 is None or d2 is None:
-            return None
-        return (d1 - d2).days
-    
-    def _estimate_typos_korean(self, text: str) -> int:
-        """LLM을 사용한 한국어 텍스트 오탈자 개수 계산"""
-        if not text:
-            return 0
-        return self.llm_scorer.count_typos(text)
-
-    @staticmethod
-    def validate_data(df):
-        """데이터 유효성을 검증하는 함수"""
-        return True
-
     def get_data_info(df):
         """데이터 정보를 반환하는 함수"""
         info = {
@@ -119,8 +92,36 @@ class Preprocessor:
         Returns:
             pd.DataFrame: 기본 전처리된 데이터프레임
         """
+        # variable_mapping.json의 structured_data 키만 사용
+        structured_keys = set(self.variable_mapping.get("structured_data", {}).keys())
+        
+        # 원본 데이터에서 해당 변수들만 필터링 (존재하는 변수만)
+        available_vars = list(structured_keys & set(df.columns))
+        missing_vars = list(structured_keys - set(df.columns))
+        
+        if missing_vars:
+            print(f"다음 변수들이 데이터에 없습니다: {missing_vars}")
+        
+        df = df[available_vars]
 
-        df_processed = df
+        # BFR_OCTR_YN 제거, BFR_OCTR_CT만 유지
+        if "BFR_OCTR_YN" in df.columns and "BFR_OCTR_CT" in df.columns:
+            df = df.drop(columns=["BFR_OCTR_YN"])
+
+        # 8개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
+        agree_vars = [
+            "EMAIL_RCYN", "SAEIL_CNTC_AGRE_YN", "SHRS_IDIF_AOFR_YN", "SULC_IDIF_AOFR_YN",
+            "IDIF_IQRY_AGRE_YN", "SMS_RCYN", "EMAIL_OTPB_YN", "MPNO_OTPB_YN"
+        ]
+
+        # 존재하는 경우만 사용
+        agree_vars = [col for col in agree_vars if col in df.columns]
+
+        if agree_vars:
+            agree_count = (df[agree_vars] == "예").sum(axis=1)
+            df["AGREE_LEVEL"] = agree_count.apply(lambda x: "하" if x <= 2 else ("중" if x <= 5 else "상"))
+            df_processed = df.drop(columns=agree_vars)
+
         return df_processed
 
     def nlp_preprocessing(self, data, json_name=None):
@@ -324,8 +325,8 @@ class Preprocessor:
             rows.append({
                 "SEEK_CUST_NO": seek_id,
                 "JHNT_CTN": jhnt_ctn,
-                "score": score,
-                "경과일": elapsed_days if elapsed_days is not None else None
+                "training_score": score,
+                "elapsed_days": elapsed_days if elapsed_days is not None else None
             })
         
         return pd.DataFrame(rows)
@@ -374,7 +375,7 @@ class Preprocessor:
             rows.append({
                 "SEEK_CUST_NO": seek_id,
                 "JHNT_CTN": jhnt_ctn,
-                "score": score
+                "certification_score": score
             })
         
         return pd.DataFrame(rows)
