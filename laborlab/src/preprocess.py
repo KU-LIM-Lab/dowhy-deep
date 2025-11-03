@@ -29,7 +29,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from collections import Counter
 
-from config import (
+from llm_reference import (
     JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
     DEFAULT_MAX_COVER_LEN, DEFAULT_COVER_EXCEED_RATIO, DEFAULT_DATE_FORMAT
 )
@@ -40,14 +40,36 @@ from llm_scorer import LLMScorer
 class Preprocessor:
     def __init__(self, df_list, api_key=None):
         self.json_names = JSON_NAMES
+        self.sheet_name = '구직인증 관련 데이터'
         self.df_list = []
         self.variable_mapping = self.load_variable_mapping()
         self.llm_scorer = LLMScorer(api_key)
+        self.hope_jscd1_map = {}  # SEEK_CUST_NO -> HOPE_JSCD1 매핑 저장
+        self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
 
     def load_variable_mapping(self):
         with open('../data/variable_mapping.json', encoding='utf-8') as f:
             variable_mapping = json.load(f)
         return variable_mapping
+    
+    def load_job_mapping(self):
+        """job_subcategories.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
+        try:
+            job_df = pd.read_csv('../data/fixed_data/job_subcategories.csv', encoding='utf-8')
+            # 소분류코드를 문자열로 변환하여 딕셔너리 생성
+            job_mapping = dict(zip(job_df['소분류코드'].astype(str).str.zfill(3), job_df['소분류명']))
+            return job_mapping
+        except Exception as e:
+            print(f"job_subcategories.csv 로드 실패: {e}")
+            return {}
+    
+    def get_job_name_from_code(self, code):
+        """HOPE_JSCD1 코드를 직종명으로 변환"""
+        if not code:
+            return "미상"
+        # 코드를 문자열로 변환하고 앞에 0을 채워서 3자리로 만들기
+        code_str = str(code).zfill(3)
+        return self.job_code_to_name.get(code_str, f"직종코드 {code}")
 
     @staticmethod
     def _parse_date(s: Optional[str]) -> Optional[datetime]:
@@ -65,39 +87,14 @@ class Preprocessor:
         if d1 is None or d2 is None:
             return None
         return (d1 - d2).days
-
-    @staticmethod
-    def _estimate_typos_korean(text: str) -> int:
-        """한국어 텍스트의 오타 추정"""
+    
+    def _estimate_typos_korean(self, text: str) -> int:
+        """LLM을 사용한 한국어 텍스트 오탈자 개수 계산"""
         if not text:
             return 0
-        dbl_spaces = len(re.findall(r" {2,}", text))
-        repeat_punct = len(re.findall(r"([\.?!,~\-])\1{2,}", text))
-        latin_tokens = re.findall(r"\b[A-Za-z]{2,}\b", text)
-        return dbl_spaces + repeat_punct + len(latin_tokens)
+        return self.llm_scorer.count_typos(text)
 
-    def _build_resume_sections(self, data):
-        """이력서 섹션을 구축하는 헬퍼 메서드"""
-        sections = RESUME_SECTIONS.copy()
-        
-        for resume in data.get("RESUMES", []):
-            for it in (resume.get("ITEMS") or []):
-                sec = it.get("RESUME_ITEM_CLCD") or it.get("DS_RESUME_ITEM_CLCD") or ""
-                nm = it.get("RESUME_ITEM_1_NM") or ""
-                val = it.get("RESUME_ITEM_1_VAL") or ""
-                st = it.get("HIST_STDT") or ""
-                en = it.get("HIST_ENDT") or ""
-                rec = {"sec": sec, "name": nm, "value": val, "start": st, "end": en}
-                sec_norm = sec.replace(" ", "") if isinstance(sec, str) else sec
-                if sec_norm in SUPPORTED_SECTIONS:
-                    if sec_norm in ["전산능력", "자격면허"]:
-                        sections["전산자격통합"].append(rec)
-                    elif sec_norm in ["훈련", "직업훈련"]:
-                        sections["훈련통합"].append(rec)
-                    else:
-                        sections[sec_norm].append(rec)
-        return sections
-
+    @staticmethod
     def validate_data(df):
         """데이터 유효성을 검증하는 함수"""
         return True
@@ -198,14 +195,20 @@ class Preprocessor:
         if not formatting_sentence.strip():
             formatting_sentence = "정보 없음"
         
+        # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+        hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+        job_name = self.get_job_name_from_code(hope_jscd1)
+        job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
+        
         # LLM scorer에 전달하여 점수 계산
-        score, _ = self.llm_scorer.score(selection="이력서", job_name="미상", job_examples=[], text=formatting_sentence)
+        score, _ = self.llm_scorer.score(selection="이력서", job_name=job_name, job_examples=job_examples, text=formatting_sentence)
         
         return pd.DataFrame([{
             "SEEK_CUST_NO": seek_id,
             "resume_score": score,
             "items_num": items_num
         }])
+
 
     def _preprocess_cover_letter(self, data):
         """자기소개서 특화 전처리"""
@@ -218,7 +221,7 @@ class Preprocessor:
             if not seek_id:
                 continue
                 
-            # 자기소개서 데이터 추출
+            # 자기소개서 데이터 추출 (BASS_SFID_YN == "Y"인 항목만)
             texts = []
             items = []
             for c in item.get("COVERLETTERS", []):
@@ -231,24 +234,27 @@ class Preprocessor:
                     break
             
             full_text = "\n\n".join(texts) if texts else "정보 없음"
-            lens = [len(it.get("SELF_INTRO_CONT", "") or "") for it in items] if items else []
-            max_len = max(lens) if lens else 0
-            typo = sum(self._estimate_typos_korean(it.get("SELF_INTRO_CONT", "") or "") for it in items) if items else 0
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
             
             # 점수 계산
-            score, why = self.llm_scorer.score("자기소개서", "미상", [], full_text)
+            score, _ = self.llm_scorer.score("자기소개서", job_name, job_examples, full_text)
             
+            # 오탈자 수 계산 (TYPO_CHECK 프롬프트 사용)
+            typo_count = self.llm_scorer.count_typos(full_text)
+            
+            # score와 오탈자 수만 반환
             rows.append({
                 "SEEK_CUST_NO": seek_id,
-                "cover_items_count": len(items),
-                "cover_max_chars": max_len,
-                "cover_exceed_85pct": int(max_len >= DEFAULT_MAX_COVER_LEN * DEFAULT_COVER_EXCEED_RATIO),
-                "cover_typo_count": typo,
-                "cover_score": score,
-                "cover_why": why
+                "cover_letter_score": score,
+                "오탈자 수": typo_count
             })
         
         return pd.DataFrame(rows)
+
 
     def _preprocess_training(self, data):
         """직업훈련 특화 전처리"""
@@ -260,66 +266,70 @@ class Preprocessor:
             seek_id = item.get("SEEK_CUST_NO", "")
             if not seek_id:
                 continue
-                
-            # 이력서에서 훈련 섹션 추출
-            secs = self._build_resume_sections(item)
-            resume_train = secs.get("훈련통합", [])
             
-            # JSON에서 훈련 데이터 추출
-            tr_json = item.get("TRAININGS", [])
+            # 구직인증 일자 가져오기
+            jhcr_de = item.get("JHCR_DE", "")  # 구직인증 일자
             
-            def _to_rec_from_json(t):
-                return {
-                    "name": t.get("TRNG_NM") or "",
-                    "start": t.get("TRNG_BGDE") or "",
-                    "end": t.get("TRNG_ENDE") or ""
-                }
+            # TRAININGS에서 훈련 데이터 추출
+            trainings = item.get("TRAININGS", [])
             
-            def _to_rec_from_resume(t):
-                return {
-                    "name": t.get("name") or t.get("value") or "",
-                    "start": t.get("start") or "",
-                    "end": t.get("end") or ""
-                }
+            # TRAININGS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
+            training_end_dates = []
+            for tr in trainings:
+                trng_ende = tr.get("TRNG_ENDE", "").strip()
+                if trng_ende:
+                    try:
+                        # 날짜 문자열을 datetime 객체로 변환
+                        date_obj = datetime.strptime(trng_ende, DEFAULT_DATE_FORMAT)
+                        training_end_dates.append(date_obj)
+                    except:
+                        pass
             
-            # JSON과 이력서 데이터 결합
-            combined = [_to_rec_from_json(t) for t in tr_json] + [_to_rec_from_resume(t) for t in resume_train]
+            # 경과일 계산: JHCR_DE - 최근 TRNG_ENDE (일수 차이)
+            elapsed_days = None
+            if jhcr_de and training_end_dates:
+                try:
+                    # 구직인증 일자를 datetime 객체로 변환
+                    jhcr_date = datetime.strptime(jhcr_de, DEFAULT_DATE_FORMAT)
+                    # 가장 최근 훈련 종료일 (최대값)
+                    latest_end_date = max(training_end_dates)
+                    # 일수 차이 계산
+                    elapsed_days = (jhcr_date - latest_end_date).days
+                    elapsed_days = elapsed_days if elapsed_days >= 0 else None
+                except:
+                    elapsed_days = None
             
-            # 중복 제거
-            seen = set()
-            uniq = []
-            for r in combined:
-                key = (r["name"], r["start"], r["end"])
-                if key not in seen:
-                    seen.add(key)
-                    uniq.append(r)
+            # 텍스트 포맷팅: {TRNG_CRSN}: ({TRNG_BGDE} ~ {TRNG_ENDE})
+            training_texts = []
+            for tr in trainings:
+                trng_crsn = tr.get("TRNG_CRSN", "").strip()  # 훈련 과정명
+                trng_bgde = tr.get("TRNG_BGDE", "").strip()  # 훈련 시작일
+                trng_ende = tr.get("TRNG_ENDE", "").strip()  # 훈련 종료일
+                if trng_crsn and trng_bgde and trng_ende:
+                    training_texts.append(f"{trng_crsn}: ({trng_bgde} ~ {trng_ende})")
             
-            # 마지막 훈련 종료일 계산
-            ends = [self._parse_date(r["end"]) for r in uniq if r.get("end")]
-            ends = [d for d in ends if d]
-            last_end = max(ends).strftime("%Y-%m-%d") if ends else None
+            text = "\n".join(training_texts) if training_texts else "정보 없음"
             
-            # 구직 등록일과의 간격 계산
-            jobseek = item.get("JHCR_DE")
-            gap = self._days_between(self._parse_date(jobseek), self._parse_date(last_end)) if (jobseek and last_end) else None
-            
-            # 텍스트 생성
-            text = "\n".join([f"{r['name']} ({r['start']}~{r['end']})" for r in uniq]) if uniq else "정보 없음"
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
             
             # 점수 계산
-            score, why = self.llm_scorer.score("직업훈련", "미상", [], text)
+            score, why = self.llm_scorer.score("직업훈련", job_name, job_examples, text)
+            
+            # JHNT_CTN 가져오기
+            jhnt_ctn = item.get("JHNT_CTN", "")
             
             rows.append({
                 "SEEK_CUST_NO": seek_id,
-                "training_count_total": len(uniq),
-                "training_last_end": last_end,
-                "jobseek_date": jobseek,
-                "days_last_training_to_jobseek": gap,
-                "training_score": score,
-                "training_why": why
+                "JHNT_CTN": jhnt_ctn,
+                "score": score,
+                "경과일": elapsed_days if elapsed_days is not None else None
             })
         
         return pd.DataFrame(rows)
+
 
     def _preprocess_certification(self, data):
         """자격증 특화 전처리"""
@@ -331,72 +341,46 @@ class Preprocessor:
             seek_id = item.get("SEEK_CUST_NO", "")
             if not seek_id:
                 continue
-                
-            # 이력서에서 자격증 섹션 추출
-            secs = self._build_resume_sections(item)
-            resume_itlic = secs.get("전산자격통합", [])
             
             # JSON에서 자격증 데이터 추출
-            lic_json = item.get("LICENSES", [])
+            licenses = item.get("LICENSES", [])
             
-            def _to_rec_from_json(l):
-                return {
-                    "cat": l.get("QULF_LCNS_LCFN") or "",
-                    "name": l.get("QULF_LCNS_NM") or "",
-                    "acq": l.get("ACQ_DE") or ""
-                }
-            
-            def _to_rec_from_resume(l):
-                return {
-                    "cat": l.get("sec") or "",
-                    "name": l.get("name") or l.get("value") or "",
-                    "acq": l.get("end") or ""
-                }
-            
-            # JSON과 이력서 데이터 결합
-            combined = [_to_rec_from_json(l) for l in lic_json] + [_to_rec_from_resume(l) for l in resume_itlic]
-            
-            # 중복 제거
-            seen = set()
-            uniq = []
-            for r in combined:
-                key = (r["cat"], r["name"], r["acq"])
-                if key not in seen:
-                    seen.add(key)
-                    uniq.append(r)
-            
-            # 자격증 카테고리 분석
-            cats = [r["cat"] for r in uniq if r.get("cat")]
-            cnt = Counter(cats) if cats else Counter()
-            has_nat_tech = int(cnt.get("국가기술자격", 0) > 0)
-            has_nat_prof = int(cnt.get("국가전문자격", 0) > 0)
-            has_priv = int(cnt.get("민간자격", 0) > 0)
-            
-            top_cat = None
-            if cnt:
-                top_cat = sorted(cnt.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+            # 자격증 포맷팅: 자격증1: 전기기능사/국가기술자격 형식
+            formatted_texts = []
+            for idx, lic in enumerate(licenses, start=1):
+                qulf_itnm = lic.get("QULF_ITNM", "").strip()  # 자격증명
+                qulf_lcns_lcfn = lic.get("QULF_LCNS_LCFN", "").strip()  # 자격증 분류
+                
+                if qulf_itnm and qulf_lcns_lcfn:
+                    formatted_texts.append(f"자격증{idx}: {qulf_itnm}/{qulf_lcns_lcfn}")
+                elif qulf_itnm:
+                    formatted_texts.append(f"자격증{idx}: {qulf_itnm}")
             
             # 텍스트 생성
-            text = "\n".join([f"{r['cat']} - {r['name']} (취득:{r['acq']})" for r in uniq]) if uniq else "정보 없음"
+            text = "\n".join(formatted_texts) if formatted_texts else "정보 없음"
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
             
             # 점수 계산
-            score, why = self.llm_scorer.score("자격증", "미상", [], text)
+            score, _ = self.llm_scorer.score("자격증", job_name, job_examples, text)
             
+            # JHNT_CTN 가져오기
+            jhnt_ctn = item.get("JHNT_CTN", "")
+            
+            # score만 반환
             rows.append({
                 "SEEK_CUST_NO": seek_id,
-                "license_total": len(uniq),
-                "has_국가기술자격": has_nat_tech,
-                "has_국가전문자격": has_nat_prof,
-                "has_민간자격": has_priv,
-                "top_license_category": top_cat,
-                "license_score": score,
-                "license_why": why
+                "JHNT_CTN": jhnt_ctn,
+                "score": score
             })
         
         return pd.DataFrame(rows)
 
 
-    def load_and_preprocess_data(self, data_file, sheet_name=None, json_name=None):
+    def load_and_preprocess_data(self, data_file, json_name=None):
         """
         데이터를 로드하고 전처리하는 함수
         
@@ -413,7 +397,7 @@ class Preprocessor:
             data = pd.read_csv(data_file)
             data_processed = self.basic_preprocessing(data)
         elif data_file.endswith(('.xlsx', '.xls')):
-            data = pd.read_excel(data_file, sheet_name=sheet_name)
+            data = pd.read_excel(data_file, sheet_name=self.sheet_name)
             data_processed = self.basic_preprocessing(data)
         elif data_file.endswith('.json'):
             with open(data_file, 'r', encoding='utf-8') as f:
@@ -426,32 +410,44 @@ class Preprocessor:
         return data_processed
 
 
-    def get_merged_df(self, file_list, sheet_name=None):
+    def get_merged_df(self, file_list):
         """
         파일명 리스트를 받아 각 파일을 load_and_preprocess_data로 읽고 self.df_list에 append,
         이후 SEEK_CUST_NO 컬럼 기준으로 순차적으로 조인하여 데이터프레임 반환
 
         Args:
             file_list (list): 파일명(str) 리스트
-            sheet_names (list): 각 파일에 대응하는 시트명 리스트 (Excel 파일용, 선택사항)
-            json_names (list): 각 파일에 대응하는 JSON 데이터 타입 리스트 (JSON 파일용, 선택사항)
-                              - ['이력서', '자기소개서', '직업훈련', '자격증'] 등
-
+ 
         Returns:
-            pd.DataFrame: SEEK_CUST_NO 기준으로 조인된 데이터프레임 -> repeat 처리 필요
+            pd.DataFrame: SEEK_CUST_NO 또는 JHNT_CTN 기준으로 조인된 데이터프레임 -> repeat 처리 필요
         """
         self.df_list = []
         result = None
         
-        for idx, file in enumerate(file_list):
+        # 첫 번째 파일(엑셀) 먼저 처리 - HOPE_JSCD1(희망 직종 코드) 정보 저장
+        if file_list:
+            current_json_name = self.json_names[0]
+            df = self.load_and_preprocess_data(file_list[0], json_name=current_json_name)
+            self.df_list.append(df)
+            result = df
+            
+            # HOPE_JSCD1 정보를 SEEK_CUST_NO 기준으로 매핑하여 저장
+            if 'HOPE_JSCD1' in df.columns and 'SEEK_CUST_NO' in df.columns:
+                self.hope_jscd1_map = df.set_index('SEEK_CUST_NO')['HOPE_JSCD1'].to_dict()
+        
+        # 나머지 4개 파일 반복문으로 처리
+        for idx, file in enumerate(file_list[1:], start=1):
             # 각 파일에 대응하는 시트명과 JSON명 사용       
             current_json_name = self.json_names[idx]
-            df = self.load_and_preprocess_data(file, sheet_name=sheet_name, json_name=current_json_name)
+            df = self.load_and_preprocess_data(file, json_name=current_json_name)
             self.df_list.append(df)
             
-            if idx == 0:
-                result = df
+            # 직업훈련과 자격증은 JHNT_CTN 기준으로 merge
+            if current_json_name in ['직업훈련', '자격증']:
+                merge_key = "JHNT_CTN"
             else:
-                result = result.merge(df, on="SEEK_CUST_NO", how="outer", suffixes=('', f'_df{idx+1}'))
+                merge_key = "SEEK_CUST_NO"
+            
+            result = result.merge(df, on=merge_key, how="outer", suffixes=('', f'_df{idx+1}'))
         
         return result
