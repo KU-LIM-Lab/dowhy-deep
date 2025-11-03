@@ -82,19 +82,31 @@ def setup_logger():
 
 
 def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
-                              df: pd.DataFrame):
+                              df: pd.DataFrame) -> dict:
     """
     단일 DAG에 대해 Causal Estimation (TabPFN) 및 Refutation을 수행합니다.
     - DAG에서 Treatment/Confounder/Mediator 자동 추출
     - 비교: TabPFN 추정기
     - Validation: Placebo treatment, Random common cause
     """
+    results = {
+        "dag_idx": dag_idx,
+        "dag_file": f"dag_{dag_idx}.txt",
+        "treatment": None,
+        "lr_ate": None,
+        "tabpfn_ate": None,
+        "placebo_p_value": None,
+        "random_cc_p_value": None,
+        "is_successful": False,
+        "skip_reason": None,
+    }
 
     # DAG 파일 로딩
     dag_dir = Path("./kubig_experiments/dags/output/")
     dag_file = dag_dir / f"dag_{dag_idx}.txt"
     if not dag_file.exists():
         logger.warning("[%s] DAG file not found, skipping: %s", dag_file.name, str(dag_file))
+        results["skip_reason"] = "DAG file not found"
         return # 파일이 없으면 스킵
 
     graph_txt = dag_file.read_text(encoding="utf-8")
@@ -102,10 +114,12 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     # 역할 추출 (kubig_experiments.src.dag_parser의 extract_roles_general 함수 사용)
     roles = extract_roles_general(graph_txt, outcome="ACQ_180_YN")
     dag_treatment = roles["treatment"]
+    results["treatment"] = dag_treatment
 
     if dag_treatment not in df.columns:
         msg = f"[skip] treatment '{dag_treatment}' not found in dataframe."
         logger.info("[%s] %s", dag_file.name, msg)
+        results["skip_reason"] = "treatment not in dataframe"
         return # pytest.skip 대신 return 사용
 
     logger.info(
@@ -129,6 +143,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     if identified is None:
         msg = "[skip] No valid identified estimand (식별 실패)."
         logger.info("[%s] %s", dag_file.name, msg)
+        results["skip_reason"] = "No valid identified estimand"
         return 
     
     # Linear Regression (Baseline) 추정
@@ -142,13 +157,14 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
             logger.warning("[%s] %s", dag_file.name, msg)
             est_lr_value = "INVALID"
         else:
-            est_lr_value = est_lr.value
+            est_lr_value = float(est_lr.value)
 
+        results["lr_ate"] = est_lr_value
         logger.info("[%s] [%s] Baseline(Linear Regression) ATE: %s", dag_file.name, dag_treatment, est_lr_value)
         
     except Exception as e:
         logger.error(f"[%s] Baseline (LR) estimation failed with exception: %s", dag_file.name, e)
-        est_lr_value = "ERROR"
+        results["lr_ate"] = "ERROR"
 
     # TabPFN 추정
     try:
@@ -160,6 +176,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     except Exception as e:
         msg = f"[skip] TabPFN estimation failed with exception: {e}"
         logger.error("[%s] %s", dag_file.name, msg)
+        results["skip_reason"] = "TabPFN estimation failed"
         return
 
     # 추정 결과 검증
@@ -168,21 +185,49 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     ):
         msg = f"[skip] TabPFN estimation returned invalid value: {getattr(est_tabpfn, 'value', None)}"
         logger.info("[%s] %s", dag_file.name, msg)
+        results["skip_reason"] = "TabPFN invalid value"
         return
     
+    results["tabpfn_ate"] = float(est_tabpfn.value)
     logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, dag_treatment, est_tabpfn.value)
 
     # 반박 (Refutation)
-    refuters = ["placebo_treatment_refuter", "random_common_cause"]
-    for ref in refuters:
+    refuters = {
+        "placebo_treatment_refuter": "placebo_p_value",
+        "random_common_cause": "random_cc_p_value"
+    }
+    
+    for ref_name, result_key in refuters.items():
         try:
-            refutation = model.refute_estimate(identified, est_tabpfn, method_name=ref)
-            logger.info("[%s] Refutation (%s): %s", dag_file.name, ref, refutation)
+            refutation = model.refute_estimate(identified, est_tabpfn, method_name=ref_name)
+            logger.info("[%s] Refutation (%s): %s", dag_file.name, ref_name, refutation)
 
             if refutation is None:
-                logger.error("[%s] Refutation failed for %s", dag_file.name, ref)
+                logger.error("[%s] Refutation failed for %s", dag_file.name, ref_name)
+            else:
+                # --- 문자열 파싱을 통한 p-value 추출 로직 ---
+                p_value_float = None
+                refutation_str = str(refutation)
+                
+                if 'p value:' in refutation_str:
+                    p_str = refutation_str.split('p value:')[-1].strip()
+                    if p_str:
+                        p_str = p_str.split()[0]
+                    
+                    try:
+                        p_value_float = float(p_str)
+                    except (ValueError, TypeError):
+                        pass
+                
+                if p_value_float is not None and np.isfinite(p_value_float):
+                    results[result_key] = p_value_float
+                
         except Exception as e:
-            logger.error("[%s] Refutation (%s) failed with exception: %s", dag_file.name, ref, e)
+            logger.error("[%s] Refutation (%s) failed with exception: %s", dag_file.name, ref_name, e)
+            results[result_key] = "ERROR"
+            
+    results["is_successful"] = True
+    return results
 
 
 if __name__ == "__main__":
@@ -221,11 +266,17 @@ if __name__ == "__main__":
 
     total_rows = len(final_df)
     num_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
-    dag_indices = range(1, 43)
+
+    if IS_TEST_MODE:
+        dag_indices = [1, 10]  # 테스트 모드에서는 소수의 DAG만 사용
+    else:
+        dag_indices = range(1, 43)
 
     main_logger.info("-" * 50)
     main_logger.info("Starting batch validation runs.")
     main_logger.info(f"Total rows: {total_rows}. Batch size: {BATCH_SIZE}. Total batches: {num_batches}.")
+
+    all_results_df = pd.DataFrame()
 
     for i in range(num_batches):
         start_idx = i * BATCH_SIZE
@@ -237,10 +288,30 @@ if __name__ == "__main__":
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
 
+        batch_results = []
+
         for dag_idx in dag_indices:
             main_logger.info("-" * 50)
             main_logger.info(f"[Batch {i+1}] Processing DAG index: {dag_idx}")
-            validate_tabpfn_estimator(dag_idx, main_logger, batch_df)
+            result_dict = validate_tabpfn_estimator(dag_idx, main_logger, batch_df)
+            
+            result_dict["batch_id"] = i + 1 
+            result_dict["batch_size"] = len(batch_df) 
+            
+            batch_results.append(result_dict)
+        
+        if batch_results:
+            batch_results_df = pd.DataFrame(batch_results)
+            all_results_df = pd.concat([all_results_df, batch_results_df], ignore_index=True) # 전체 결과에 누적
+            
+            # 배치별 파일 저장 (CSV)
+            batch_result_file = RESULTS_DIR / f"batch_results_{i+1:02d}.csv"
+            batch_results_df.to_csv(batch_result_file, index=False, encoding="utf-8")
+            main_logger.info(f" BATCH {i+1} results saved to: {batch_result_file.name}")
+    
+    final_result_file = RESULTS_DIR / "all_validation_results.csv"
+    all_results_df.to_csv(final_result_file, index=False, encoding="utf-8")
+    main_logger.info("All validation results saved to: %s", final_result_file.name)
 
     main_logger.info("-" * 50)
     main_logger.info("Validation runs complete.")
