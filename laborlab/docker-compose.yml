@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  causal-analysis:
+    build:
+      context: ..  # 프로젝트 루트를 빌드 컨텍스트로
+      dockerfile: laborlab/Dockerfile
+    container_name: dowhy-causal-analysis
+    volumes:
+      # 데이터 디렉토리 마운트
+      - ./data:/app/laborlab/data:ro
+      # 로그 디렉토리 마운트 (읽기/쓰기)
+      - ./log:/app/laborlab/log
+      # 설정 파일 마운트
+      - ./experiment_config.json:/app/laborlab/experiment_config.json:ro
+      # Python 캐시 제외를 위한 볼륨
+      - python-cache:/root/.cache/pip
+    environment:
+      - PYTHONPATH=/app
+      - TERMINAL_OUTPUT_DIR=/app/laborlab/log
+      # 실험 설정 파일 경로 (환경변수로 오버라이드 가능)
+      - EXPERIMENT_CONFIG=/app/laborlab/experiment_config.json
+    working_dir: /app/laborlab
+    # docker-compose up 실행 시 자동으로 배치 실험 실행
+    # 환경변수 EXPERIMENT_CONFIG가 설정되어 있으면 자동으로 사용 (--config 인자 생략 가능)
+    command: python run_batch_experiments.py
+    stdin_open: false
+    tty: false
+    # GPU 지원 (NVIDIA Docker 필요, 선택사항)
+    # 주석 해제하여 GPU 사용 가능
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  python-cache:
+

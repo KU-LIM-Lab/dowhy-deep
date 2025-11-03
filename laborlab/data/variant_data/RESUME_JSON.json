@@ -1,0 +1,329 @@
+[
+  {
+    "SEEK_CUST_NO": "1234567890123",
+    "RESUMES": [
+      {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "홍길동님의 이력서입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "SEQNO": 1,
+        "ITEMS": [
+          {
+            "RESUME_ITEM_CLCD": "1",
+            "DS_RESUME_ITEM_CLCD": "자격면허",
+            "RESUME_ITEM_1_CD": "6005902",
+            "DS_RESUME_ITEM_1_CD": "운전면허",
+            "RESUME_ITEM_1_NM": "자동차운전면허 1종 보통",
+            "RESUME_ITEM_1_VAL": "2020-05 취득",
+            "HIST_STDT": "2020-05-01",
+            "HIST_ENDT": null,
+            "HIST_ITEM_GRDCD": null,
+            "DS_HIST_ITEM_GRDCD": null,
+            "ETC_ITEM_CONT": "무사고 4년",
+            "COMP_NM_OPEN_YN": null
+          },
+          {
+            "RESUME_ITEM_CLCD": "7",
+            "DS_RESUME_ITEM_CLCD": "전산능력",
+            "RESUME_ITEM_1_CD": "1",
+            "DS_RESUME_ITEM_1_CD": "문서작성 (워드프로세스 활용)",
+            "RESUME_ITEM_1_NM": "MS Word/Excel",
+            "HIST_ITEM_GRDCD": "B",
+            "DS_HIST_ITEM_GRDCD": "중",
+            "RESUME_ITEM_1_VAL": "VLOOKUP, 피벗테이블 활용"
+          },
+          {
+            "RESUME_ITEM_CLCD": "8",
+            "DS_RESUME_ITEM_CLCD": "외국어능력",
+            "RESUME_ITEM_1_CD": "01",
+            "DS_RESUME_ITEM_1_CD": "영어",
+            "RESUME_ITEM_1_NM": "TOEIC 860",
+            "HIST_ITEM_GRDCD": "A",
+            "DS_HIST_ITEM_GRDCD": "상",
+            "RESUME_ITEM_1_VAL": "OPIc IM2"
+          },
+          {
+            "RESUME_ITEM_CLCD": "9",
+            "DS_RESUME_ITEM_CLCD": "학력",
+            "RESUME_ITEM_1_CD": "4",
+            "DS_RESUME_ITEM_1_CD": "대학교(4년제)",
+            "RESUME_ITEM_1_NM": "통계학과",
+            "RESUME_ITEM_5_CD": "D",
+            "RESUME_ITEM_5_NM": "데이터사이언스(복수전공)",
+            "RESUME_ITEM_6_CD": null,
+            "RESUME_ITEM_6_NM": null,
+            "RESUME_ITEM_1_VAL": "GPA 3.8/4.5",
+            "HIST_STDT": "2016-03-01",
+            "HIST_ENDT": "2020-02-28"
+          },
+          {
+            "RESUME_ITEM_CLCD": "4",
+            "DS_RESUME_ITEM_CLCD": "개인경력",
+            "RESUME_ITEM_1_NM": "데이터 분석 인턴",
+            "CAREER_MMCNT": 6,
+            "JSCD": "235200",
+            "SLRY_AMT": 280,
+            "EMMD_OCCP_CL_YEAR": 2025,
+            "COMP_NM_OPEN_YN": "Y",
+            "HIST_STDT": "2023-07-01",
+            "HIST_ENDT": "2023-12-31",
+            "ETC_ITEM_CONT": "매출 예측 모델 개발 보조, 대시보드 제작"
+          },
+          {
+            "RESUME_ITEM_CLCD": "12",
+            "DS_RESUME_ITEM_CLCD": "참여프로젝트",
+            "RESUME_ITEM_1_NM": "고객 이탈 예측",
+            "RESUME_ITEM_1_VAL": "XGBoost로 AUROC 0.84 달성",
+            "ETC_ITEM_CONT": "특성 공학 및 교차검증 파이프라인 설계"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "9443159529278",
+    "RESUMES": [
+      {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "김민수님의 이력서(일반)입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "SEQNO": 1,
+        "ITEMS": [
+          {
+            "RESUME_ITEM_CLCD": "1",
+            "DS_RESUME_ITEM_CLCD": "자격면허",
+            "RESUME_ITEM_1_CD": "6005903",
+            "DS_RESUME_ITEM_1_CD": "지게차운전기능사",
+            "RESUME_ITEM_1_NM": "자동차운전면허 1종 보통",
+            "RESUME_ITEM_1_VAL": "2021-06 취득",
+            "HIST_STDT": "2021-06-01",
+            "HIST_ENDT": null,
+            "HIST_ITEM_GRDCD": null,
+            "DS_HIST_ITEM_GRDCD": null,
+            "ETC_ITEM_CONT": "무사고 3년",
+            "COMP_NM_OPEN_YN": null
+          },
+          {
+            "RESUME_ITEM_CLCD": "7",
+            "DS_RESUME_ITEM_CLCD": "전산능력",
+            "RESUME_ITEM_1_CD": "2",
+            "DS_RESUME_ITEM_1_CD": "스프레드시트 활용",
+            "RESUME_ITEM_1_NM": "MS Excel/PowerPoint",
+            "RESUME_ITEM_1_VAL": "피벗, 매크로 기초",
+            "HIST_ITEM_GRDCD": "A",
+            "DS_HIST_ITEM_GRDCD": "상"
+          },
+          {
+            "RESUME_ITEM_CLCD": "8",
+            "DS_RESUME_ITEM_CLCD": "외국어능력",
+            "RESUME_ITEM_1_CD": "02",
+            "DS_RESUME_ITEM_1_CD": "일본어",
+            "RESUME_ITEM_1_NM": "JLPT N2",
+            "RESUME_ITEM_1_VAL": "회화 가능",
+            "HIST_ITEM_GRDCD": "B",
+            "DS_HIST_ITEM_GRDCD": "중"
+          },
+          {
+            "RESUME_ITEM_CLCD": "9",
+            "DS_RESUME_ITEM_CLCD": "학력",
+            "RESUME_ITEM_1_CD": "4",
+            "DS_RESUME_ITEM_1_CD": "대학교(4년제)",
+            "RESUME_ITEM_1_NM": "경영정보학과",
+            "RESUME_ITEM_1_VAL": "GPA 3.7/4.5",
+            "HIST_STDT": "2017-03-01",
+            "HIST_ENDT": "2021-02-28"
+          },
+          {
+            "RESUME_ITEM_CLCD": "4",
+            "DS_RESUME_ITEM_CLCD": "개인경력",
+            "RESUME_ITEM_1_NM": "서비스 운영 인턴",
+            "CAREER_MMCNT": 5,
+            "JSCD": "235200",
+            "SLRY_AMT": 260,
+            "EMMD_OCCP_CL_YEAR": 2024,
+            "COMP_NM_OPEN_YN": "Y",
+            "HIST_STDT": "2022-07-01",
+            "HIST_ENDT": "2022-11-30",
+            "ETC_ITEM_CONT": "운영 리포트 자동화, 고객 VOC 분류"
+          },
+          {
+            "RESUME_ITEM_CLCD": "12",
+            "DS_RESUME_ITEM_CLCD": "참여프로젝트",
+            "RESUME_ITEM_1_NM": "주문 수요 예측",
+            "RESUME_ITEM_1_VAL": "시계열 모델로 MAPE 12%",
+            "ETC_ITEM_CONT": "데이터 정제/피처 엔지니어링 파이프라인 구성"
+          }
+        ]
+      },
+      {
+        "TMPL_SEQNO": 2,
+        "RESUME_TITLE": "김민수님의 이력서(경력 중심)입니다.",
+        "BASIC_RESUME_YN": "N",
+        "SEQNO": 2,
+        "ITEMS": [
+          {
+            "RESUME_ITEM_CLCD": "4",
+            "DS_RESUME_ITEM_CLCD": "개인경력",
+            "RESUME_ITEM_1_NM": "데이터 품질 관리 아르바이트",
+            "CAREER_MMCNT": 4,
+            "JSCD": "235200",
+            "SLRY_AMT": 230,
+            "EMMD_OCCP_CL_YEAR": 2023,
+            "COMP_NM_OPEN_YN": "N",
+            "HIST_STDT": "2021-12-01",
+            "HIST_ENDT": "2022-03-31",
+            "ETC_ITEM_CONT": "라벨링 가이드 개정, 샘플링 검수"
+          },
+          {
+            "RESUME_ITEM_CLCD": "7",
+            "DS_RESUME_ITEM_CLCD": "전산능력",
+            "RESUME_ITEM_1_CD": "3",
+            "DS_RESUME_ITEM_1_CD": "프레젠테이션 도구 활용",
+            "RESUME_ITEM_1_NM": "Google Slides/Canva",
+            "RESUME_ITEM_1_VAL": "템플릿 커스터마이징 및 스토리보딩",
+            "HIST_ITEM_GRDCD": "A",
+            "DS_HIST_ITEM_GRDCD": "상"
+          },
+          {
+            "RESUME_ITEM_CLCD": "12",
+            "DS_RESUME_ITEM_CLCD": "참여프로젝트",
+            "RESUME_ITEM_1_NM": "리뷰 감성 분석",
+            "RESUME_ITEM_1_VAL": "F1-score 0.86",
+            "ETC_ITEM_CONT": "형태소 분석, 불용어 사전 구축"
+          },
+          {
+            "RESUME_ITEM_CLCD": "8",
+            "DS_RESUME_ITEM_CLCD": "외국어능력",
+            "RESUME_ITEM_1_CD": "01",
+            "DS_RESUME_ITEM_1_CD": "영어",
+            "RESUME_ITEM_1_NM": "OPIc IM1",
+            "RESUME_ITEM_1_VAL": "업무 기본 회화"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "5439134307770",
+    "RESUMES": [
+      {
+        "TMPL_SEQNO": 1,
+        "RESUME_TITLE": "박서준님의 이력서(일반)입니다.",
+        "BASIC_RESUME_YN": "Y",
+        "SEQNO": 1,
+        "ITEMS": [
+          {
+            "RESUME_ITEM_CLCD": "1",
+            "DS_RESUME_ITEM_CLCD": "자격면허",
+            "RESUME_ITEM_1_CD": "6005904",
+            "DS_RESUME_ITEM_1_CD": "건설기계정비기능사",
+            "RESUME_ITEM_1_NM": "지게차운전기능사",
+            "RESUME_ITEM_1_VAL": "2022-04 취득",
+            "HIST_STDT": "2022-04-01",
+            "HIST_ENDT": null,
+            "HIST_ITEM_GRDCD": null,
+            "DS_HIST_ITEM_GRDCD": null,
+            "ETC_ITEM_CONT": "안전교육 수료",
+            "COMP_NM_OPEN_YN": null
+          },
+          {
+            "RESUME_ITEM_CLCD": "7",
+            "DS_RESUME_ITEM_CLCD": "전산능력",
+            "RESUME_ITEM_1_CD": "3",
+            "DS_RESUME_ITEM_1_CD": "프레젠테이션 도구 활용",
+            "RESUME_ITEM_1_NM": "Google Sheets / PowerPoint",
+            "RESUME_ITEM_1_VAL": "피벗·차트·슬라이드 구성",
+            "HIST_ITEM_GRDCD": "A",
+            "DS_HIST_ITEM_GRDCD": "상"
+          },
+          {
+            "RESUME_ITEM_CLCD": "8",
+            "DS_RESUME_ITEM_CLCD": "외국어능력",
+            "RESUME_ITEM_1_CD": "03",
+            "DS_RESUME_ITEM_1_CD": "중국어",
+            "RESUME_ITEM_1_NM": "HSK 5급",
+            "RESUME_ITEM_1_VAL": "업무 회화 가능",
+            "HIST_ITEM_GRDCD": "B",
+            "DS_HIST_ITEM_GRDCD": "중"
+          },
+          {
+            "RESUME_ITEM_CLCD": "9",
+            "DS_RESUME_ITEM_CLCD": "학력",
+            "RESUME_ITEM_1_CD": "4",
+            "DS_RESUME_ITEM_1_CD": "대학교(4년제)",
+            "RESUME_ITEM_1_NM": "기계공학과",
+            "RESUME_ITEM_1_VAL": "GPA 3.6/4.5",
+            "HIST_STDT": "2002-03-01",
+            "HIST_ENDT": "2006-02-28"
+          },
+          {
+            "RESUME_ITEM_CLCD": "4",
+            "DS_RESUME_ITEM_CLCD": "개인경력",
+            "RESUME_ITEM_1_NM": "설비 유지보수 사원",
+            "CAREER_MMCNT": 18,
+            "JSCD": "235200",
+            "SLRY_AMT": 350,
+            "EMMD_OCCP_CL_YEAR": 2022,
+            "COMP_NM_OPEN_YN": "N",
+            "HIST_STDT": "2021-01-01",
+            "HIST_ENDT": "2022-06-30",
+            "ETC_ITEM_CONT": "설비 상태 모니터링 체계 개선"
+          },
+          {
+            "RESUME_ITEM_CLCD": "12",
+            "DS_RESUME_ITEM_CLCD": "참여프로젝트",
+            "RESUME_ITEM_1_NM": "예지보전 PoC",
+            "RESUME_ITEM_1_VAL": "진동센서 이상 탐지 정확도 87%",
+            "ETC_ITEM_CONT": "센서 피처 설계 및 경보 임계값 최적화"
+          }
+        ]
+      },
+      {
+        "TMPL_SEQNO": 2,
+        "RESUME_TITLE": "박서준님의 이력서(프로젝트 중심)입니다.",
+        "BASIC_RESUME_YN": "N",
+        "SEQNO": 2,
+        "ITEMS": [
+          {
+            "RESUME_ITEM_CLCD": "7",
+            "DS_RESUME_ITEM_CLCD": "전산능력",
+            "RESUME_ITEM_1_CD": "3",
+            "DS_RESUME_ITEM_1_CD": "프레젠테이션 도구 활용",
+            "RESUME_ITEM_1_NM": "프레젠테이션 제작",
+            "RESUME_ITEM_1_VAL": "스토리라인·시각화·발표 스크립트",
+            "HIST_ITEM_GRDCD": "A",
+            "DS_HIST_ITEM_GRDCD": "상"
+          },
+          {
+            "RESUME_ITEM_CLCD": "12",
+            "DS_RESUME_ITEM_CLCD": "참여프로젝트",
+            "RESUME_ITEM_1_NM": "부품 불량 탐지",
+            "RESUME_ITEM_1_VAL": "재현율 0.81",
+            "ETC_ITEM_CONT": "라벨 품질 정제 및 데이터 증강"
+          },
+          {
+            "RESUME_ITEM_CLCD": "4",
+            "DS_RESUME_ITEM_CLCD": "개인경력",
+            "RESUME_ITEM_1_NM": "품질 관리 보조",
+            "CAREER_MMCNT": 8,
+            "JSCD": "235200",
+            "SLRY_AMT": 250,
+            "EMMD_OCCP_CL_YEAR": 2021,
+            "COMP_NM_OPEN_YN": "N",
+            "HIST_STDT": "2020-05-01",
+            "HIST_ENDT": "2020-12-31",
+            "ETC_ITEM_CONT": "검사 표준서 개정, 샘플 검수"
+          },
+          {
+            "RESUME_ITEM_CLCD": "8",
+            "DS_RESUME_ITEM_CLCD": "외국어능력",
+            "RESUME_ITEM_1_CD": "03",
+            "DS_RESUME_ITEM_1_CD": "중국어",
+            "RESUME_ITEM_1_NM": "비즈니스 회화",
+            "RESUME_ITEM_1_VAL": "미팅·메일 기본 커뮤니케이션"
+          }
+        ]
+      }
+    ]
+  }
+]

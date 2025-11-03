@@ -1,0 +1,22 @@
+{
+  "data_dir": "data",
+  "graphs": [
+    "main_graph",
+    "dummy_graph"
+  ],
+  "treatments": [
+    "ACCR_CD",
+    "CARR_MYCT1",
+    "NTR_BPLC_PSNT_WAGE_AMT"
+  ],
+  "outcomes": [
+    "ACQ_180_YN"
+  ],
+  "estimators": [
+    "tabpfn",
+    "linear_regression"
+  ],
+  "no_logs": false,
+  "verbose": false
+}
+

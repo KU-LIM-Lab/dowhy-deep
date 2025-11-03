@@ -229,25 +229,8 @@ build_python_command() {
     echo "$PYTHON_CMD"
 }
 
-# 터미널 출력을 log 폴더에 직접 저장하는 함수
-setup_output_directory() {
-    # log 폴더 생성
-    mkdir -p "log"
-    
-    # 실행 시간을 기반으로 파일명 생성
-    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    TERMINAL_OUTPUT_FILE="log/terminal_output_${TIMESTAMP}.log"
-    
-    echo "log"
-}
-
 # 메인 실행 함수
 main() {
-    # 출력 디렉토리 설정
-    OUTPUT_DIR=$(setup_output_directory)
-    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    TERMINAL_OUTPUT_FILE="log/terminal_output_${TIMESTAMP}.log"
-    
     log_info "DoWhy 인과추론 분석을 시작합니다..."
     echo "========================================"
     
@@ -266,7 +249,6 @@ main() {
     echo "  - 결과 변수: $OUTCOME"
     echo "  - 로그 저장: $([ "$NO_LOGS" == true ] && echo "비활성화" || echo "활성화")"
     echo "  - 상세 출력: $([ "$VERBOSE" == true ] && echo "활성화" || echo "비활성화")"
-    echo "  - 출력 폴더: log/"
     echo "========================================"
     
     # Python 명령어 실행
@@ -277,11 +259,7 @@ main() {
     # 실행 시간 측정
     START_TIME=$(date +%s)
     
-    # 환경변수 설정 (Python 스크립트에서 사용)
-    export TERMINAL_OUTPUT_DIR="log"
-    
-    # 터미널 출력을 파일로 리다이렉션하면서 동시에 콘솔에도 출력
-    if eval "$PYTHON_CMD" 2>&1 | tee "$TERMINAL_OUTPUT_FILE"; then
+    if eval "$PYTHON_CMD"; then
         END_TIME=$(date +%s)
         DURATION=$((END_TIME - START_TIME))
         
@@ -292,11 +270,9 @@ main() {
         # 결과 파일 위치 안내
         if [[ "$NO_LOGS" == false ]]; then
             log_info "로그 파일과 결과는 'log/' 폴더에서 확인할 수 있습니다."
-            log_info "터미널 출력: $TERMINAL_OUTPUT_FILE"
         fi
     else
         log_error "분석 중 오류가 발생했습니다."
-        log_error "오류 로그는 '$TERMINAL_OUTPUT_FILE'에서 확인할 수 있습니다."
         exit 1
     fi
 }
