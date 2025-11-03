@@ -1,3 +1,4 @@
+```mermaid
 flowchart LR
     subgraph Setup
         A[Raw Data] --> B[Data Preprocessing & Encoding];
