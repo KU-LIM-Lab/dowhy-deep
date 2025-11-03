@@ -16,6 +16,7 @@ from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 
 from kubig_experiments.src.preprocessor import build_pipeline_wide, postprocess
 from kubig_experiments.src.dag_parser import extract_roles_general, dot_to_nx
+from kubig_experiments.src.interpretator import load_and_consolidate_data, analyze_results
 
 RESULTS_DIR = None
 
@@ -238,7 +239,7 @@ if __name__ == "__main__":
     IS_TEST_MODE = args.test
     TEST_SAMPLE_SIZE = 100
 
-    BATCH_SIZE = 10000 
+    BATCH_SIZE = 50 
     
     # 로거 초기화
     main_logger = setup_logger()
@@ -315,3 +316,11 @@ if __name__ == "__main__":
 
     main_logger.info("-" * 50)
     main_logger.info("Validation runs complete.")
+    
+    # --- 3. 최종 해석 로직 ---
+    main_logger.info("Starting Causal Interpretation Analysis...")
+    
+    df_consolidated = load_and_consolidate_data(RESULTS_DIR)
+    analyze_results(df_consolidated)
+    
+    main_logger.info("Interpretation analysis complete.")
