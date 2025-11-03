@@ -29,7 +29,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from collections import Counter
 
-from llm_reference import (
+from config import (
     JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
     DEFAULT_MAX_COVER_LEN, DEFAULT_COVER_EXCEED_RATIO, DEFAULT_DATE_FORMAT
 )
