@@ -1,1 +1,0 @@
-treatment = [a, b, c , d, e]
