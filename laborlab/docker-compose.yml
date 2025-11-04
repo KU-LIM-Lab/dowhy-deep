@@ -20,6 +20,8 @@ services:
       - TERMINAL_OUTPUT_DIR=/app/laborlab/log
       # 실험 설정 파일 경로 (환경변수로 오버라이드 가능)
       - EXPERIMENT_CONFIG=/app/laborlab/experiment_config.json
+      # LLM API 키 (선택적, LLM 기능을 사용하려면 설정)
+      # - LLM_API_KEY=your-api-key-here
     working_dir: /app/laborlab
     # docker-compose up 실행 시 자동으로 배치 실험 실행
     # 환경변수 EXPERIMENT_CONFIG가 설정되어 있으면 자동으로 사용 (--config 인자 생략 가능)

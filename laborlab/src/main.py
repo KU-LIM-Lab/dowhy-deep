@@ -49,21 +49,102 @@ plt.rcParams['axes.unicode_minus'] = False
 
 def create_causal_graph(graph_file):
     """
-    GML 형식 그래프 파일을 읽어서 NetworkX 인과 그래프를 생성하는 함수
-    
-    사용자 제공 GML 형식:
-    graph [
-        directed 1
-        node [id "gps" label "gps"]
-        edge [source "gps" target "hippocampus"]
-    ]
+    DOT 형식 그래프 파일을 읽어서 NetworkX 인과 그래프를 생성하는 함수
     
     Args:
-        graph_file (str): 그래프 파일 경로 (GML 형식)
+        graph_file (str): 그래프 파일 경로 (DOT 형식)
     
     Returns:
         nx.DiGraph: 인과 그래프 객체
     """
+    # 무조건 DOT 형식으로 파싱
+    return _parse_dot_graph(graph_file)
+
+
+def _parse_dot_graph(graph_file):
+    """DOT 형식 그래프 파일을 파싱합니다."""
+    try:
+        # pydot을 사용하여 DOT 파일 읽기
+        import pydot
+        graphs = pydot.graph_from_dot_file(graph_file)
+        if not graphs:
+            raise ValueError(f"DOT 파일에서 그래프를 찾을 수 없습니다: {graph_file}")
+        
+        # 첫 번째 그래프 사용
+        dot_graph = graphs[0]
+        
+        # NetworkX 그래프로 변환
+        G = nx.drawing.nx_pydot.from_pydot(dot_graph)
+        
+        # 방향성 그래프로 변환 (digraph인 경우)
+        if not G.is_directed():
+            # digraph인지 확인
+            with open(graph_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if content.strip().startswith('digraph'):
+                G = G.to_directed()
+        
+        return G
+    except ImportError:
+        # pydot이 없으면 수동 파싱
+        return _parse_dot_manual(graph_file)
+    except Exception as e:
+        # pydot 파싱 실패 시 수동 파싱 시도
+        try:
+            return _parse_dot_manual(graph_file)
+        except Exception as e2:
+            raise ValueError(f"DOT 파일 파싱 실패: {e}. 수동 파싱도 실패: {e2}")
+
+
+def _parse_dot_manual(graph_file):
+    """DOT 형식을 수동으로 파싱합니다 (pydot 없이)."""
+    with open(graph_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    G = nx.DiGraph()
+    
+    # digraph인지 확인
+    is_digraph = content.strip().startswith('digraph')
+    
+    # subgraph cluster_treatments 블록 제거 (treatment 메타데이터는 DAG에 포함하지 않음)
+    # subgraph cluster_treatments { ... } 블록 제거
+    content_without_subgraph = re.sub(
+        r'subgraph\s+cluster_treatments\s*\{[^}]*\}',
+        '',
+        content,
+        flags=re.DOTALL
+    )
+    
+    # 노드 정의 찾기: node_id [label="..."]
+    # 노드 ID는 변수명 (예: ACQ_180_YN, cover_score 등)
+    # 노드명이 라벨 정의에 나타남
+    node_pattern = r'([A-Za-z_][A-Za-z0-9_]*)\s*\[[^\]]*label\s*=\s*"([^"]+)"'
+    for match in re.finditer(node_pattern, content_without_subgraph):
+        node_id = match.group(1)
+        label = match.group(2)
+        # T1, T2 등의 treatment 노드는 제외
+        if not re.match(r'^T\d+$', node_id):
+            G.add_node(node_id, label=label)
+    
+    # 엣지 찾기: source -> target; 또는 source -> target [label="..."]
+    # 주석 처리된 라인은 제외
+    edge_pattern = r'([A-Za-z_][A-Za-z0-9_]*)\s*->\s*([A-Za-z_][A-Za-z0-9_]*)'
+    for match in re.finditer(edge_pattern, content_without_subgraph):
+        source = match.group(1)
+        target = match.group(2)
+        # treatment 노드(T1, T2 등)는 제외
+        if not re.match(r'^T\d+$', source) and not re.match(r'^T\d+$', target):
+            G.add_edge(source, target)
+    
+    # 방향성 그래프로 변환
+    if is_digraph and not G.is_directed():
+        G = G.to_directed()
+    
+    return G
+
+
+def _parse_gml_graph(graph_file):
+    """GML 형식 그래프 파일을 파싱합니다."""
     # GML 파일 읽기
     with open(graph_file, 'r', encoding='utf-8') as f:
         gml_content = f.read()
@@ -93,6 +174,10 @@ def create_causal_graph(graph_file):
         if id_match:
             node_id = id_match.group(1)
             label = label_match.group(1) if label_match else node_id
+            # treatment_meta role이 있는 노드는 제외
+            role_match = re.search(r'role\s*=\s*"([^"]+)"', node_content)
+            if role_match and role_match.group(1) == "treatment_meta":
+                continue
             G.add_node(node_id, label=label)
     
     # 모든 edge 블록 추출
@@ -107,7 +192,9 @@ def create_causal_graph(graph_file):
         if source_match and target_match:
             source = source_match.group(1)
             target = target_match.group(1)
-            G.add_edge(source, target)
+            # treatment_meta 노드는 제외
+            if source not in ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10']:
+                G.add_edge(source, target)
     
     # 방향성 그래프로 변환
     if not G.is_directed() and is_directed:

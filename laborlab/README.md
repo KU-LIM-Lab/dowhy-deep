@@ -304,13 +304,30 @@ pip install openai
 export LLM_API_KEY="your-api-key"
 ```
 
-### 2. 그래프 파일을 찾을 수 없음
+또는 Docker 환경변수로 설정:
+```yaml
+# docker-compose.yml에 추가
+environment:
+  - LLM_API_KEY=your-api-key-here
+```
+
+### 2. 그래프 파일 파싱 오류
+
+**증상**: "GML 형식이 올바르지 않습니다" 또는 "DOT 파일 파싱 실패"
+
+**해결 방법**:
+- DOT 형식 파일 (`.dot` 확장자)은 자동으로 인식됩니다
+- GML 형식 파일도 지원됩니다
+- `pydot` 패키지가 설치되어 있으면 더 정확하게 파싱됩니다
+- 그래프 파일에 `subgraph cluster_treatments` 블록이 있어도 자동으로 제외됩니다
+
+### 3. 그래프 파일을 찾을 수 없음
 
 - `data/main_graph` 파일이 있는지 확인
 - 또는 `data/graph_data/` 폴더에 그래프 파일이 있는지 확인
 - `--graph` 옵션으로 직접 경로 지정
 
-### 3. 데이터 파일 경로 오류
+### 4. 데이터 파일 경로 오류
 
 데이터 구조 확인:
 ```
