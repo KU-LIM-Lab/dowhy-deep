@@ -12,7 +12,25 @@ import os
 from pathlib import Path
 from datetime import datetime
 import itertools
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
+# graph_parser 모듈 임포트 (src/__init__.py를 거치지 않고 직접 임포트)
+# __init__.py가 preprocess를 임포트하면서 의존성 문제가 발생할 수 있으므로
+# 직접 경로에서 모듈을 임포트합니다.
+import importlib.util
+
+def load_graph_parser():
+    """graph_parser 모듈을 직접 로드합니다."""
+    graph_parser_path = Path(__file__).parent / "src" / "graph_parser.py"
+    spec = importlib.util.spec_from_file_location("graph_parser", graph_parser_path)
+    graph_parser = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(graph_parser)
+    return graph_parser
+
+graph_parser = load_graph_parser()
+find_all_graph_files = graph_parser.find_all_graph_files
+extract_treatments_from_graph = graph_parser.extract_treatments_from_graph
+get_treatments_from_all_graphs = graph_parser.get_treatments_from_all_graphs
 
 
 def load_experiment_config(config_file: str) -> Dict[str, Any]:
@@ -110,6 +128,8 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     treatments = config.get("treatments", [])
     outcomes = config.get("outcomes", ["ACQ_180_YN"])
     estimators = config.get("estimators", ["tabpfn"])
+    auto_extract_treatments = config.get("auto_extract_treatments", False)
+    graph_data_dir = config.get("graph_data_dir", "graph_data")
     
     # 절대 경로로 변환
     data_dir_path = base_dir / data_dir
@@ -118,38 +138,104 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     
     # 그래프 파일 경로 처리
     graph_files = []
-    for graph in graphs:
-        if isinstance(graph, str):
-            graph_path = base_dir / data_dir / graph
-            if graph_path.exists():
-                graph_files.append(str(graph_path))
-            else:
-                # 절대 경로로 시도
-                graph_path = Path(graph)
+    
+    # auto_extract_treatments가 True이면 graph_data 폴더에서 자동으로 찾기
+    if auto_extract_treatments:
+        print(f"🔍 그래프 파일에서 자동으로 treatment 추출 중...")
+        found_graphs = find_all_graph_files(data_dir_path, graph_data_dir)
+        graph_files = [str(g) for g in found_graphs]
+        
+        if not graph_files:
+            print(f"⚠️ {graph_data_dir} 폴더에서 그래프 파일을 찾을 수 없습니다.")
+        else:
+            print(f"✅ {len(graph_files)}개의 그래프 파일 발견:")
+            for g in graph_files:
+                print(f"   - {Path(g).name}")
+    else:
+        # 수동으로 지정된 그래프 파일들
+        for graph in graphs:
+            if isinstance(graph, str):
+                graph_path = base_dir / data_dir / graph
                 if graph_path.exists():
                     graph_files.append(str(graph_path))
                 else:
-                    print(f"⚠️ 그래프 파일을 찾을 수 없습니다: {graph}")
-        else:
-            print(f"⚠️ 잘못된 그래프 경로: {graph}")
+                    # graph_data 폴더에서 찾기
+                    graph_path = base_dir / data_dir / graph_data_dir / graph
+                    if graph_path.exists():
+                        graph_files.append(str(graph_path))
+                    else:
+                        # 절대 경로로 시도
+                        graph_path = Path(graph)
+                        if graph_path.exists():
+                            graph_files.append(str(graph_path))
+                        else:
+                            print(f"⚠️ 그래프 파일을 찾을 수 없습니다: {graph}")
+            else:
+                print(f"⚠️ 잘못된 그래프 경로: {graph}")
     
     if not graph_files:
         print("❌ 유효한 그래프 파일이 없습니다.")
         return
     
+    # treatment 자동 추출
+    graph_treatments_map = {}
+    graph_outcomes_map = {}
+    
+    if auto_extract_treatments:
+        print(f"\n🔍 각 그래프 파일에서 treatment 정보 추출 중...")
+        
+        for graph_file in graph_files:
+            graph_path = Path(graph_file)
+            extracted_treatments = extract_treatments_from_graph(graph_path)
+            
+            if extracted_treatments:
+                graph_treatments_map[graph_file] = [t["treatment_var"] for t in extracted_treatments if t.get("treatment_var")]
+                # outcome 추출 (첫 번째 treatment에서)
+                if extracted_treatments[0].get("outcome"):
+                    graph_outcomes_map[graph_file] = extracted_treatments[0]["outcome"]
+                print(f"   ✅ {graph_path.name}: {len(graph_treatments_map[graph_file])}개의 treatment 발견")
+                for t in extracted_treatments:
+                    if t.get("treatment_var"):
+                        print(f"      - {t['treatment_var']}: {t.get('label', '')}")
+            else:
+                print(f"   ⚠️ {graph_path.name}: treatment 정보를 찾을 수 없습니다.")
+        
+        # treatment가 자동 추출된 경우, 각 그래프별로 다른 treatment 사용
+        if graph_treatments_map:
+            print(f"\n📋 자동 추출된 treatment 정보를 사용합니다.")
+    
     # 실험 조합 생성
-    experiment_combinations = list(itertools.product(
-        graph_files,
-        treatments,
-        outcomes,
-        estimators
-    ))
+    if auto_extract_treatments and graph_treatments_map:
+        # 각 그래프별로 해당 그래프의 treatment만 사용
+        experiment_combinations = []
+        for graph_file in graph_files:
+            graph_treatments = graph_treatments_map.get(graph_file, treatments)
+            graph_outcome = graph_outcomes_map.get(graph_file, outcomes[0] if outcomes else "ACQ_180_YN")
+            
+            # 해당 그래프의 treatment와 outcome 조합 생성
+            for treatment in graph_treatments:
+                for estimator in estimators:
+                    experiment_combinations.append((graph_file, treatment, graph_outcome, estimator))
+    else:
+        # 기존 방식: 모든 조합 생성
+        experiment_combinations = list(itertools.product(
+            graph_files,
+            treatments,
+            outcomes,
+            estimators
+        ))
     
     total_experiments = len(experiment_combinations)
     print(f"\n📊 총 {total_experiments}개의 실험을 실행합니다.")
-    print(f"   - 그래프: {len(graph_files)}개")
-    print(f"   - Treatment: {len(treatments)}개")
-    print(f"   - Outcome: {len(outcomes)}개")
+    if auto_extract_treatments and graph_treatments_map:
+        print(f"   - 그래프: {len(graph_files)}개 (각 그래프별 treatment 자동 추출)")
+        total_treatments = sum(len(t) for t in graph_treatments_map.values())
+        print(f"   - 총 Treatment: {total_treatments}개")
+        print(f"   - Outcome: {len(set(graph_outcomes_map.values())) if graph_outcomes_map else len(outcomes)}개")
+    else:
+        print(f"   - 그래프: {len(graph_files)}개")
+        print(f"   - Treatment: {len(treatments)}개")
+        print(f"   - Outcome: {len(outcomes)}개")
     print(f"   - Estimator: {len(estimators)}개\n")
     
     # 결과 저장
@@ -261,6 +347,8 @@ def create_example_config(config_file: Path):
     """예시 설정 파일을 생성합니다."""
     example_config = {
         "data_dir": "data",
+        "graph_data_dir": "graph_data",
+        "auto_extract_treatments": True,
         "graphs": [
             "main_graph",
             "dummy_graph"
@@ -278,7 +366,8 @@ def create_example_config(config_file: Path):
             "linear_regression"
         ],
         "no_logs": False,
-        "verbose": False
+        "verbose": False,
+        "comment": "auto_extract_treatments가 true이면 graphs와 treatments는 무시되고, 각 graph 파일에서 자동으로 추출됩니다."
     }
     
     config_file.parent.mkdir(exist_ok=True)

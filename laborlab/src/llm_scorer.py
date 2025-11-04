@@ -1,11 +1,19 @@
 """
 LLM 기반 점수 계산 모듈
 """
-from openai import OpenAI
 import os
 import json
 from typing import List, Tuple, Optional
-from llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, SCORING_KEYWORDS, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
+
+# openai는 optional dependency - 없어도 작동하도록 처리
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    OpenAI = None
+
+from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, SCORING_KEYWORDS, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
 
 
 class LLMScorer:
@@ -18,6 +26,10 @@ class LLMScorer:
     def count_typos(self, text: str) -> int:
         """TYPO_CHECK 프롬프트를 사용한 오탈자 개수 계산"""
         if not text or text.strip() == "":
+            return 0
+
+        if not OPENAI_AVAILABLE or OpenAI is None:
+            # openai가 설치되지 않은 경우 기본값 반환
             return 0
 
         try:
@@ -66,6 +78,10 @@ class LLMScorer:
     
     def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
         """LLM을 사용한 점수 계산"""
+        if not OPENAI_AVAILABLE or OpenAI is None:
+            # openai가 설치되지 않은 경우 기본값 반환
+            return 50, "LLM API 사용 불가 (openai 패키지 미설치)"
+            
         try:
             os.environ["OPENAI_API_KEY"] = self.api_key
             client = OpenAI()
@@ -88,7 +104,7 @@ class LLMScorer:
             
         except Exception as e:
             # 오류 발생 시 기본값 반환
-            return 0, "오류 발생"
+            return 50, f"LLM API 오류: {str(e)[:200]}"
     
     def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
         """점수 계산 메인 메서드 - (score, rationale) 반환"""

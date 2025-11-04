@@ -1,6 +1,7 @@
 [
   {
-    "SEEK_CUST_NO": "1234567890123",
+    "SEEK_CUST_NO": "W10001",
+    "JHNT_CTN": "C10001",
     "RESUMES": [
       {
         "TMPL_SEQNO": 1,
@@ -81,7 +82,8 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "9443159529278",
+    "SEEK_CUST_NO": "W10002",
+    "JHNT_CTN": "C10002",
     "RESUMES": [
       {
         "TMPL_SEQNO": 1,
@@ -204,7 +206,8 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "5439134307770",
+    "SEEK_CUST_NO": "W10003",
+    "JHNT_CTN": "C10003",
     "RESUMES": [
       {
         "TMPL_SEQNO": 1,

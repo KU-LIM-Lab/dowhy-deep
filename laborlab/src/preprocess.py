@@ -29,11 +29,11 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from collections import Counter
 
-from llm_reference import (
+from .llm_reference import (
     JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
     DEFAULT_MAX_COVER_LEN, DEFAULT_COVER_EXCEED_RATIO, DEFAULT_DATE_FORMAT
 )
-from llm_scorer import LLMScorer
+from .llm_scorer import LLMScorer
 
 
 
@@ -48,7 +48,8 @@ class Preprocessor:
         self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
 
     def load_variable_mapping(self):
-        with open('../data/variable_mapping.json', encoding='utf-8') as f:
+        # variable_mapping.json은 variant_data 폴더에 있음
+        with open('../data/variant_data/variable_mapping.json', encoding='utf-8') as f:
             variable_mapping = json.load(f)
         return variable_mapping
     

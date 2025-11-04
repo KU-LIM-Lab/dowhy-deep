@@ -125,37 +125,60 @@ def load_all_data(data_dir, graph_file=None):
         graph_file (str, optional): 그래프 파일 경로. None이면 data_dir/main_graph 사용
     
     Returns:
-        tuple: (정형데이터_df, 비정형데이터_딕셔너리, 인과그래프)
+        tuple: (파일경로_리스트, 인과그래프)
     """
     data_path = Path(data_dir)
     
-    # 1. 정형 데이터 로드
-    structured_data = pd.read_csv(data_path / "data.csv", encoding='utf-8')
-    print(f"✅ 정형 데이터 로드 완료: {len(structured_data)}건")
+    # 1. 정형 데이터 파일 경로 확인 (fixed_data 폴더에서)
+    structured_data_path = data_path / "fixed_data" / "data.csv"
+    if not structured_data_path.exists():
+        # fallback: data_dir 직접 경로
+        structured_data_path = data_path / "data.csv"
     
-    # 2. 비정형 데이터(JSON) 로드
-    unstructured_data = {}
+    if not structured_data_path.exists():
+        raise FileNotFoundError(f"정형 데이터 파일을 찾을 수 없습니다: {structured_data_path}")
+    
+    print(f"✅ 정형 데이터 파일 경로: {structured_data_path}")
+    
+    # 2. 비정형 데이터(JSON) 파일 경로 리스트 생성 (variant_data 폴더에서)
+    variant_data_path = data_path / "variant_data"
+    file_list = []
     
     json_files = [
-        ("COVERLETTERS_JSON.json", "자기소개서"),
         ("RESUME_JSON.json", "이력서"),
+        ("COVERLETTERS_JSON.json", "자기소개서"),
         ("TRAININGS_JSON.json", "직업훈련"),
         ("LICENSES_JSON.json", "자격증")
     ]
     
+    # 정형 데이터 파일을 먼저 추가 (Preprocessor의 get_merged_df 방식과 일치)
+    file_list.append(str(structured_data_path))
+    
+    # JSON 파일 경로 추가
     for filename, json_type in json_files:
-        json_path = data_path / filename
+        json_path = variant_data_path / filename
         if json_path.exists():
-            with open(json_path, 'r', encoding='utf-8') as f:
-                unstructured_data[json_type] = json.load(f)
-            print(f"✅ {json_type} 데이터 로드 완료: {len(unstructured_data[json_type])}건")
+            file_list.append(str(json_path))
+            print(f"✅ {json_type} 파일 경로 추가: {json_path}")
         else:
             print(f"⚠️ {json_type} 파일을 찾을 수 없습니다: {json_path}")
     
     # 3. 인과 그래프 로드
-    # graph_file이 제공되지 않으면 data_dir/main_graph 사용
+    # graph_file이 제공되지 않으면 data_dir/main_graph 또는 data_dir/graph_data/graph_1 사용
     if graph_file is None:
         graph_file = data_path / "main_graph"
+        if not graph_file.exists():
+            # fallback: graph_data 폴더에서 첫 번째 그래프 파일 찾기
+            graph_data_path = data_path / "graph_data"
+            if graph_data_path.exists():
+                # .dot 파일 제외하고 GML 형식 파일 우선
+                graph_files = [f for f in graph_data_path.glob("graph_*") if not f.suffix == '.dot']
+                if not graph_files:
+                    # .dot 파일도 포함
+                    graph_files = list(graph_data_path.glob("graph_*"))
+                if graph_files:
+                    graph_file = sorted(graph_files)[0]  # 첫 번째 파일 사용
+                    print(f"⚠️ main_graph를 찾을 수 없어 graph_data 폴더의 {graph_file.name}을 사용합니다.")
     else:
         graph_file = Path(graph_file)
     
@@ -165,160 +188,51 @@ def load_all_data(data_dir, graph_file=None):
     causal_graph = create_causal_graph(str(graph_file))
     print(f"✅ 인과 그래프 로드 완료: {causal_graph.number_of_nodes()}개 노드, {causal_graph.number_of_edges()}개 엣지")
     
-    return structured_data, unstructured_data, causal_graph
+    return file_list, causal_graph
 
 
-def preprocess_unstructured_data(unstructured_data, data_dir):
+def preprocess_and_merge_data(file_list, data_dir, api_key=None):
     """
-    비정형 데이터(JSON)를 정형 데이터로 변환하는 함수
+    Preprocessor 클래스를 사용하여 모든 데이터를 전처리하고 병합하는 함수
     
     Args:
-        unstructured_data (dict): 비정형 데이터 딕셔너리
+        file_list (list): 파일 경로 리스트 [정형데이터, 이력서, 자기소개서, 직업훈련, 자격증]
         data_dir (str): 데이터 디렉토리 경로
-    
-    Returns:
-        pd.DataFrame: 전처리된 데이터프레임 리스트
-    """
-    preprocessor = preprocess.Preprocessor([])
-    
-    processed_dfs = {}
-    
-    # 각 JSON 타입별로 전처리 수행
-    for json_type, data in unstructured_data.items():
-        try:
-            # JSON 데이터를 DataFrame으로 변환
-            if json_type == "자기소개서":
-                df = _convert_coverletters_to_df(data)
-            elif json_type == "이력서":
-                df = _convert_resume_to_df(data)
-            elif json_type == "직업훈련":
-                df = _convert_trainings_to_df(data)
-            elif json_type == "자격증":
-                df = _convert_licenses_to_df(data)
-            else:
-                df = pd.DataFrame()
-            
-            if not df.empty:
-                processed_dfs[json_type] = df
-                print(f"✅ {json_type} 전처리 완료: {len(df)}건")
-            
-        except Exception as e:
-            print(f"⚠️ {json_type} 전처리 실패: {e}")
-            processed_dfs[json_type] = pd.DataFrame()
-    
-    return processed_dfs
-
-
-def _convert_coverletters_to_df(data):
-    """자기소개서 JSON을 DataFrame으로 변환"""
-    rows = []
-    for record in data:
-        seek_cust_no = record.get("SEEK_CUST_NO")
-        for coverletter in record.get("COVERLETTERS", []):
-            row = {"SEEK_CUST_NO": seek_cust_no}
-            row["SFID_NO"] = coverletter.get("SFID_NO")
-            row["SFID_IEM_NUM"] = len(coverletter.get("ITEMS", []))
-            row["SFID_LTTR_NUM"] = sum(
-                len(item.get("SELF_INTRO_CONT", "")) 
-                for item in coverletter.get("ITEMS", [])
-            )
-            rows.append(row)
-    return pd.DataFrame(rows)
-
-
-def _convert_resume_to_df(data):
-    """이력서 JSON을 DataFrame으로 변환"""
-    rows = []
-    for record in data:
-        seek_cust_no = record.get("SEEK_CUST_NO")
-        # 간단한 집계 정보만 추출
-        row = {"SEEK_CUST_NO": seek_cust_no}
-        rows.append(row)
-    return pd.DataFrame(rows)
-
-
-def _convert_trainings_to_df(data):
-    """직업훈련 JSON을 DataFrame으로 변환"""
-    rows = []
-    for record in data:
-        seek_cust_no = record.get("SEEK_CUST_NO")
-        jhnt_ctn = record.get("JHNT_CTN")
-        for training in record.get("TRAININGS", []):
-            row = {
-                "SEEK_CUST_NO": seek_cust_no,
-                "JHNT_CTN": jhnt_ctn,
-                "KECO_CD": training.get("KECO_CD"),
-                "TRNG_JSCD": training.get("TRNG_JSCD")
-            }
-            rows.append(row)
-    
-    df = pd.DataFrame(rows)
-    # JHNT_CTN별로 집계
-    if not df.empty:
-        df = df.groupby("JHNT_CTN").agg({
-            "KECO_CD": lambda x: ",".join([str(v) for v in x if pd.notna(v)]) if len(x) > 0 else "",
-            "TRNG_JSCD": lambda x: ",".join([str(v) for v in x if pd.notna(v)]) if len(x) > 0 else ""
-        }).reset_index()
-        return df
-    else:
-        return pd.DataFrame()
-
-
-def _convert_licenses_to_df(data):
-    """자격증 JSON을 DataFrame으로 변환"""
-    rows = []
-    for record in data:
-        seek_cust_no = record.get("SEEK_CUST_NO")
-        jhnt_ctn = record.get("JHNT_CTN")
-        licenses = record.get("LICENSES", [])
-        row = {
-            "SEEK_CUST_NO": seek_cust_no,
-            "JHNT_CTN": jhnt_ctn,
-            "CRQF_CT": len(licenses)
-        }
-        rows.append(row)
-    return pd.DataFrame(rows)
-
-
-def merge_all_data(structured_data, processed_dfs):
-    """
-    정형 데이터와 비정형 데이터를 병합하는 함수
-    
-    Args:
-        structured_data (pd.DataFrame): 정형 데이터
-        processed_dfs (dict): 전처리된 비정형 데이터 딕셔너리
+        api_key (str, optional): LLM API 키
     
     Returns:
         pd.DataFrame: 병합된 데이터프레임
     """
-    # 정형 데이터가 기준이 됨
-    merged_df = structured_data.copy()
+    # Preprocessor 인스턴스 생성
+    preprocessor = preprocess.Preprocessor([], api_key=api_key)
     
-    # JHNT_CTN 또는 SEEK_CUST_NO를 기준으로 병합
-    for json_type, df in processed_dfs.items():
-        if df.empty:
-            continue
-        
-        # 병합 키 결정
-        if "JHNT_CTN" in df.columns:
-            merge_key = "JHNT_CTN"
-        elif "SEEK_CUST_NO" in df.columns:
-            # SEEK_CUST_NO가 있는 경우, 정형 데이터의 JHNT_MBN과 매핑 필요
-            # 여기서는 간단히 skip하고 나중에 구현
-            continue
-        else:
-            continue
-        
-        if merge_key in merged_df.columns:
-            merged_df = merged_df.merge(
-                df,
-                on=merge_key,
-                how="left",
-                suffixes=('', f'_{json_type}')
-            )
-            print(f"✅ {json_type} 데이터 병합 완료")
+    # 작업 디렉토리 변경 저장
+    original_cwd = os.getcwd()
+    data_path = Path(data_dir).resolve()
     
-    return merged_df
+    try:
+        # preprocess.py의 load_variable_mapping과 load_job_mapping이 
+        # '../data/' 상대 경로를 사용하므로, src/ 폴더가 기준이 됨
+        # 따라서 data_dir의 상위 폴더에서 src/를 찾아 작업 디렉토리 설정
+        # 일반적으로 laborlab/data -> laborlab/src 기준으로 '../data/' 사용
+        script_dir = Path(__file__).parent  # src/ 폴더
+        laborlab_dir = script_dir.parent     # laborlab/ 폴더
+        
+        # laborlab 폴더로 이동하여 preprocess.py의 상대 경로가 작동하도록 함
+        os.chdir(str(laborlab_dir))
+        
+        # file_list의 경로를 절대 경로로 변환
+        absolute_file_list = [str(Path(f).resolve()) for f in file_list]
+        
+        # get_merged_df를 사용하여 모든 파일을 로드, 전처리, 병합
+        merged_df = preprocessor.get_merged_df(absolute_file_list)
+        
+        print(f"✅ 모든 데이터 전처리 및 병합 완료")
+        return merged_df
+    
+    finally:
+        # 원래 작업 디렉토리로 복원
+        os.chdir(original_cwd)
 
 
 def setup_logging(args):
@@ -420,18 +334,16 @@ def main():
         print("1️⃣ 데이터 로드 중...")
         # graph 인자가 없으면 data_dir/main_graph를 기본값으로 사용
         graph_path = args.graph if args.graph else None
-        structured_data, unstructured_data, causal_graph = load_all_data(
+        file_list, causal_graph = load_all_data(
             args.data_dir,
             graph_path
         )
         
-        # 2. 비정형 데이터 전처리
-        print("2️⃣ 비정형 데이터 전처리 중...")
-        processed_dfs = preprocess_unstructured_data(unstructured_data, args.data_dir)
-        
-        # 3. 데이터 병합
-        print("3️⃣ 데이터 병합 중...")
-        merged_df = merge_all_data(structured_data, processed_dfs)
+        # 2. 데이터 전처리 및 병합 (Preprocessor 사용)
+        print("2️⃣ 데이터 전처리 및 병합 중...")
+        # 환경변수에서 API 키 가져오기 (선택사항)
+        api_key = os.environ.get('LLM_API_KEY', None)
+        merged_df = preprocess_and_merge_data(file_list, args.data_dir, api_key=api_key)
         print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
         
         if logger:
