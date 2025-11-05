@@ -322,6 +322,44 @@ def preprocess_and_merge_data(file_list, data_dir, api_key=None):
         os.chdir(original_cwd)
 
 
+def save_predictions_to_excel(df_with_predictions, output_dir=None, filename=None, logger=None):
+    """
+    예측값이 포함된 데이터프레임을 Excel 파일로 저장
+    
+    Args:
+        df_with_predictions: 예측값이 포함된 데이터프레임
+        output_dir: 출력 디렉토리 (None이면 log 폴더 사용)
+        filename: 파일명 (None이면 자동 생성)
+        logger: 로거 객체
+    
+    Returns:
+        str: 저장된 파일 경로
+    """
+    if output_dir is None:
+        script_dir = Path(__file__).parent.parent
+        output_dir = script_dir / "log"
+    else:
+        output_dir = Path(output_dir)
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    if filename is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"predictions_{timestamp}.xlsx"
+    
+    filepath = output_dir / filename
+    
+    # Excel 파일로 저장
+    df_with_predictions.to_excel(filepath, index=False, engine='openpyxl')
+    
+    if logger:
+        logger.info(f"예측 결과 저장 완료: {filepath}")
+        file_size = os.path.getsize(filepath)
+        logger.info(f"파일 크기: {file_size:,} bytes")
+    
+    return str(filepath)
+
+
 def setup_logging(args):
     """로깅을 설정하는 통합 함수"""
     if args.no_logs:
@@ -460,7 +498,12 @@ def main():
             args.estimator,
             logger
         )
+        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df, logger)
+        print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
         
+        excel_path = save_predictions_to_excel(df_with_predictions, logger=logger)
+        print(f"✅ 예측 결과 저장 완료: {excel_path}")
+
         print("7️⃣ 검증 테스트 실행 중...")
         validation_results = estimation.run_validation_tests(
             model,

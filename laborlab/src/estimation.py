@@ -13,6 +13,8 @@ from datetime import datetime
 import os
 import sys
 
+from dowhy.causal_estimators.regression_estimator import RegressionEstimator
+
 # 로컬 DoWhy 라이브러리 경로 추가
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
@@ -42,6 +44,68 @@ def log_estimation_results(logger, estimate, method_name):
     # 추정치의 신뢰구간이 있다면 로깅
     if hasattr(estimate, 'confidence_intervals'):
         logger.info(f"신뢰구간: {estimate.confidence_intervals}")
+
+
+def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None):
+    """
+    E(Y|A, X) 조건부 기대값 예측
+    
+    Args:
+        estimate: CausalEstimate 객체
+        data_df: 예측할 데이터프레임
+        treatment_value: 처치 값 (None이면 실제 값 사용)
+        logger: 로거 객체
+    
+    Returns:
+        tuple: (data_df_with_predictions, accuracy)
+            - data_df_with_predictions: ACQ_180_YN 열에 예측값이 채워진 데이터프레임
+            - accuracy: 정확도 (이진 분류) 또는 None (연속형)
+    """
+    if not hasattr(estimate, 'estimator'):
+        raise ValueError("estimate.estimator가 없습니다. estimate_causal_effect를 먼저 실행하세요.")
+    
+    estimator = estimate.estimator
+    if not isinstance(estimator, RegressionEstimator):
+        raise ValueError(f"{type(estimator).__name__}는 예측을 지원하지 않습니다.")
+    
+    if logger:
+        logger.info(f"E(Y|A, X) 예측 시작: {len(data_df)}개")
+        if treatment_value is not None:
+            logger.info(f"처치 값: {treatment_value}")
+    
+    try:
+        if treatment_value is not None:
+            predictions = estimator.interventional_outcomes(data_df, treatment_value)
+        else:
+            predictions = estimator.predict(data_df)
+        
+        predictions_series = pd.Series(predictions, index=data_df.index)
+        
+        # 데이터프레임 복사 후 예측값 채우기
+        result_df = data_df.copy()
+        outcome_name = estimate.outcome_name
+        result_df[outcome_name] = predictions_series
+        
+        # 실제 Y 값과 비교하여 정확도 계산
+        outcome_name = estimate.outcome_name
+        accuracy = 0
+        if outcome_name in data_df.columns:
+            actual_y = data_df[outcome_name]
+            predicted_classes = (predictions_series > 0.5).astype(int)
+            accuracy = (predicted_classes == actual_y).mean()
+            if logger:
+                logger.info(f"예측 완료: 정확도={accuracy:.4f} ({accuracy*100:.2f}%)")
+        else:
+            if logger:
+                logger.info(f"예측 완료: 평균={predictions_series.mean():.6f}")
+                logger.warning(f"실제 Y 값({outcome_name})을 찾을 수 없어 정확도를 계산할 수 없습니다.")
+        
+        return accuracy, result_df
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"예측 실패: {e}")
+        raise
 
 def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
     """인과효과를 추정하는 함수"""
