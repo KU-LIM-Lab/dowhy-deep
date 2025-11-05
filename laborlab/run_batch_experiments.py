@@ -48,6 +48,7 @@ def run_single_experiment(
     estimator: str,
     base_dir: Path,
     experiment_id: str,
+    api_key: Optional[str] = None,
     no_logs: bool = False,
     verbose: bool = False
 ) -> Dict[str, Any]:
@@ -70,6 +71,8 @@ def run_single_experiment(
         "--estimator", estimator,
     ]
     
+    if api_key:
+        cmd.extend(["--api-key", api_key])
     if no_logs:
         cmd.append("--no-logs")
     if verbose:
@@ -130,6 +133,7 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     estimators = config.get("estimators", ["tabpfn"])
     auto_extract_treatments = config.get("auto_extract_treatments", False)
     graph_data_dir = config.get("graph_data_dir", "graph_data")
+    api_key = config.get("api_key", None)  # config에서 API 키 가져오기
     
     # 절대 경로로 변환
     data_dir_path = base_dir / data_dir
@@ -258,11 +262,23 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
             estimator=estimator,
             base_dir=base_dir,
             experiment_id=experiment_id,
+            api_key=api_key,
             no_logs=config.get("no_logs", False),
             verbose=config.get("verbose", False)
         )
         
         results.append(result)
+        
+        # 실패한 경우 에러 메시지 출력
+        if result["status"] == "failed":
+            print(f"❌ 실패: {experiment_id}")
+            if result.get("stderr"):
+                # stderr의 마지막 몇 줄만 출력 (너무 길지 않게)
+                stderr_lines = result["stderr"].strip().split('\n')
+                error_preview = '\n'.join(stderr_lines[-10:])  # 마지막 10줄만
+                print(f"   에러: {error_preview}")
+            elif result.get("error"):
+                print(f"   에러: {result['error']}")
         
         # 중간 결과 저장
         with open(results_file, 'w', encoding='utf-8') as f:
@@ -285,10 +301,17 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     
     # 실패한 실험 목록 출력
     if failed_count > 0:
-        print("❌ 실패한 실험 목록:")
+        print("\n❌ 실패한 실험 목록:")
         for result in results:
             if result["status"] == "failed":
-                print(f"  - {result['experiment_id']}: {result.get('error', 'Unknown error')}")
+                print(f"\n  - {result['experiment_id']}")
+                if result.get("stderr"):
+                    # stderr의 마지막 5줄만 출력
+                    stderr_lines = result["stderr"].strip().split('\n')
+                    error_preview = '\n'.join(stderr_lines[-5:])
+                    print(f"    에러: {error_preview}")
+                elif result.get("error"):
+                    print(f"    에러: {result['error']}")
 
 
 def main():
@@ -348,6 +371,7 @@ def create_example_config(config_file: Path):
     example_config = {
         "data_dir": "data",
         "graph_data_dir": "graph_data",
+        "api_key": None,
         "auto_extract_treatments": True,
         "graphs": [
             "main_graph",
@@ -367,7 +391,7 @@ def create_example_config(config_file: Path):
         ],
         "no_logs": False,
         "verbose": False,
-        "comment": "auto_extract_treatments가 true이면 graphs와 treatments는 무시되고, 각 graph 파일에서 자동으로 추출됩니다."
+        "comment": "auto_extract_treatments가 true이면 graphs와 treatments는 무시되고, 각 graph 파일에서 자동으로 추출됩니다. api_key는 GPT API 키를 설정하세요 (예: \"sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"). null이면 환경변수 LLM_API_KEY를 사용합니다."
     }
     
     config_file.parent.mkdir(exist_ok=True)

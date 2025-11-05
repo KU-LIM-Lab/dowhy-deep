@@ -28,6 +28,7 @@ import os
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from collections import Counter
+from pathlib import Path
 
 from .llm_reference import (
     JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
@@ -49,14 +50,24 @@ class Preprocessor:
 
     def load_variable_mapping(self):
         # variable_mapping.json은 variant_data 폴더에 있음
-        with open('../data/variant_data/variable_mapping.json', encoding='utf-8') as f:
+        # __file__ 기준으로 경로 계산: src/preprocess.py -> laborlab/ -> data/
+        preprocess_file = Path(__file__)  # src/preprocess.py
+        laborlab_dir = preprocess_file.parent.parent  # laborlab/
+        variable_mapping_path = laborlab_dir / "data" / "variant_data" / "variable_mapping.json"
+        
+        with open(variable_mapping_path, encoding='utf-8') as f:
             variable_mapping = json.load(f)
         return variable_mapping
     
     def load_job_mapping(self):
         """job_subcategories.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
         try:
-            job_df = pd.read_csv('../data/fixed_data/job_subcategories.csv', encoding='utf-8')
+            # __file__ 기준으로 경로 계산: src/preprocess.py -> laborlab/ -> data/
+            preprocess_file = Path(__file__)  # src/preprocess.py
+            laborlab_dir = preprocess_file.parent.parent  # laborlab/
+            job_mapping_path = laborlab_dir / "data" / "fixed_data" / "job_subcategories.csv"
+            
+            job_df = pd.read_csv(job_mapping_path, encoding='utf-8')
             # 소분류코드를 문자열로 변환하여 딕셔너리 생성
             job_mapping = dict(zip(job_df['소분류코드'].astype(str).str.zfill(3), job_df['소분류명']))
             return job_mapping
@@ -93,6 +104,18 @@ class Preprocessor:
         Returns:
             pd.DataFrame: 기본 전처리된 데이터프레임
         """
+        # 디버깅: 원본 데이터 컬럼 확인
+        print(f"[DEBUG] basic_preprocessing 시작 - 원본 데이터 컬럼 수: {len(df.columns)}")
+        print(f"[DEBUG] 원본 데이터에 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
+        print(f"[DEBUG] 원본 데이터에 JHNT_CTN 존재: {'JHNT_CTN' in df.columns}")
+        print(f"[DEBUG] 원본 데이터에 JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
+        
+
+        # 병합에 필요한 키 컬럼은 항상 유지
+        merge_keys = ["SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"]
+        existing_merge_keys = [key for key in merge_keys if key in df.columns]
+        print(f"[DEBUG] 발견된 병합 키: {existing_merge_keys}")
+        
         # variable_mapping.json의 structured_data 키만 사용
         structured_keys = set(self.variable_mapping.get("structured_data", {}).keys())
         
@@ -103,11 +126,15 @@ class Preprocessor:
         if missing_vars:
             print(f"다음 변수들이 데이터에 없습니다: {missing_vars}")
         
-        df = df[available_vars]
+        # 병합 키와 필터링된 변수들을 합침 (중복 제거)
+        final_vars = list(set(available_vars + existing_merge_keys))
+        print(f"[DEBUG] 최종 컬럼 수: {len(final_vars)}, SEEK_CUST_NO 포함 여부: {'SEEK_CUST_NO' in final_vars}")
+        df = df[final_vars]
 
         # BFR_OCTR_YN 제거, BFR_OCTR_CT만 유지
         if "BFR_OCTR_YN" in df.columns and "BFR_OCTR_CT" in df.columns:
             df = df.drop(columns=["BFR_OCTR_YN"])
+            print(f"[DEBUG] BFR_OCTR_YN 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
         # 8개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
         agree_vars = [
@@ -121,9 +148,14 @@ class Preprocessor:
         if agree_vars:
             agree_count = (df[agree_vars] == "예").sum(axis=1)
             df["AGREE_LEVEL"] = agree_count.apply(lambda x: "하" if x <= 2 else ("중" if x <= 5 else "상"))
-            df_processed = df.drop(columns=agree_vars)
+            df = df.drop(columns=agree_vars)
+            print(f"[DEBUG] agree_vars 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
-        return df_processed
+        print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
+        if 'SEEK_CUST_NO' in df.columns:
+            print(f"[DEBUG] SEEK_CUST_NO 샘플 값: {df['SEEK_CUST_NO'].head(3).tolist()}")
+        
+        return df
 
     def nlp_preprocessing(self, data, json_name=None):
         """
@@ -153,63 +185,74 @@ class Preprocessor:
 
     def _preprocess_resume(self, data):
         """이력서 특화 전처리"""
-        seek_id = data.get("SEEK_CUST_NO", "")
+        # 리스트인 경우 처리 (JSON 파일이 리스트 형태일 수 있음)
+        if not isinstance(data, list):
+            data = [data]
         
-        # BASIC_RESUME_YN == "Y"인 resume 찾기
-        resumes = data.get("RESUMES", [])
-        basic_resume = None
-        for resume in resumes:
-            if str(resume.get("BASIC_RESUME_YN", "")).upper() == "Y":
-                basic_resume = resume
-                break
-        
-        # 기본 이력서가 없으면 빈 결과 반환
-        if basic_resume is None:
-            return pd.DataFrame([{
+        rows = []
+        for item in data:
+            seek_id = item.get("SEEK_CUST_NO", "")
+            if not seek_id:
+                continue
+            
+            # BASIC_RESUME_YN == "Y"인 resume 찾기
+            resumes = item.get("RESUMES", [])
+            basic_resume = None
+            for resume in resumes:
+                if str(resume.get("BASIC_RESUME_YN", "")).upper() == "Y":
+                    basic_resume = resume
+                    break
+            
+            # 기본 이력서가 없으면 빈 결과 추가
+            if basic_resume is None:
+                rows.append({
+                    "SEEK_CUST_NO": seek_id,
+                    "resume_score": None,
+                    "items_num": 0
+                })
+                continue
+            
+            # ITEMS 가져오기
+            items = basic_resume.get("ITEMS", [])
+            items_num = len(items)
+            
+            # variable_mapping에서 resume 섹션 가져오기
+            resume_mapping = self.variable_mapping.get("resume", {})
+            
+            # ITEMS를 포매팅
+            formatting_sentence = ""
+            for item_data in items:
+                for key, value in item_data.items():
+                    # variable_mapping에서 한글 변수명 찾기
+                    if key in resume_mapping:
+                        korean_key = resume_mapping[key].get("변수명", key)
+                    else:
+                        korean_key = key
+                    
+                    # value가 None이면 빈 문자열로 처리
+                    value_str = str(value) if value is not None else ""
+                    formatting_sentence += f"{korean_key}: {value_str}\n"
+                formatting_sentence += "\n"
+            
+            # 포매팅된 텍스트가 비어있으면 기본값 설정
+            if not formatting_sentence.strip():
+                formatting_sentence = "정보 없음"
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
+            
+            # LLM scorer에 전달하여 점수 계산
+            score, _ = self.llm_scorer.score("이력서", job_name, job_examples, formatting_sentence)
+            
+            rows.append({
                 "SEEK_CUST_NO": seek_id,
-                "resume_score": None,
-                "items_num": 0
-            }])
+                "resume_score": score,
+                "items_num": items_num
+            })
         
-        # ITEMS 가져오기
-        items = basic_resume.get("ITEMS", [])
-        items_num = len(items)
-        
-        # variable_mapping에서 resume 섹션 가져오기
-        resume_mapping = self.variable_mapping.get("resume", {})
-        
-        # ITEMS를 포매팅
-        formatting_sentence = ""
-        for item in items:
-            for key, value in item.items():
-                # variable_mapping에서 한글 변수명 찾기
-                if key in resume_mapping:
-                    korean_key = resume_mapping[key].get("변수명", key)
-                else:
-                    korean_key = key
-                
-                # value가 None이면 빈 문자열로 처리
-                value_str = str(value) if value is not None else ""
-                formatting_sentence += f"{korean_key}: {value_str}\n"
-            formatting_sentence += "\n"
-        
-        # 포매팅된 텍스트가 비어있으면 기본값 설정
-        if not formatting_sentence.strip():
-            formatting_sentence = "정보 없음"
-        
-        # HOPE_JSCD1 정보 가져와서 직종명으로 변환
-        hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
-        job_name = self.get_job_name_from_code(hope_jscd1)
-        job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
-        
-        # LLM scorer에 전달하여 점수 계산
-        score, _ = self.llm_scorer.score(selection="이력서", job_name=job_name, job_examples=job_examples, text=formatting_sentence)
-        
-        return pd.DataFrame([{
-            "SEEK_CUST_NO": seek_id,
-            "resume_score": score,
-            "items_num": items_num
-        }])
+        return pd.DataFrame(rows)
 
 
     def _preprocess_cover_letter(self, data):
@@ -426,23 +469,39 @@ class Preprocessor:
         self.df_list = []
         result = None
         
-        # 첫 번째 파일(엑셀) 먼저 처리 - HOPE_JSCD1(희망 직종 코드) 정보 저장
+        # 첫 번째 파일(정형 데이터 CSV) 먼저 처리 - HOPE_JSCD1(희망 직종 코드) 정보 저장
         if file_list:
-            current_json_name = self.json_names[0]
-            df = self.load_and_preprocess_data(file_list[0], json_name=current_json_name)
+            # 첫 번째 파일은 정형 데이터이므로 json_name=None
+            print(f"[DEBUG] 첫 번째 파일 처리 시작: {file_list[0]}, 타입: 정형 데이터 (CSV)")
+            df = self.load_and_preprocess_data(file_list[0], json_name=None)
             self.df_list.append(df)
             result = df
+            
+            print(f"[DEBUG] 첫 번째 데이터프레임 크기: {result.shape}")
+            print(f"[DEBUG] 첫 번째 데이터프레임 컬럼: {list(result.columns)}")
+            print(f"[DEBUG] 첫 번째 데이터프레임에 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in result.columns}")
+            print(f"[DEBUG] 첫 번째 데이터프레임에 JHNT_CTN 존재: {'JHNT_CTN' in result.columns}")
             
             # HOPE_JSCD1 정보를 SEEK_CUST_NO 기준으로 매핑하여 저장
             if 'HOPE_JSCD1' in df.columns and 'SEEK_CUST_NO' in df.columns:
                 self.hope_jscd1_map = df.set_index('SEEK_CUST_NO')['HOPE_JSCD1'].to_dict()
+                print(f"[DEBUG] HOPE_JSCD1 매핑 생성 완료: {len(self.hope_jscd1_map)}개")
+            else:
+                print(f"[DEBUG] 경고: HOPE_JSCD1 또는 SEEK_CUST_NO가 없어 매핑을 생성할 수 없습니다.")
         
         # 나머지 4개 파일 반복문으로 처리
-        for idx, file in enumerate(file_list[1:], start=1):
-            # 각 파일에 대응하는 시트명과 JSON명 사용       
+        for idx, file in enumerate(file_list[1:], start=0):
+            # 각 파일에 대응하는 JSON명 사용
+            # idx는 0부터 시작 (file_list[1:]의 첫 번째 요소가 idx=0)
+            if idx >= len(self.json_names):
+                raise IndexError(f"JSON 파일 수({len(file_list)-1})가 json_names 길이({len(self.json_names)})를 초과합니다. file: {file}")
             current_json_name = self.json_names[idx]
+            print(f"\n[DEBUG] {idx+1}번째 파일 처리 시작: {file}, 타입: {current_json_name}")
             df = self.load_and_preprocess_data(file, json_name=current_json_name)
             self.df_list.append(df)
+            
+            print(f"[DEBUG] {current_json_name} 데이터프레임 크기: {df.shape}")
+            print(f"[DEBUG] {current_json_name} 데이터프레임 컬럼: {list(df.columns)}")
             
             # 직업훈련과 자격증은 JHNT_CTN 기준으로 merge
             if current_json_name in ['직업훈련', '자격증']:
@@ -450,6 +509,20 @@ class Preprocessor:
             else:
                 merge_key = "SEEK_CUST_NO"
             
+            print(f"[DEBUG] 병합 키: {merge_key}")
+            print(f"[DEBUG] result에 {merge_key} 존재: {merge_key in result.columns}")
+            print(f"[DEBUG] {current_json_name}에 {merge_key} 존재: {merge_key in df.columns}")
+            
+            # 병합 키 컬럼 존재 여부 확인
+            if merge_key not in result.columns:
+                print(f"[DEBUG] ERROR: result 컬럼 목록: {list(result.columns)}")
+                raise KeyError(f"병합 키 '{merge_key}'가 첫 번째 데이터프레임에 없습니다. 사용 가능한 컬럼: {list(result.columns)}")
+            if merge_key not in df.columns:
+                print(f"[DEBUG] ERROR: {current_json_name} 컬럼 목록: {list(df.columns)}")
+                raise KeyError(f"병합 키 '{merge_key}'가 {current_json_name} 데이터프레임에 없습니다. 파일: {file}, 사용 가능한 컬럼: {list(df.columns)}")
+            
+            print(f"[DEBUG] 병합 전 result 크기: {result.shape}, {current_json_name} 크기: {df.shape}")
             result = result.merge(df, on=merge_key, how="outer", suffixes=('', f'_df{idx+1}'))
+            print(f"[DEBUG] 병합 후 result 크기: {result.shape}")
         
         return result

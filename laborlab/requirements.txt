@@ -28,4 +28,4 @@ pydot>=1.4.2
 python-dateutil>=2.8.0
 
 # 선택적 의존성 (LLM 점수 계산용)
-# openai>=1.0.0  # 주석 처리: LLM 기능을 사용하지 않으면 설치 불필요
+openai>=1.0.0

@@ -46,6 +46,14 @@ dowhy_logging.getLogger("dowhy.causal_estimators").setLevel(dowhy_logging.WARNIN
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
+# ============================================================================
+# GPT API 키 설정
+# ============================================================================
+# API 키는 experiment_config.json의 api_key 필드에서 설정합니다.
+# run_batch_experiments.py를 통해 실행하면 config의 api_key가 자동으로 전달됩니다.
+# 직접 실행하는 경우 --api-key 인자로 전달할 수 있습니다.
+# ============================================================================
+
 
 def create_causal_graph(graph_file):
     """
@@ -291,35 +299,17 @@ def preprocess_and_merge_data(file_list, data_dir, api_key=None):
         pd.DataFrame: 병합된 데이터프레임
     """
     # Preprocessor 인스턴스 생성
+    # preprocess.py는 __file__ 기준으로 경로를 계산하므로 작업 디렉토리 변경 불필요
     preprocessor = preprocess.Preprocessor([], api_key=api_key)
     
-    # 작업 디렉토리 변경 저장
-    original_cwd = os.getcwd()
-    data_path = Path(data_dir).resolve()
+    # file_list의 경로를 절대 경로로 변환
+    absolute_file_list = [str(Path(f).resolve()) for f in file_list]
     
-    try:
-        # preprocess.py의 load_variable_mapping과 load_job_mapping이 
-        # '../data/' 상대 경로를 사용하므로, src/ 폴더가 기준이 됨
-        # 따라서 data_dir의 상위 폴더에서 src/를 찾아 작업 디렉토리 설정
-        # 일반적으로 laborlab/data -> laborlab/src 기준으로 '../data/' 사용
-        script_dir = Path(__file__).parent  # src/ 폴더
-        laborlab_dir = script_dir.parent     # laborlab/ 폴더
-        
-        # laborlab 폴더로 이동하여 preprocess.py의 상대 경로가 작동하도록 함
-        os.chdir(str(laborlab_dir))
-        
-        # file_list의 경로를 절대 경로로 변환
-        absolute_file_list = [str(Path(f).resolve()) for f in file_list]
-        
-        # get_merged_df를 사용하여 모든 파일을 로드, 전처리, 병합
-        merged_df = preprocessor.get_merged_df(absolute_file_list)
-        
-        print(f"✅ 모든 데이터 전처리 및 병합 완료")
-        return merged_df
+    # get_merged_df를 사용하여 모든 파일을 로드, 전처리, 병합
+    merged_df = preprocessor.get_merged_df(absolute_file_list)
     
-    finally:
-        # 원래 작업 디렉토리로 복원
-        os.chdir(original_cwd)
+    print(f"✅ 모든 데이터 전처리 및 병합 완료")
+    return merged_df
 
 
 def save_predictions_to_excel(df_with_predictions, output_dir=None, filename=None, logger=None):
@@ -434,6 +424,7 @@ def parse_arguments():
                        default='linear_regression', help='추정 방법')
     parser.add_argument('--treatment', type=str, required=True, help='처치 변수명')
     parser.add_argument('--outcome', type=str, required=True, help='결과 변수명')
+    parser.add_argument('--api-key', type=str, default=None, help='GPT API 키 (experiment_config.json에서 설정)')
     parser.add_argument('--no-logs', action='store_true', help='로그 저장 비활성화')
     parser.add_argument('--verbose', action='store_true', help='상세 출력 활성화')
     
@@ -466,8 +457,13 @@ def main():
         
         # 2. 데이터 전처리 및 병합 (Preprocessor 사용)
         print("2️⃣ 데이터 전처리 및 병합 중...")
-        # 환경변수에서 API 키 가져오기 (선택사항)
-        api_key = os.environ.get('LLM_API_KEY', None)
+        # API 키는 config 파일에서 설정 (run_batch_experiments.py를 통해 전달됨)
+        api_key = args.api_key
+        if api_key:
+            print(f"🔑 API 키: config 파일에서 사용")
+        else:
+            print(f"⚠️ API 키가 설정되지 않았습니다. LLM 기능을 사용할 수 없습니다.")
+        
         merged_df = preprocess_and_merge_data(file_list, args.data_dir, api_key=api_key)
         print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
         
