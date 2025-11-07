@@ -74,23 +74,96 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             logger.info(f"처치 값: {treatment_value}")
     
     try:
-        if treatment_value is not None:
-            predictions = estimator.interventional_outcomes(data_df, treatment_value)
-        else:
-            predictions = estimator.predict(data_df)
+        # 데이터프레임 복사 (원본 보호)
+        data_df_clean = data_df.copy()
         
-        predictions_series = pd.Series(predictions, index=data_df.index)
+        # treatment와 outcome 변수는 반드시 유지해야 함
+        # _treatment_name과 _outcome_name은 리스트일 수 있음 (private attribute)
+        treatment_var = estimate._treatment_name[0] if isinstance(estimate._treatment_name, list) else estimate._treatment_name
+        outcome_var = estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name
+        required_vars = [treatment_var, outcome_var]
+        
+        # logging 모듈 import
+        import logging
+        
+        # logger나 다른 객체 타입 컬럼 제거 (숫자/문자열만 남김)
+        cols_to_drop = []
+        for col in data_df_clean.columns:
+            # 필수 변수는 건너뛰기
+            if col in required_vars:
+                # 필수 변수의 값이 Logger 객체인지 확인하고 정리
+                if len(data_df_clean) > 0:
+                    # 첫 번째 non-null 값을 확인하여 타입 체크
+                    non_null_values = data_df_clean[col].dropna()
+                    if len(non_null_values) > 0:
+                        first_val = non_null_values.iloc[0]
+                        # Logger 객체인지 명시적으로 확인
+                        is_logger = isinstance(first_val, logging.Logger) or 'Logger' in str(type(first_val))
+                        is_invalid_type = not isinstance(first_val, (str, int, float, bool, type(None), np.integer, np.floating))
+                        
+                        if is_logger or is_invalid_type:
+                            if logger:
+                                logger.warning(f"컬럼 '{col}'에 Logger/객체 타입({type(first_val).__name__})이 발견되어 NaN으로 대체합니다.")
+                            
+                            # 모든 행에서 Logger 객체를 NaN으로 대체
+                            mask = data_df_clean[col].apply(
+                                lambda x: isinstance(x, logging.Logger) or 'Logger' in str(type(x)) or 
+                                         not isinstance(x, (str, int, float, bool, type(None), np.integer, np.floating))
+                            )
+                            data_df_clean.loc[mask, col] = np.nan
+                            
+                            # 숫자 타입으로 변환 시도
+                            try:
+                                data_df_clean[col] = pd.to_numeric(data_df_clean[col], errors='coerce')
+                            except:
+                                pass
+                continue
+            
+            # object 타입 컬럼 확인
+            if data_df_clean[col].dtype == 'object' and len(data_df_clean) > 0:
+                # 첫 번째 non-null 값을 확인하여 타입 체크
+                non_null_values = data_df_clean[col].dropna()
+                if len(non_null_values) > 0:
+                    first_val = non_null_values.iloc[0]
+                    # Logger 객체인지 명시적으로 확인
+                    is_logger = isinstance(first_val, logging.Logger) or 'Logger' in str(type(first_val))
+                    is_invalid_type = not isinstance(first_val, (str, int, float, bool, type(None), np.integer, np.floating))
+                    
+                    if is_logger or is_invalid_type:
+                        cols_to_drop.append(col)
+                        if logger:
+                            logger.warning(f"컬럼 '{col}'이 객체 타입({type(first_val).__name__})이어서 제거합니다.")
+        
+        if cols_to_drop:
+            data_df_clean = data_df_clean.drop(columns=cols_to_drop)
+            if logger:
+                logger.info(f"제거된 컬럼: {cols_to_drop}")
+        
+        # treatment 변수가 있는지 확인
+        if treatment_var not in data_df_clean.columns:
+            raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
+        
+        if treatment_value is not None:
+            predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
+        else:
+            predictions = estimator.predict(data_df_clean)
+        
+        predictions_series = pd.Series(predictions, index=data_df_clean.index)
         
         # 데이터프레임 복사 후 예측값 채우기
-        result_df = data_df.copy()
-        outcome_name = estimate.outcome_name
+        result_df = data_df_clean.copy()
+        # _outcome_name은 리스트일 수 있음
+        outcome_name = estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name
         result_df[outcome_name] = predictions_series
         
         # 실제 Y 값과 비교하여 정확도 계산
-        outcome_name = estimate.outcome_name
+        # outcome_name은 위에서 이미 정의됨
         accuracy = 0
-        if outcome_name in data_df.columns:
-            actual_y = data_df[outcome_name]
+        if outcome_name in data_df_clean.columns:
+            actual_y = data_df_clean[outcome_name]
+            # actual_y가 숫자 타입인지 확인
+            if not pd.api.types.is_numeric_dtype(actual_y):
+                actual_y = pd.to_numeric(actual_y, errors='coerce')
             predicted_classes = (predictions_series > 0.5).astype(int)
             accuracy = (predicted_classes == actual_y).mean()
             if logger:

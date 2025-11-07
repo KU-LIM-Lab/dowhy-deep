@@ -21,6 +21,7 @@ import os
 import sys
 import json
 import re
+import time
 
 # DoWhy 라이브러리 임포트
 import dowhy
@@ -286,6 +287,65 @@ def load_all_data(data_dir, graph_file=None):
     return file_list, causal_graph
 
 
+def clean_dataframe_for_causal_model(df, required_vars=None, logger=None):
+    """
+    CausalModel 생성 전에 데이터프레임을 정리하는 함수
+    - Logger 객체나 다른 비데이터 타입 컬럼 제거
+    - 숫자/문자열/불린 타입만 유지
+    - required_vars에 지정된 변수는 항상 유지
+    
+    Args:
+        df (pd.DataFrame): 원본 데이터프레임
+        required_vars (list, optional): 반드시 유지해야 할 변수 리스트 (treatment, outcome 등)
+        logger: 로거 객체
+    
+    Returns:
+        pd.DataFrame: 정리된 데이터프레임
+    """
+    df_clean = df.copy()
+    cols_to_drop = []
+    
+    if required_vars is None:
+        required_vars = []
+    
+    for col in df_clean.columns:
+        # object 타입 컬럼 확인
+        if df_clean[col].dtype == 'object':
+            if len(df_clean) > 0:
+                # NaN이 아닌 첫 번째 값 확인
+                non_null_values = df_clean[col].dropna()
+                if len(non_null_values) > 0:
+                    first_val = non_null_values.iloc[0]
+                    # Logger 같은 객체 타입인지 확인
+                    is_logger_object = isinstance(first_val, logging.Logger) or 'Logger' in str(type(first_val))
+                    is_invalid_type = not isinstance(first_val, (str, int, float, bool, type(None)))
+                    
+                    if is_logger_object or is_invalid_type:
+                        # 필수 변수인 경우 Logger 객체를 NaN으로 대체
+                        if col in required_vars:
+                            if logger:
+                                logger.warning(f"필수 변수 '{col}'의 값이 객체 타입({type(first_val).__name__})이어서 NaN으로 대체합니다.")
+                            else:
+                                print(f"⚠️ 필수 변수 '{col}'의 값이 객체 타입({type(first_val).__name__})이어서 NaN으로 대체합니다.")
+                            df_clean[col] = np.nan
+                        else:
+                            # 필수 변수가 아닌 경우 컬럼 제거
+                            cols_to_drop.append(col)
+                            if logger:
+                                logger.warning(f"컬럼 '{col}'이 객체 타입({type(first_val).__name__})이어서 제거합니다.")
+                            else:
+                                print(f"⚠️ 컬럼 '{col}'이 객체 타입({type(first_val).__name__})이어서 제거합니다.")
+    
+    if cols_to_drop:
+        df_clean = df_clean.drop(columns=cols_to_drop)
+        if logger:
+            logger.info(f"제거된 컬럼: {cols_to_drop}")
+        else:
+            print(f"제거된 컬럼: {cols_to_drop}")
+    
+    return df_clean
+
+
 def preprocess_and_merge_data(file_list, data_dir, api_key=None):
     """
     Preprocessor 클래스를 사용하여 모든 데이터를 전처리하고 병합하는 함수
@@ -437,6 +497,10 @@ def main():
     logger = setup_logging(args)
     
     try:
+        # 전체 시작 시간
+        total_start_time = time.time()
+        step_times = {}
+        
         print(f"\n🚀 DoWhy 인과추론 분석 시작")
         print(f"📊 데이터 디렉토리: {args.data_dir}")
         graph_display = args.graph if args.graph else f"{args.data_dir}/main_graph"
@@ -448,15 +512,20 @@ def main():
         
         # 1. 데이터 로드
         print("1️⃣ 데이터 로드 중...")
+        step_start = time.time()
         # graph 인자가 없으면 data_dir/main_graph를 기본값으로 사용
         graph_path = args.graph if args.graph else None
         file_list, causal_graph = load_all_data(
             args.data_dir,
             graph_path
         )
+        step_times['데이터 로드'] = time.time() - step_start
+        print(f"⏱️ 데이터 로드 소요 시간: {step_times['데이터 로드']:.2f}초")
         
         # 2. 데이터 전처리 및 병합 (Preprocessor 사용)
         print("2️⃣ 데이터 전처리 및 병합 중...")
+        print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
+        step_start = time.time()
         # API 키는 config 파일에서 설정 (run_batch_experiments.py를 통해 전달됨)
         api_key = args.api_key
         if api_key:
@@ -465,70 +534,257 @@ def main():
             print(f"⚠️ API 키가 설정되지 않았습니다. LLM 기능을 사용할 수 없습니다.")
         
         merged_df = preprocess_and_merge_data(file_list, args.data_dir, api_key=api_key)
+        step_times['데이터 전처리 및 병합'] = time.time() - step_start
+        print(f"⏱️ 데이터 전처리 및 병합 소요 시간: {step_times['데이터 전처리 및 병합']:.2f}초")
         print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
+        
+        # merged_df의 head() 로깅
+        print("\n" + "="*60)
+        print("📊 병합된 데이터프레임 미리보기 (head):")
+        print("="*60)
+        print(merged_df.head())
+        print("="*60 + "\n")
         
         if logger:
             logger.info("="*60)
             logger.info("데이터 로드 및 병합 완료")
             logger.info("="*60)
             logger.info(f"최종 데이터 크기: {merged_df.shape}")
+            logger.info(f"컬럼 목록: {list(merged_df.columns)}")
             logger.info(f"노드 수: {causal_graph.number_of_nodes()}")
             logger.info(f"엣지 수: {causal_graph.number_of_edges()}")
+            logger.info("\n병합된 데이터프레임 head():")
+            logger.info("\n" + str(merged_df.head()))
+        
+        # 3. 데이터 정리 (Logger 객체 등 제거)
+        print("3️⃣ 데이터 정리 중...")
+        step_start = time.time()
+        
+        # 그래프에 정의된 모든 변수 추출
+        graph_variables = set(causal_graph.nodes())
+        print(f"📋 그래프에 정의된 변수 수: {len(graph_variables)}개")
+        
+        # treatment와 outcome 변수는 반드시 유지해야 함
+        required_vars = [args.treatment, args.outcome]
+        # 그래프에 정의된 모든 변수도 필수 변수로 추가
+        required_vars.extend(list(graph_variables))
+        required_vars = list(set(required_vars))  # 중복 제거
+        
+        # Logger 객체가 데이터프레임에 포함되어 있는지 사전 검사
+        logger_columns = []
+        for col in merged_df.columns:
+            if merged_df[col].dtype == 'object' and len(merged_df) > 0:
+                non_null_values = merged_df[col].dropna()
+                if len(non_null_values) > 0:
+                    first_val = non_null_values.iloc[0]
+                    # Logger 객체인지 확인
+                    if isinstance(first_val, logging.Logger) or 'Logger' in str(type(first_val)):
+                        logger_columns.append((col, type(first_val).__name__))
+                        if logger:
+                            logger.error(f"⚠️ 경고: 컬럼 '{col}'에 Logger 객체가 포함되어 있습니다! (타입: {type(first_val).__name__})")
+                        else:
+                            print(f"⚠️ 경고: 컬럼 '{col}'에 Logger 객체가 포함되어 있습니다! (타입: {type(first_val).__name__})")
+        
+        if logger_columns:
+            print(f"\n❌ 오류: 다음 컬럼에 Logger 객체가 발견되었습니다:")
+            for col, col_type in logger_columns:
+                print(f"   - {col} (타입: {col_type})")
+            print(f"\n이 문제를 해결하기 위해 데이터 정리 과정에서 Logger 객체를 제거합니다.")
+        
+        merged_df_clean = clean_dataframe_for_causal_model(merged_df, required_vars=required_vars, logger=logger)
+        
+        # 그래프 변수와 데이터 변수 일치 여부 검증
+        data_variables = set(merged_df_clean.columns)
+        missing_graph_vars = graph_variables - data_variables
+        extra_data_vars = data_variables - graph_variables
+        
+        if missing_graph_vars:
+            print(f"\n⚠️ 경고: 그래프에 정의된 변수 중 데이터에 없는 변수:")
+            for var in sorted(missing_graph_vars):
+                print(f"   - {var}")
+            if logger:
+                logger.warning(f"그래프에 정의된 변수 중 데이터에 없는 변수: {sorted(missing_graph_vars)}")
+        
+        # 그래프에 정의되지 않은 변수 제거 (필수 변수 제외)
+        essential_vars = {args.treatment, args.outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        vars_to_keep = set()
+        
+        # 1. 그래프에 정의된 모든 변수 추가
+        vars_to_keep.update(graph_variables)
+        
+        # 2. 필수 변수 추가 (treatment, outcome, 병합 키)
+        vars_to_keep.update(essential_vars)
+        
+        # 3. 실제 데이터에 존재하는 변수만 필터링
+        vars_to_keep = vars_to_keep & data_variables
+        
+        # 4. 그래프에 정의되지 않은 변수 제거
+        vars_to_remove = data_variables - vars_to_keep
+        
+        if vars_to_remove:
+            print(f"\n🗑️ 그래프에 정의되지 않은 변수 제거 중 ({len(vars_to_remove)}개):")
+            for var in sorted(list(vars_to_remove)[:20]):  # 처음 20개만 출력
+                print(f"   - {var}")
+            if len(vars_to_remove) > 20:
+                print(f"   ... 외 {len(vars_to_remove) - 20}개")
+            if logger:
+                logger.info(f"그래프에 정의되지 않은 변수 제거: {sorted(list(vars_to_remove))}")
+            
+            # 변수 제거
+            merged_df_clean = merged_df_clean[list(vars_to_keep)]
+            print(f"✅ 변수 제거 완료: {len(merged_df_clean.columns)}개 변수 유지")
+        
+        step_times['데이터 정리'] = time.time() - step_start
+        print(f"⏱️ 데이터 정리 소요 시간: {step_times['데이터 정리']:.2f}초")
+        print(f"✅ 정리된 데이터: {len(merged_df_clean)}건, {len(merged_df_clean.columns)}개 변수")
+        
+        # 최종 검증: 그래프 변수와 데이터 변수 일치 여부
+        final_data_variables = set(merged_df_clean.columns)
+        final_missing_graph_vars = graph_variables - final_data_variables
+        final_extra_data_vars = final_data_variables - graph_variables - essential_vars
+        
+        if final_missing_graph_vars:
+            print(f"\n⚠️ 경고: 그래프에 정의된 변수 중 최종 데이터에 없는 변수:")
+            for var in sorted(final_missing_graph_vars):
+                print(f"   - {var}")
+            if logger:
+                logger.warning(f"그래프에 정의된 변수 중 최종 데이터에 없는 변수: {sorted(final_missing_graph_vars)}")
+        
+        if final_extra_data_vars:
+            print(f"\n⚠️ 경고: 최종 데이터에 있지만 그래프에 정의되지 않은 변수 ({len(final_extra_data_vars)}개):")
+            for var in sorted(list(final_extra_data_vars)[:10]):
+                print(f"   - {var}")
+            if len(final_extra_data_vars) > 10:
+                print(f"   ... 외 {len(final_extra_data_vars) - 10}개")
+            if logger:
+                logger.warning(f"최종 데이터에 있지만 그래프에 정의되지 않은 변수: {sorted(list(final_extra_data_vars))}")
+        
+        # treatment와 outcome 변수가 있는지 확인
+        missing_vars = [var for var in [args.treatment, args.outcome] if var not in merged_df_clean.columns]
+        if missing_vars:
+            raise ValueError(f"필수 변수가 데이터에 없습니다: {missing_vars}")
+        
+        # 그래프의 핵심 변수들이 모두 있는지 확인
+        critical_missing = missing_graph_vars - {args.treatment, args.outcome}  # treatment/outcome은 이미 체크됨
+        if critical_missing:
+            print(f"\n❌ 오류: 그래프의 핵심 변수들이 데이터에 없습니다:")
+            for var in sorted(critical_missing):
+                print(f"   - {var}")
+            if logger:
+                logger.error(f"그래프의 핵심 변수들이 데이터에 없습니다: {sorted(critical_missing)}")
+            # 경고만 출력하고 계속 진행 (일부 변수가 없어도 분석 가능할 수 있음)
+            # raise ValueError(f"그래프의 핵심 변수들이 데이터에 없습니다: {sorted(critical_missing)}")
         
         # 4. 인과모델 생성 및 분석
         print("4️⃣ 인과모델 생성 중...")
+        step_start = time.time()
         model = CausalModel(
-            data=merged_df,
+            data=merged_df_clean,
             treatment=args.treatment,
             outcome=args.outcome,
             graph=causal_graph
         )
+        step_times['인과모델 생성'] = time.time() - step_start
+        print(f"⏱️ 인과모델 생성 소요 시간: {step_times['인과모델 생성']:.2f}초")
         
         print("5️⃣ 인과효과 식별 중...")
+        step_start = time.time()
         identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
+        step_times['인과효과 식별'] = time.time() - step_start
+        print(f"⏱️ 인과효과 식별 소요 시간: {step_times['인과효과 식별']:.2f}초")
         
         print("6️⃣ 인과효과 추정 중...")
+        step_start = time.time()
         estimate = estimation.estimate_causal_effect(
             model,
             identified_estimand,
             args.estimator,
             logger
         )
-        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df, logger)
+        step_times['인과효과 추정'] = time.time() - step_start
+        print(f"⏱️ 인과효과 추정 소요 시간: {step_times['인과효과 추정']:.2f}초")
+        
+        step_start = time.time()
+        # 예측 전에 한 번 더 Logger 객체 제거 (안전장치)
+        # treatment와 outcome 변수는 필수이므로 유지
+        essential_vars_for_pred = {args.treatment, args.outcome}
+        merged_df_clean_final = clean_dataframe_for_causal_model(
+            merged_df_clean, 
+            required_vars=list(essential_vars_for_pred), 
+            logger=logger
+        )
+        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df_clean_final, logger)
+        step_times['예측'] = time.time() - step_start
+        print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
         print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
         
+        step_start = time.time()
         excel_path = save_predictions_to_excel(df_with_predictions, logger=logger)
+        step_times['예측 결과 저장'] = time.time() - step_start
+        print(f"⏱️ 예측 결과 저장 소요 시간: {step_times['예측 결과 저장']:.2f}초")
         print(f"✅ 예측 결과 저장 완료: {excel_path}")
 
         print("7️⃣ 검증 테스트 실행 중...")
+        step_start = time.time()
         validation_results = estimation.run_validation_tests(
             model,
             identified_estimand,
             estimate,
             logger
         )
+        step_times['검증 테스트'] = time.time() - step_start
+        print(f"⏱️ 검증 테스트 소요 시간: {step_times['검증 테스트']:.2f}초")
         
         print("8️⃣ 민감도 분석 실행 중...")
+        step_start = time.time()
         sensitivity_df = estimation.run_sensitivity_analysis(
             model,
             identified_estimand,
             estimate,
             logger
         )
+        step_times['민감도 분석'] = time.time() - step_start
+        print(f"⏱️ 민감도 분석 소요 시간: {step_times['민감도 분석']:.2f}초")
         
         print("9️⃣ 시각화 생성 중...")
+        step_start = time.time()
         heatmap_path = estimation.create_sensitivity_heatmap(
             sensitivity_df,
             logger
         ) if not sensitivity_df.empty else None
+        step_times['시각화 생성'] = time.time() - step_start
+        print(f"⏱️ 시각화 생성 소요 시간: {step_times['시각화 생성']:.2f}초")
         
         print("🔟 최종 요약 보고서 출력 중...")
+        step_start = time.time()
         estimation.print_summary_report(estimate, validation_results, sensitivity_df)
+        step_times['요약 보고서'] = time.time() - step_start
+        print(f"⏱️ 요약 보고서 출력 소요 시간: {step_times['요약 보고서']:.2f}초")
+        
+        # 전체 소요 시간 계산
+        total_time = time.time() - total_start_time
+        step_times['전체'] = total_time
+        
+        # 시간 요약 출력
+        print("\n" + "="*60)
+        print("⏱️ 단계별 소요 시간 요약")
+        print("="*60)
+        for step_name, elapsed_time in step_times.items():
+            percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+            print(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+        print("="*60)
         
         if logger:
             logger.info("분석 완료")
+            logger.info("="*60)
+            logger.info("단계별 소요 시간 요약")
+            logger.info("="*60)
+            for step_name, elapsed_time in step_times.items():
+                percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+                logger.info(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+            logger.info("="*60)
         
-        print(f"\n✅ 전체 분석 완료!")
+        print(f"\n✅ 전체 분석 완료! (총 소요 시간: {total_time:.2f}초)")
         
     except Exception as e:
         if logger:

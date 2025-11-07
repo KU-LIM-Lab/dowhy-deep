@@ -81,10 +81,12 @@ def run_single_experiment(
     # 실험 실행
     start_time = datetime.now()
     try:
+        # 실시간 출력을 위해 capture_output=False 사용
+        # stdout/stderr는 직접 파일로 리다이렉트되므로 여기서는 실시간으로 보여줌
         result = subprocess.run(
             cmd,
             cwd=base_dir,  # laborlab 디렉토리에서 실행
-            capture_output=True,
+            capture_output=False,  # 실시간 출력을 위해 False로 변경
             text=True,
             check=True
         )
@@ -99,8 +101,8 @@ def run_single_experiment(
             "treatment": treatment,
             "outcome": outcome,
             "estimator": estimator,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "stdout": "",  # 실시간 출력이므로 빈 문자열
+            "stderr": "",  # 실시간 출력이므로 빈 문자열
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
         }
@@ -108,6 +110,7 @@ def run_single_experiment(
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
         
+        # 실패한 경우에도 출력은 이미 터미널에 표시됨
         return {
             "experiment_id": experiment_id,
             "status": "failed",
@@ -116,8 +119,8 @@ def run_single_experiment(
             "treatment": treatment,
             "outcome": outcome,
             "estimator": estimator,
-            "stdout": e.stdout,
-            "stderr": e.stderr,
+            "stdout": "",  # 실시간 출력이므로 빈 문자열
+            "stderr": "",  # 실시간 출력이므로 빈 문자열
             "error": str(e),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
@@ -209,6 +212,8 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
             print(f"\n📋 자동 추출된 treatment 정보를 사용합니다.")
     
     # 실험 조합 생성
+    # linear_regression을 먼저 실행하고, 그 다음 tabpfn을 실행하도록 순서 변경
+    # 빠른 결과 확인을 위해 빠른 추정기(linear_regression)를 먼저 실행
     if auto_extract_treatments and graph_treatments_map:
         # 각 그래프별로 해당 그래프의 treatment만 사용
         experiment_combinations = []
@@ -217,16 +222,36 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
             graph_outcome = graph_outcomes_map.get(graph_file, outcomes[0] if outcomes else "ACQ_180_YN")
             
             # 해당 그래프의 treatment와 outcome 조합 생성
+            # linear_regression 먼저, 그 다음 tabpfn 순서로 실행
             for treatment in graph_treatments:
+                # linear_regression 먼저 실행 (빠른 결과 확인)
+                if "linear_regression" in estimators:
+                    experiment_combinations.append((graph_file, treatment, graph_outcome, "linear_regression"))
+                # 그 다음 tabpfn 실행
+                if "tabpfn" in estimators:
+                    experiment_combinations.append((graph_file, treatment, graph_outcome, "tabpfn"))
+                # 다른 estimator들도 순서대로 추가
                 for estimator in estimators:
-                    experiment_combinations.append((graph_file, treatment, graph_outcome, estimator))
+                    if estimator not in ["linear_regression", "tabpfn"]:
+                        experiment_combinations.append((graph_file, treatment, graph_outcome, estimator))
     else:
-        # 기존 방식: 모든 조합 생성
+        # 기존 방식: 모든 조합 생성하되, estimator 순서를 linear_regression 먼저로 변경
+        # estimators 리스트를 재정렬: linear_regression 먼저, 그 다음 나머지
+        sorted_estimators = []
+        if "linear_regression" in estimators:
+            sorted_estimators.append("linear_regression")
+        if "tabpfn" in estimators:
+            sorted_estimators.append("tabpfn")
+        # 나머지 estimator 추가
+        for est in estimators:
+            if est not in sorted_estimators:
+                sorted_estimators.append(est)
+        
         experiment_combinations = list(itertools.product(
             graph_files,
             treatments,
             outcomes,
-            estimators
+            sorted_estimators
         ))
     
     total_experiments = len(experiment_combinations)
@@ -252,6 +277,7 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     for idx, (graph_file, treatment, outcome, estimator) in enumerate(experiment_combinations, 1):
         experiment_id = f"exp_{idx:04d}_{Path(graph_file).stem}_{treatment}_{outcome}_{estimator}"
         
+        print(f"⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
         print(f"\n[{idx}/{total_experiments}] 실험 실행 중...")
         
         result = run_single_experiment(

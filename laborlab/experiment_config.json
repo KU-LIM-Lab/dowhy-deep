@@ -16,8 +16,8 @@
     "ACQ_180_YN"
   ],
   "estimators": [
-    "tabpfn",
-    "linear_regression"
+    "linear_regression",
+    "tabpfn"
   ],
   "no_logs": false,
   "verbose": false,

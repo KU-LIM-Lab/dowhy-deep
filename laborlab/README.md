@@ -182,21 +182,51 @@ python run_batch_experiments.py
 
 ### Docker를 사용한 실행
 
-Docker Compose를 사용하여 전체 배치 실험을 실행:
+Docker를 사용하면 환경 설정 없이 바로 실행할 수 있습니다.
+
+#### 1. 초기 빌드 및 컨테이너 시작
 
 ```bash
-# Docker 이미지 빌드
+# Docker 이미지 빌드 (최초 1회만 필요)
 docker-compose build
 
-# 실험 실행
-docker-compose up
-
-# 백그라운드 실행
+# 컨테이너 시작 (백그라운드에서 계속 실행)
 docker-compose up -d
-
-# 로그 확인
-docker-compose logs -f
 ```
+
+#### 2. 코드 수정 후 실행 (재빌드 불필요)
+
+소스 코드(`src/`)와 `run_batch_experiments.py`는 볼륨으로 마운트되어 있으므로, 코드 수정 후 재빌드 없이 바로 실행할 수 있습니다:
+
+```bash
+# 배치 실험 실행
+docker-compose exec causal-analysis python run_batch_experiments.py
+
+# 단일 실험 실행
+docker-compose exec causal-analysis python -m src.main \
+  --data-dir data \
+  --graph data/graph_data/graph_1.dot \
+  --treatment ACCR_CD \
+  --outcome ACQ_180_YN \
+  --estimator tabpfn \
+  --api-key "your-api-key"
+
+# 컨테이너 내부에서 직접 실행 (인터랙티브)
+docker-compose exec causal-analysis bash
+# 컨테이너 내부에서:
+python run_batch_experiments.py
+```
+
+#### 3. 컨테이너 중지
+
+```bash
+docker-compose down
+```
+
+**주의사항:**
+- 코드 수정은 재빌드 없이 바로 반영됩니다
+- `requirements.txt` 변경 시에는 재빌드 필요: `docker-compose build`
+- 실행 결과는 `log/` 폴더에 저장됩니다
 
 ## ⚙️ 설정 파일
 

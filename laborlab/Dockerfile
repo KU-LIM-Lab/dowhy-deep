@@ -28,7 +28,8 @@ ENV TERMINAL_OUTPUT_DIR=/app/laborlab/log
 # 작업 디렉토리 설정
 WORKDIR /app/laborlab
 
-# 기본 명령어 (도커 컴포즈에서 오버라이드 가능)
-# docker-compose 없이 직접 실행할 경우를 위한 기본 명령어
-CMD ["python", "run_batch_experiments.py", "--config", "experiment_config.json"]
+# 기본 명령어는 docker-compose.yml에서 오버라이드
+# 직접 실행 시: docker-compose run --rm causal-analysis python run_batch_experiments.py
+# 또는: docker-compose exec causal-analysis python run_batch_experiments.py
+CMD ["sleep", "infinity"]
 
