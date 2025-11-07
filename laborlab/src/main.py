@@ -713,7 +713,8 @@ def main():
             required_vars=list(essential_vars_for_pred), 
             logger=logger
         )
-        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df_clean_final, logger)
+        # treatment 값 a를 전달하면 do(A=a)를 예측합니다.
+        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df_clean_final, logger=logger)
         step_times['예측'] = time.time() - step_start
         print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
         print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
