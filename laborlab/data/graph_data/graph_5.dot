@@ -13,9 +13,6 @@ digraph {
 
     // ==== 직종/노동시장/임금 관련 structured 변수 ====
     HOPE_JSCD1                  [label="희망직종코드1"];
-    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
-    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
-    AVG_EMPN_VS_CRQF_CT         [label="평균채용대비자격증건수"];
 
     // ==== certification 테이블 변수 ====
     CLOS_YM                     [label="마감년월(자격증데이터)"];
@@ -76,14 +73,14 @@ digraph {
             treatment_question="희망 직종과 같은 분야(또는 밀접 분야)의 자격증을 보유한 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
         ];
 
-        // T5: 평균채용대비자격증건수가 높은 구직자 (high relative certification level)
+        // T5: 기술/전문 분야 자격증 보유 여부 (high-value technical/professional cert)
         T5 [
-            label="T5: high_avg_cert_vs_hiring",
+            label="T5: tech_professional_certificate",
             role="treatment_meta",
-            treatment_var="AVG_EMPN_VS_CRQF_CT",
-            treatment_name="high_avg_cert_vs_hiring",
-            treatment_def="AVG_EMPN_VS_CRQF_CT가 분포 상위 분위(예: 상위 30%)이면 1, 그 외 0",
-            treatment_question="동일 직종·지역에서 평균 대비 자격증 보유 수준이 높은 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_var="CRTF_LCLS_NM",
+            treatment_name="tech_professional_certificate",
+            treatment_def="CRTF_LCLS_NM이 '기술', '전문', '정보통신' 등 고숙련·전문직군에 해당하는 자격증을 하나 이상 포함하면 1, 그 외 0 (대분류-직군 매핑 룰 별도 정의)",
+            treatment_question="기술·전문·IT 등 고숙련 직군에 해당하는 자격증을 보유한 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
         ];
     }
 
@@ -99,8 +96,6 @@ digraph {
     AGE -> ACQ_180_YN;                     // 연령에 따른 취업확률 차이
 
     AREA_CD -> HOPE_JSCD1;                 // 지역에 따라 선택 가능한/선호되는 직종이 다를 수 있음
-    AREA_CD -> IPS_VS_RCIT_RATE;           // 지역별 모집비율 차이
-    AREA_CD -> NTR_BPLC_PSNT_WAGE_AMT;     // 지역별 제시임금 수준 차이
     AREA_CD -> ACQ_180_YN;                 // 지역 노동시장 여건 차이
 
     // --- 학력/전공/경력 -> 직종/자격증 선택 ---
@@ -114,13 +109,8 @@ digraph {
     CARR_MYCT1 -> HOPE_JSCD1;              // 경력 분야를 계속 희망할 가능성
     CARR_MYCT1 -> ACQ_180_YN;              // 경력 자체가 취업 가능성에 직접 영향
 
-    // --- 직종/노동시장/임금 구조 ---
-    HOPE_JSCD1 -> AVG_EMPN_VS_CRQF_CT;     // 직종에 따라 요구/평균 자격증 개수가 다름
-    HOPE_JSCD1 -> IPS_VS_RCIT_RATE;        // 직종×지역별 모집비율
-    HOPE_JSCD1 -> NTR_BPLC_PSNT_WAGE_AMT;  // 직종×지역별 제시임금 수준
-
-    IPS_VS_RCIT_RATE -> ACQ_180_YN;        // 모집비율이 높을수록 취업 가능성이 증가
-    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;  // 제시임금 수준이 매칭 성사에 영향
+    // --- 직종 구조 (노동시장·임금 요약은 생략, 존재하지 않는 변수 제거) ---
+    HOPE_JSCD1 -> CRTF_LCLS_NM;            // 희망 직종과 관련 분야 자격증을 준비/선택하는 경향
 
     // --- 자격증 데이터 구조 및 취득/관측 ---
     // certification 테이블은 JHNT_CTN을 통해 구직인증과 연결
@@ -128,13 +118,11 @@ digraph {
     JHNT_CTN -> CRTF_NM;                   // 자격증명
     JHNT_CTN -> CRTF_LCLS_NM;              // 자격증 대분류명
 
-    CRTF_LCLS_NM -> CRTF_CD;               // 어떤 분야(대분류)의 자격증인지가 세부 자격증 코드를 결정
-    CRTF_CD -> AVG_EMPN_VS_CRQF_CT;        // 개인 보유 자격증이 직종별 '평균채용대비자격증건수'에 반영됨
+    CRTF_LCLS_NM -> CRTF_CD;               // 어떤 분야(대분류)의 자격증인지가 세부 자격증 코드를 부분적으로 결정
 
     // 자격증 보유가 취업에 미치는 직접적인 구조
     CRTF_CD -> ACQ_180_YN;                 // 특정 자격증 보유 자체가 취업 가능성에 직접 영향
     CRTF_LCLS_NM -> ACQ_180_YN;            // 어떤 분야의 자격증인지(예: 전문기술 vs 일반)도 취업에 차이를 줄 수 있음
-    AVG_EMPN_VS_CRQF_CT -> ACQ_180_YN;     // 평균 대비 자격증 건수가 많을수록 취업 가능성 증가
 
     // --- 데이터 마감/관측 구조 ---
     CLOS_YM -> ACQ_180_YN;                 // 관측 기간(마감년월)에 따라 180일 내 취업 여부의 관측 가능 여부가 달라질 수 있음

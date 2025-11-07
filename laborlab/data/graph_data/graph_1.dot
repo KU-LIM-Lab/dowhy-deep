@@ -13,8 +13,6 @@ digraph {
     HOPE_JSCD1                  [label="희망직종코드1"];
     CARR_MYCT1                  [label="경력월수1"];
     ACCR_CD                     [label="학력코드"];
-    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
-    AVG_EMPN_VS_CRQF_CT         [label="평균채용대비자격증건수"];
     AREA_CD                     [label="지역코드"];
     AGE                         [label="연령"];
     SHSY_YN                     [label="교대제여부"];
@@ -23,8 +21,6 @@ digraph {
     SFID_IEM_NUM                [label="자기소개서항목개수"];
     SFID_LTTR_NUM               [label="자기소개서글자개수"];
     OCTR_HOPE_JSFC_CSCY_SCOR1   [label="직업훈련희망직종일치도점수1"];
-    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
-    IPS_VS_JBHT_RATE            [label="피보험자대비구직자비율"];
     HPAR_CSCY_SCOR              [label="희망지역일치도점수"];
     JHNT_PPOS_CD                [label="구직목적코드"];
     MDTN_HOPE_YN                [label="알선희망여부"];
@@ -79,14 +75,14 @@ digraph {
             treatment_question="희망직종1에 대한 관련 경력이 있는 구직자는 무경력자에 비해 6개월 이내 취업 확률이 얼마나 다른가?"
         ];
 
-        // T4: 노동시장 매칭 여건 (모집비율 높은 시장 vs 낮은 시장)
+        // T4: 노동시장 기회가 높은 지역 vs 낮은 지역 (고기회 지역)
         T4 [
-            label="T4: high_vacancy_rate",
+            label="T4: high_opportunity_region",
             role="treatment_meta",
-            treatment_var="IPS_VS_RCIT_RATE",
-            treatment_name="high_vacancy_rate",
-            treatment_def="직종×지역별 모집비율이 상위 q분위(예: 상위 30%)이면 1, 그 외 0",
-            treatment_question="채용공고가 상대적으로 많은 직종·지역에서 구직하는 사람은 6개월 이내 취업 확률이 얼마나 더 높은가?"
+            treatment_var="AREA_CD",
+            treatment_name="high_opportunity_region",
+            treatment_def="수도권/대도시 등 고기회 지역 코드=1, 그 외 지역=0 (코드 매핑 별도 정의)",
+            treatment_question="고기회 지역(예: 수도권·대도시)에 거주하는 구직자는 기타 지역 거주자보다 6개월 이내 취업 확률이 얼마나 높은가?"
         ];
 
         // T5: 직업훈련-희망직종 일치도 (training-job match quality)
@@ -101,7 +97,7 @@ digraph {
     }
 
     // ============================================================
-    // ==== Causal structure (원래 DAG) ===========================
+    // ==== Causal structure (원래 DAG, 네 변수만 제거) ===========
 
     // --- 운전가능여부 ---
     DRV_PSBL_YN -> DSPT_LABR_YN;          // 운전이 가능하면 파견 근로의 장벽이 낮아짐
@@ -133,26 +129,18 @@ digraph {
     HOPE_JSCD1 -> SHSY_YN;               // 직종에 따라 교대제 필요
     HOPE_JSCD1 -> DLY_LABR_HOPE_YN;      // 직종에 따라 일용근무 여부 달라짐
 
-    // --- 중앙사업장제시임금금액 ---
-    NTR_BPLC_PSNT_WAGE_AMT -> HOPE_WAGE_SM_AMT; // 제시 임금 수준이 희망임금에 영향
-    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;       // (직접원인) 취업 여부에 영향
-
-    // --- 평균채용대비자격증건수 ---
-    AVG_EMPN_VS_CRQF_CT -> HOPE_WAGE_SM_AMT;    // 자격증 많으면 희망임금 상향
-    AVG_EMPN_VS_CRQF_CT -> ACQ_180_YN;          // (직접원인) 취업 여부에 영향
-
     // --- 지역코드 ---
-    AREA_CD -> HOPE_WAGE_SM_AMT;                // 지역 차이로 희망임금 달라짐
-    AREA_CD -> ACQ_180_YN;                      // (직접원인) 취업 여부에 영향
+    AREA_CD -> HOPE_WAGE_SM_AMT;         // 지역 차이로 희망임금 달라짐
+    AREA_CD -> ACQ_180_YN;               // (직접원인) 취업 여부에 영향
 
     // --- 연령 ---
-    AGE -> HOPE_WAGE_SM_AMT;                    // 연령 높을수록 희망임금 상향
+    AGE -> HOPE_WAGE_SM_AMT;             // 연령 높을수록 희망임금 상향
 
     // --- 구직목적코드 ---
-    JHNT_PPOS_CD -> MDTN_HOPE_YN;               // 구직 목적에 따라 알선 희망 여부 달라짐
+    JHNT_PPOS_CD -> MDTN_HOPE_YN;        // 구직 목적에 따라 알선 희망 여부 달라짐
 
     // --- 성별코드 ---
-    SXDS_CD -> MAJR_CD1;                        // 성별에 따라 전공 선택이 다름
+    SXDS_CD -> MAJR_CD1;                 // 성별에 따라 전공 선택이 다름
 
     // --- 자기소개서/이력·자격 관련 파생지표 ---
     cover_score -> ACQ_180_YN;                  // 자소서 평가점수는 취업에 직접 영향
@@ -167,6 +155,4 @@ digraph {
     SFID_IEM_NUM -> ACQ_180_YN;                 // 자기소개서항목개수
     SFID_LTTR_NUM -> ACQ_180_YN;                // 자기소개서글자개수
     OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;    // 직업훈련희망직종일치도점수1
-    IPS_VS_RCIT_RATE -> ACQ_180_YN;             // 피보험자대비모집비율
-    IPS_VS_JBHT_RATE -> ACQ_180_YN;             // 피보험자대비구직자비율
 }

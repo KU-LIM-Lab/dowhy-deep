@@ -31,19 +31,13 @@ digraph {
     BFR_WTM6_JHCR_CT            [label="이전6개월이내구직인증건수"];
     BFR_EJAP_CT                 [label="이전이메일입사지원건수"];
     BFR_UEPS_RECP_CT            [label="이전실업급여수급건수"];
-    IPS_VS_JBHT_RATE            [label="피보험자대비구직자비율"];
-    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
     IPS_IRDS_NMPR               [label="피보험자증감인원수"];
     NTR_HOPE_WAGE_SM_AMT        [label="중앙희망임금합계금액"];
-    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
     SFID_IEM_NUM                [label="자기소개서항목개수"];
     SFID_LTTR_NUM               [label="자기소개서글자개수"];
 
     // ============================================================
     // ==== Treatment definitions (메타데이터용 노드) ==============
-    // role="treatment_meta"로 태깅한 노드 안에 정보를 넣는다.
-    // 나중에 pygraphviz로 읽어서 DoWhy/TabPFN 파이프라인에 넘길 때
-    // 이 메타 정보를 이용해 treatment 변수를 자동 생성할 수 있다.
 
     subgraph cluster_treatments {
         label="Treatments (outcome: ACQ_180_YN)";
@@ -117,9 +111,6 @@ digraph {
     AGE -> ACQ_180_YN;                     // 나이가 높으면 전반적인 취업 확률에 영향
 
     AREA_CD -> HPAR_CSCY_SCOR;             // 거주지역과 희망지역 일치도에 영향
-    AREA_CD -> NTR_BPLC_PSNT_WAGE_AMT;     // 지역에 따라 제시임금 수준이 다름
-    AREA_CD -> IPS_VS_RCIT_RATE;           // 지역에 따라 모집비율 다름
-    AREA_CD -> IPS_VS_JBHT_RATE;           // 지역에 따라 구직자비율 다름
     AREA_CD -> ACQ_180_YN;                 // 지역별 노동시장 여건 차이
 
     // --- 학력/경력 -> 임금 기대/고용형태/직종 선택 ---
@@ -154,7 +145,7 @@ digraph {
     AGREE_LEVEL -> RQAG_HOPE_YN;           // 구직인증 재신청 의사도 높을 수 있음
 
     EMAIL_OTPB_YN -> ACQ_180_YN;           // 이메일을 공개하면 연락/매칭기회 증가
-    MPNO_OTPB_YN -> ACQ_180_YN;            // 휴대전화 공개 역시 매칭기회 증가
+    MPNO_OTPB_YN -> ACQ_180_YN;           // 휴대전화 공개 역시 매칭기회 증가
 
     // --- 구직 목적 및 서비스 이용 행태 ---
     JHNT_PPOS_CD -> MDTN_HOPE_YN;          // 구직 목적(실업급여, 실제 취업 등)에 따라 알선 희망 여부 달라짐
@@ -174,19 +165,11 @@ digraph {
     BFR_UEPS_RECP_CT -> HOPE_WAGE_SM_AMT;  // 실업급여 경험은 예약임금/희망임금에 영향
     BFR_UEPS_RECP_CT -> ACQ_180_YN;        // 장기 실업/실업급여 경험이 취업 가능성에 영향
 
-    // --- 노동시장 상태 지표 ---
-    IPS_IRDS_NMPR -> IPS_VS_JBHT_RATE;     // 피보험자 증감이 구직자비율에 영향
-    IPS_IRDS_NMPR -> IPS_VS_RCIT_RATE;     // 피보험자 증감이 모집비율에도 영향
-
-    IPS_VS_JBHT_RATE -> ACQ_180_YN;        // 구직자비율이 높으면 경쟁 심화로 취업확률 감소
-    IPS_VS_RCIT_RATE -> ACQ_180_YN;        // 모집비율이 높으면 취업확률 증가
-
-    NTR_BPLC_PSNT_WAGE_AMT -> NTR_HOPE_WAGE_SM_AMT; // 제시임금 수준이 중앙 희망임금에 영향
-    NTR_BPLC_PSNT_WAGE_AMT -> HOPE_WAGE_SM_AMT;     // 개인의 희망임금에도 직접 영향
-    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;           // 제시임금이 너무 낮/높으면 매칭 실패 가능
+    // --- 노동시장 상태 지표 (간단화: 증감만 남김) ---
+    IPS_IRDS_NMPR -> ACQ_180_YN;           // 피보험자 증감(고용 증가/감소)이 취업 가능성에 직접 영향
 
     // --- 자기소개서 및 서류 품질 ---
     SFID_IEM_NUM -> SFID_LTTR_NUM;         // 항목 개수가 많으면 전체 글자수도 많아짐
     SFID_IEM_NUM -> ACQ_180_YN;            // 자기소개서 구성(항목 수)이 평가에 영향
-    SFID_LTTR_NUM -> ACQ_180_YN;           // 자기소개서 분량이 취업 여부에 영향 (너무 짧거나 너무 길면 불리할 수 있음)
+    SFID_LTTR_NUM -> ACQ_180_YN;           // 자기소개서 분량이 취업 여부에 영향
 }
