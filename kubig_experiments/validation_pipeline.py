@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import sys
 from pathlib import Path
 import logging
@@ -18,6 +19,7 @@ from kubig_experiments.src.preprocessor import build_pipeline_wide, postprocess
 from kubig_experiments.src.dag_parser import extract_roles_general, dot_to_nx
 from kubig_experiments.src.inference_top1 import llm_inference
 from kubig_experiments.src.interpretator import load_and_consolidate_data, analyze_results
+from kubig_experiments.src.eda import perform_eda
 
 RESULTS_DIR = None
 
@@ -259,6 +261,9 @@ if __name__ == "__main__":
     except Exception as e:
         main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
         sys.exit(1)
+
+    EDA_OUTPUT_DIR = RESULTS_DIR / "output"
+    perform_eda(final_df, EDA_OUTPUT_DIR, main_logger)
     
     # --- 2. 배치 분할 및 반복 실행 ---
     if IS_TEST_MODE:
