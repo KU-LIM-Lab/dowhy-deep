@@ -106,7 +106,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     }
 
     # DAG 파일 로딩
-    dag_dir = Path("./kubig_experiments/dags/output/")
+    dag_dir = Path("./kubig_experiments/dags/")
     dag_file = dag_dir / f"dag_{dag_idx}.txt"
     if not dag_file.exists():
         logger.warning("[%s] DAG file not found, skipping: %s", dag_file.name, str(dag_file))

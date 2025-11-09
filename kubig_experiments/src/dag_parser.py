@@ -128,7 +128,7 @@ def extract_roles_general(graph_txt: str, outcome: str) -> Dict[str, List[str]]:
 
 if __name__ == "__main__":
     from pathlib import Path
-    dag_dir = Path("./kubig_experiments/dags/output")
+    dag_dir = Path("./kubig_experiments/dags/")
     dag_files = sorted(dag_dir.glob("dag_*.txt"))
     for f in dag_files:
         txt = f.read_text(encoding="utf-8")
