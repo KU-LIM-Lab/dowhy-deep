@@ -2,7 +2,7 @@
 # Causal Inference Core (from validation_pipeline setup)
 # ==============================
 dowhy
-tabpfn
+tabpfn<6.0
 pygraphviz
 
 # ==============================

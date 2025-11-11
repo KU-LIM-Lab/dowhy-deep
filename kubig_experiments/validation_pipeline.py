@@ -1,14 +1,13 @@
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import sys
 from pathlib import Path
 import logging
 import warnings
 import uuid
 from datetime import datetime
-import time
 import argparse
+import pytz
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
@@ -26,8 +25,16 @@ RESULTS_DIR = None
 DATA_OUTPUT_DIR = project_root / "kubig_experiments" / "data" / "output"
 DATA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+class KSTFormatter(logging.Formatter):
+    """UTC 타임스탬프를 KST (Asia/Seoul)로 변환하는 포맷터"""
+    def converter(self, timestamp):
+        # timestamp는 UTC 시간을 기준으로 합니다.
+        KST = pytz.timezone('Asia/Seoul')
+        dt = datetime.fromtimestamp(timestamp, pytz.utc)
+        return dt.astimezone(KST).timetuple()
+
 def setup_logger():
-    """테스트 로깅 설정을 초기화하고 LoggerAdapter 객체를 반환합니다. (원래의 test_logger fixture)"""
+    """테스트 로깅 설정을 초기화하고 LoggerAdapter 객체를 반환합니다. """
     # 1) warnings 전부 무시 + 브릿지 차단
     warnings.filterwarnings("ignore")
     logging.captureWarnings(False)
@@ -47,7 +54,10 @@ def setup_logger():
             lg.removeHandler(h)
 
     # 3) 고유 run_id (timestamp + uuid8)
-    run_ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    KST = pytz.timezone('Asia/Seoul')
+    now_kst = datetime.now(KST)
+
+    run_ts = now_kst.strftime("%Y%m%d-%H%M%S")
     run_uid = uuid.uuid4().hex[:8]
     run_id = f"{run_ts}_{run_uid}"
 
@@ -67,11 +77,9 @@ def setup_logger():
     base_logger.propagate = False
 
     if not base_logger.handlers:
-        fmt = logging.Formatter(
+        fmt = KSTFormatter(
             "%(asctime)s | %(levelname)s | run=%(run_id)s | %(message)s"
         )
-
-        fmt.converter = time.localtime
 
         fh = logging.FileHandler(log_path, encoding="utf-8")
         fh.setLevel(logging.INFO)
@@ -266,7 +274,7 @@ def main():
     except Exception as e:
         main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
         sys.exit(1)
-    
+
     preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
     final_df.to_csv(preprocessed_path, index=False, encoding="utf-8")
     main_logger.info(f"[OK] Preprocessed data saved to: {preprocessed_path.name}")
@@ -302,18 +310,9 @@ def main():
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
         
-        if IS_TEST_MODE:
-            preds_file = DATA_OUTPUT_DIR / f"preds_test.csv"
-        else:
-            preds_file = DATA_OUTPUT_DIR / f"preds_{i+1}.csv"
-
-        if not preds_file.exists():
-            main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
-            llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR)
-            main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
-        else:
-            main_logger.info(f"Loading existing LLM predictions from {preds_file.name} for BATCH {i+1}...")
-            llm_preds_df = pd.read_csv(preds_file, encoding="utf-8")
+        main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
+        llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR)
+        main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
         
         batch_df['JHNT_MBN'] = batch_df['JHNT_MBN'].astype(str)
         llm_preds_df['JHNT_MBN'] = llm_preds_df['JHNT_MBN'].astype(str)

@@ -505,7 +505,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
     date_diff_cols = [] 
     if "JHCR_DE" in df.columns:
         anchor = pd.to_datetime(df["JHCR_DE"], errors="coerce")
-        date_cols = [c for c in df.columns if any(x in c.upper() for x in ["DE","DT","DATE","BGDE","ENDE","STDT","ENDT"])]
+        date_cols = [c for c in df.columns if any(x in c.upper() for x in ["DE","DT","DATE","BGDE","ENDE","STDT","ENDT"]) and "MDTN" not in c.upper()]
         
         for col in date_cols:
             if col == "JHCR_DE":
@@ -544,7 +544,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
     df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
                        for c in cat_cols}) \
              .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
-    
+
     # 로깅 추가
     if cat_cols:
         logger.info(f"Applied Label Encoding to {len(cat_cols)} columns:")
