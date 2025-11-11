@@ -352,7 +352,7 @@ if __name__ == "__main__":
     # --- 3. 최종 해석 로직 ---
     main_logger.info("Starting Causal Interpretation Analysis...")
     
-    df_consolidated = load_and_consolidate_data(RESULTS_DIR)
-    analyze_results(df_consolidated)
+    df_consolidated = load_and_consolidate_data(RESULTS_DIR, main_logger)
+    top_dags_info = analyze_results(df_consolidated, main_logger)
     
     main_logger.info("Interpretation analysis complete.")
