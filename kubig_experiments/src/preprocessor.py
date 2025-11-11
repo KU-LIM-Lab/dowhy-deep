@@ -427,10 +427,12 @@ def parse_license_to_lists(paths: List[Path]) -> pd.DataFrame:
 # =========================
 def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info("Reading raw CSV data.")
-    base = pd.read_csv(RAW_CSV, encoding="utf-8")
-    for k in ["JHNT_MBN","JHNT_CTN"]:
-        if k in base.columns:
-            base[k] = base[k].astype(str)
+
+    dtype_map = {}
+    for k in ["JHNT_MBN", "JHNT_CTN"]:
+        dtype_map[k] = str
+
+    base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
 
     # 1. 이력서 데이터 처리
     logger.info(f"Collecting resume JSON files from {RESUME_DIR}.")
@@ -536,14 +538,20 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
         logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
     
     # ---- (4) label encoding ----
-    cat_cols = [c for c in df.select_dtypes(include=['object','category']).columns if c != "SELF_INTRO_CONT"]
-    
+    excluded_cols = ["SELF_INTRO_CONT", "JHNT_MBN", "JHNT_CTN"]
+    cat_cols = [c for c in df.select_dtypes(include=['object','category']).columns if c not in excluded_cols]
+
     df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
                        for c in cat_cols}) \
-            .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+             .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
     
     # 로깅 추가
     if cat_cols:
-        logger.info(f"Applied Label Encoding to {len(cat_cols)} columns, excluding SELF_INTRO_CONT.")
+        logger.info(f"Applied Label Encoding to {len(cat_cols)} columns:")
+        logger.info(f"    Encoded Columns: {cat_cols}") 
+        logger.info(f"    Excluded Columns: {', '.join(excluded_cols)}")
+    else:
+        logger.info(f"No categorical columns (excluding {', '.join(excluded_cols)}) found for Label Encoding.")
+    
     logger.info("Postprocessing complete.")
     return df

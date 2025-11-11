@@ -8,7 +8,6 @@ from pathlib import Path
 import logging
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
-OUT_DIR = Path(__file__).resolve().parent.parent / "data" / "inference_outputs"
 
 BATCH_SIZE = 32
 MAX_LENGTH = 384
@@ -34,7 +33,7 @@ IDX2LABEL = {
 }
 
 def llm_inference(df: pd.DataFrame, logger: logging.LoggerAdapter,
-                  batch_id: int, is_test_mode: bool) -> pd.DataFrame:
+                  batch_id: int, is_test_mode: bool, output_dir) -> pd.DataFrame:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"[INFO] Device: {device}")
@@ -91,14 +90,14 @@ def llm_inference(df: pd.DataFrame, logger: logging.LoggerAdapter,
         "SELF_INTRO_CONT_LABEL": top1,  # index (0~9)
     })
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     if is_test_mode:
         out_file_name = "preds_test.csv"
     else:
         out_file_name = f"preds_{batch_id+1}.csv"
 
-    out_path = OUT_DIR / out_file_name
+    out_path = output_dir / out_file_name
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     out_df.to_csv(out_path, index=False, encoding="utf-8")

@@ -23,6 +23,8 @@ from kubig_experiments.src.interpretator import load_and_consolidate_data, analy
 from kubig_experiments.src.eda import perform_eda
 
 RESULTS_DIR = None
+DATA_OUTPUT_DIR = project_root / "kubig_experiments" / "data" / "output"
+DATA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def setup_logger():
     """테스트 로깅 설정을 초기화하고 LoggerAdapter 객체를 반환합니다. (원래의 test_logger fixture)"""
@@ -264,9 +266,12 @@ def main():
     except Exception as e:
         main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
         sys.exit(1)
+    
+    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
+    final_df.to_csv(preprocessed_path, index=False, encoding="utf-8")
+    main_logger.info(f"[OK] Preprocessed data saved to: {preprocessed_path.name}")
 
-    EDA_OUTPUT_DIR = RESULTS_DIR / "output"
-    perform_eda(final_df, EDA_OUTPUT_DIR, main_logger)
+    perform_eda(final_df, DATA_OUTPUT_DIR, main_logger)
     
     # --- 2. 배치 분할 및 반복 실행 ---
     if IS_TEST_MODE:
@@ -293,21 +298,18 @@ def main():
         end_idx = min((i + 1) * BATCH_SIZE, total_rows)
         
         batch_df = final_df.iloc[start_idx:end_idx].copy()
-        
         main_logger.info("=" * 70)
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
-
-        preds_dir = Path("./kubig_experiments/data/inference_outputs/")
         
         if IS_TEST_MODE:
-            preds_file = preds_dir / f"preds_test.csv"
+            preds_file = DATA_OUTPUT_DIR / f"preds_test.csv"
         else:
-            preds_file = preds_dir / f"preds_{i+1}.csv"
+            preds_file = DATA_OUTPUT_DIR / f"preds_{i+1}.csv"
 
         if not preds_file.exists():
             main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
-            llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE)
+            llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR)
             main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
         else:
             main_logger.info(f"Loading existing LLM predictions from {preds_file.name} for BATCH {i+1}...")
