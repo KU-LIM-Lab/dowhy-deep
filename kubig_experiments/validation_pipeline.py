@@ -7,6 +7,7 @@ import logging
 import warnings
 import uuid
 from datetime import datetime
+import time
 import argparse
 
 project_root = Path(__file__).resolve().parent.parent
@@ -67,6 +68,8 @@ def setup_logger():
         fmt = logging.Formatter(
             "%(asctime)s | %(levelname)s | run=%(run_id)s | %(message)s"
         )
+
+        fmt.converter = time.localtime
 
         fh = logging.FileHandler(log_path, encoding="utf-8")
         fh.setLevel(logging.INFO)
@@ -234,7 +237,7 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     return results
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Run Causal Validation Pipeline.")
     parser.add_argument('-test', action='store_true', help='Enable test mode, sampling 1000 rows.')
     args = parser.parse_args()
@@ -356,3 +359,6 @@ if __name__ == "__main__":
     top_dags_info = analyze_results(df_consolidated, main_logger)
     
     main_logger.info("Interpretation analysis complete.")
+
+if __name__ == "__main__":
+    main()
