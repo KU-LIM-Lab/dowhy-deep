@@ -97,14 +97,127 @@ def setup_logger():
     logger.info("Logging initialized. File: %s", str(log_path))
     return logger
 
+def get_treatment_type(df: pd.DataFrame, treatment_col: str) -> str:
+    """treatment 컬럼의 타입을 binary, multi-class, continuous 중 하나로 결정합니다."""
+    if treatment_col not in df.columns:
+        return "unknown"
+
+    s = df[treatment_col].dropna()
+    unique_count = s.nunique()
+
+    if unique_count <= 1:
+        return "unknown"
+
+    # 1. object 타입이면서 unique count 확인 (사용자 요청 반영)
+    if s.dtype == object:
+        if unique_count == 2:
+            return "binary"
+        elif unique_count >= 3:
+            return "multi-class"
+            
+    # 2. 숫자형 타입 확인
+    if unique_count == 2:
+        return "binary"
+    elif unique_count < 20 and pd.api.types.is_numeric_dtype(s): # 카디널리티가 낮은 숫자형은 multi-class로 간주
+        return "multi-class"
+    
+    # 3. 그 외 (주로 카디널리티가 높은 숫자형 또는 기타)
+    return "continuous"
+
+
+def estimate_tabpfn_ate_multi(model, identified, data, treatment_col, logger):
+    """
+    TabPFN 기반 ATE 추정 (binary + multi-category 공통 처리)
+
+    - treatment_col의 unique level 확인
+    - baseline:
+        - 0이 있으면 0
+        - 아니면 numeric이면 min(levels)
+        - 혼합/문자면 문자열 기준 가장 앞
+    - baseline vs 각 level에 대해 TabpfnEstimator로 ATE 추정
+    - 유효한 값들 중 최댓값 선택
+
+    return:
+        best_ate (float) or None,
+        best_level or None,
+        ate_dict (dict[level] = ate) or None,
+        best_estimate (CausalEstimate) or None  # refutation용
+    """
+
+    # treatment 컬럼 존재 여부 확인
+    if treatment_col not in data.columns:
+        logger.warning("[TabPFN] treatment column '%s' not in data.", treatment_col)
+        return None, None, None, None
+
+    # 실제 treatment level들
+    levels = pd.Series(data[treatment_col].dropna().unique()).tolist()
+    if len(levels) < 2:
+        logger.info("[TabPFN] '%s': less than 2 levels, skip", treatment_col)
+        return None, None, None, None
+
+    # baseline 선택 로직
+    if any(l == 0 for l in levels):
+        baseline = 0
+    else:
+        try:
+            baseline = min(levels)
+        except TypeError:
+            # 숫자/문자 섞인 경우 문자열 기준으로 가장 앞
+            baseline = sorted(levels, key=lambda x: str(x))[0]
+
+    logger.info("[TabPFN] treatment '%s': levels=%s, baseline=%r", treatment_col, levels, baseline)
+
+    ate_dict = {}
+    est_dict = {}
+
+    # baseline vs. 나머지 (레벨 개수 - 1 만큼 ATE 계산)
+    for lvl in levels:
+        if lvl == baseline:
+            continue
+        try:
+            est = model.estimate_effect(
+                identified,
+                method_name="backdoor.tabpfn",
+                method_params={
+                    "estimator": TabpfnEstimator,
+                    "n_estimators": 8,
+                    "treatment_value": lvl,
+                    "control_value": baseline,
+                },
+            )
+
+            val = getattr(est, "value", None)
+            if isinstance(val, (int, float, np.floating)) and np.isfinite(val):
+                val = float(val)
+                ate_dict[lvl] = val
+                est_dict[lvl] = est
+                logger.info("[TabPFN] ATE('%s'): level=%r vs baseline=%r -> %.6f", treatment_col, lvl, baseline, val,)
+            
+            else:
+                logger.warning("[TabPFN] Non-numeric ATE for level=%r vs baseline=%r: %r", lvl, baseline, val)
+        
+        except Exception as e:
+            logger.warning("[TabPFN] Failed to estimate ATE('%s') for level=%r vs baseline=%r: %s", treatment_col, lvl, baseline, e)
+
+    if not ate_dict:
+        logger.warning(
+            "[TabPFN] No valid ATE values for treatment '%s'.", treatment_col
+        )
+        return None, None, None, None
+
+    # 한 DAG 내에서 가장 큰 ATE 선택
+    best_level, best_ate = max(ate_dict.items(), key=lambda kv: kv[1])
+
+    logger.info("[TabPFN] Selected best ATE for '%s': level=%r, ate=%.6f", treatment_col, best_level, best_ate)
+
+    best_est = est_dict[best_level]
+    return float(best_ate), best_level, ate_dict, best_est
+
 
 def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
-                              df: pd.DataFrame) -> dict:
+                              df: pd.DataFrame, treatment_type: str) -> dict: 
     """
     단일 DAG에 대해 Causal Estimation (TabPFN) 및 Refutation을 수행합니다.
-    - DAG에서 Treatment/Confounder/Mediator 자동 추출
-    - 비교: TabPFN 추정기
-    - Validation: Placebo treatment, Random common cause
     """
     results = {
         "dag_idx": dag_idx,
@@ -124,11 +237,10 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     if not dag_file.exists():
         logger.warning("[%s] DAG file not found, skipping: %s", dag_file.name, str(dag_file))
         results["skip_reason"] = "DAG file not found"
-        return # 파일이 없으면 스킵
+        return results # 파일이 없으면 스킵
 
     graph_txt = dag_file.read_text(encoding="utf-8")
 
-    # 역할 추출 (kubig_experiments.src.dag_parser의 extract_roles_general 함수 사용)
     roles = extract_roles_general(graph_txt, outcome="ACQ_180_YN")
     dag_treatment = roles["treatment"]
     results["treatment"] = dag_treatment
@@ -137,19 +249,38 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         msg = f"[skip] treatment '{dag_treatment}' not found in dataframe."
         logger.info("[%s] %s", dag_file.name, msg)
         results["skip_reason"] = "treatment not in dataframe"
-        return # pytest.skip 대신 return 사용
+        return results 
+    
+    if treatment_type == "unknown":
+        msg = f"[skip] Unknown treatment type for '{dag_treatment}'. Skipping."
+        logger.info("[%s] %s", dag_file.name, msg)
+        results["skip_reason"] = "Unknown treatment type"
+        return results
 
     logger.info(
-        "[%s] Roles | X=%s | M=%s | C=%s",
-        dag_file.name, dag_treatment, roles["mediators"], roles["confounders"]
+        "[%s] Roles | X=%s | M=%s | C=%s (Type: %s)",
+        dag_file.name, dag_treatment, roles["mediators"], roles["confounders"], treatment_type
     )
+    
+    df_copy = df.copy()
+    object_cols = df_copy.select_dtypes(include=['object']).columns.tolist()
+    
+    EXCLUDE_COLS = ["JHNT_MBN", "JHNT_CTN", "SELF_INTRO_CONT"] 
+    cols_to_convert = [c for c in object_cols if c not in EXCLUDE_COLS]
 
+    for col in cols_to_convert:
+        try:
+            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').astype('Int64')
+            logger.debug(f"[{dag_file.name}] Converted object column '{col}' to Int64.")
+        except Exception as e:
+            logger.warning(f"[{dag_file.name}] Failed to convert object column '{col}' to Int64: {e}")
+            
     # 그래프 생성 및 노드 이름 조정
     nx_graph = dot_to_nx(graph_txt)
     
     # DoWhy CausalModel 생성
     model = CausalModel(
-        data=df,
+        data=df_copy,
         treatment=dag_treatment,
         outcome="ACQ_180_YN",
         graph=nx_graph,
@@ -161,14 +292,13 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         msg = "[skip] No valid identified estimand (식별 실패)."
         logger.info("[%s] %s", dag_file.name, msg)
         results["skip_reason"] = "No valid identified estimand"
-        return 
+        return results
     
     # Linear Regression (Baseline) 추정
     try:
         method_lr = "backdoor.linear_regression"
         est_lr = model.estimate_effect(identified, method_name=method_lr, test_significance=True)
         
-        # Linear Regression 결과 검증
         if est_lr.value is None or not (isinstance(est_lr.value, (float, np.floating)) and np.isfinite(est_lr.value)):
             msg = f"[skip] Baseline (LR) estimation returned invalid value: {est_lr.value}"
             logger.warning("[%s] %s", dag_file.name, msg)
@@ -182,31 +312,62 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     except Exception as e:
         logger.error(f"[%s] Baseline (LR) estimation failed with exception: %s", dag_file.name, e)
         results["lr_ate"] = "ERROR"
+        
+    est_tabpfn = None # TabPFN 추정 결과를 저장할 변수 초기화
 
-    # TabPFN 추정
-    try:
-        est_tabpfn = model.estimate_effect(
-            identified,
-            method_name="backdoor.tabpfn",
-            method_params={"estimator": TabpfnEstimator, "n_estimators": 8},
+    # TabPFN 추정 (treatment_type에 따라 분기)
+    if treatment_type in ["binary", "continuous"]:
+        # Binary/Continuous (기존 로직: 단일 ATE 추정)
+        try:
+            est_tabpfn = model.estimate_effect(
+                identified,
+                method_name="backdoor.tabpfn",
+                method_params={"estimator": TabpfnEstimator, "n_estimators": 8},
+            )
+        except Exception as e:
+            msg = f"[skip] TabPFN estimation failed with exception: {e}"
+            logger.error("[%s] %s", dag_file.name, msg)
+            results["skip_reason"] = "TabPFN estimation failed"
+            return results
+
+        # 추정 결과 검증
+        if est_tabpfn is None or est_tabpfn.value is None or not (
+            isinstance(est_tabpfn.value, (float, np.floating)) and np.isfinite(est_tabpfn.value)
+        ):
+            msg = f"[skip] TabPFN estimation returned invalid value: {getattr(est_tabpfn, 'value', None)}"
+            logger.info("[%s] %s", dag_file.name, msg)
+            results["skip_reason"] = "TabPFN invalid value"
+            return results
+        
+        results["tabpfn_ate"] = float(est_tabpfn.value)
+        logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, dag_treatment, est_tabpfn.value)
+
+    elif treatment_type == "multi-class":
+        # Multi-Class (요구사항 3: estimate_tabpfn_ate_multi 사용)
+        logger.info(f"[{dag_file.name}] Running Multi-Class ATE Estimation for '{dag_treatment}'.")
+        
+        best_ate, best_level, ate_dict, est_tabpfn_best = estimate_tabpfn_ate_multi(
+            model=model, 
+            identified=identified, 
+            data=df_copy, # 변환된 df_copy 사용
+            treatment_col=dag_treatment, 
+            logger=logger
         )
-    except Exception as e:
-        msg = f"[skip] TabPFN estimation failed with exception: {e}"
-        logger.error("[%s] %s", dag_file.name, msg)
-        results["skip_reason"] = "TabPFN estimation failed"
-        return
-
-    # 추정 결과 검증
-    if est_tabpfn is None or est_tabpfn.value is None or not (
-        isinstance(est_tabpfn.value, (float, np.floating)) and np.isfinite(est_tabpfn.value)
-    ):
-        msg = f"[skip] TabPFN estimation returned invalid value: {getattr(est_tabpfn, 'value', None)}"
-        logger.info("[%s] %s", dag_file.name, msg)
-        results["skip_reason"] = "TabPFN invalid value"
-        return
+        
+        if best_ate is None:
+            msg = "[skip] Multi-Class TabPFN estimation failed or returned no valid ATE."
+            logger.info("[%s] %s", dag_file.name, msg)
+            results["skip_reason"] = "TabPFN multi-class estimation failed"
+            return results
+            
+        results["tabpfn_ate"] = best_ate
+        # Refutation을 위해 est_tabpfn을 최적의 추정 객체로 업데이트
+        est_tabpfn = est_tabpfn_best 
+        logger.info("[%s] [%s] Multi-Class TabPFN ATE (Best: %r): %s", dag_file.name, dag_treatment, best_level, best_ate)
     
-    results["tabpfn_ate"] = float(est_tabpfn.value)
-    logger.info("[%s] [%s] TabPFN ATE: %s", dag_file.name, dag_treatment, est_tabpfn.value)
+    else:
+        # 'unknown' 타입은 이미 위에서 걸러짐
+        return results
 
     # 반박 (Refutation)
     refuters = {
@@ -268,7 +429,7 @@ def main():
         main_logger.info(f"Wide pipeline complete. Intermediate shape: {intermediate_df.shape}")
         
         # 2) 후처리 (이진 매핑, 날짜 차이, 결측 컬럼 제거)
-        final_df = postprocess(intermediate_df, main_logger) 
+        final_df = postprocess(intermediate_df, main_logger, DATA_OUTPUT_DIR) 
         main_logger.info(f"Preprocessing complete. Final DataFrame shape: {final_df.shape}")
         
     except Exception as e:
@@ -286,6 +447,10 @@ def main():
         main_logger.info("Test mode enabled: sampling %d rows for quick validation.", TEST_SAMPLE_SIZE)
         final_df = final_df.sample(n=TEST_SAMPLE_SIZE, random_state=42).reset_index(drop=True)
         BATCH_SIZE = TEST_SAMPLE_SIZE
+
+    if not IS_TEST_MODE:
+        final_df = final_df.sample(frac=1, random_state=42).reset_index(drop=True)
+        main_logger.info("Data shuffled successfully before batching. Final DataFrame shape: %s", final_df.shape)
 
     total_rows = len(final_df)
     num_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
@@ -306,14 +471,28 @@ def main():
         end_idx = min((i + 1) * BATCH_SIZE, total_rows)
         
         batch_df = final_df.iloc[start_idx:end_idx].copy()
+        
         main_logger.info("=" * 70)
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
         
-        main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
-        llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR)
-        main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions merged.")
+        preds_dir = DATA_OUTPUT_DIR
+
+        if IS_TEST_MODE:
+            preds_file = preds_dir / f"preds_test.csv"
+        else:
+            preds_file = preds_dir / f"preds_{i+1}.csv"
         
+        if not preds_file.exists():
+            main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
+            llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR) 
+            main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions saved.")
+        else:
+            main_logger.info(f"Loading existing LLM predictions from {preds_file.name} for BATCH {i+1}...")
+            # JHNT_MBN을 문자열로 로드하여 정밀도 보존
+            llm_preds_df = pd.read_csv(preds_file, encoding="utf-8", dtype={'JHNT_MBN': str})
+        
+        # JHNT_MBN을 str로 통일하여 병합
         batch_df['JHNT_MBN'] = batch_df['JHNT_MBN'].astype(str)
         llm_preds_df['JHNT_MBN'] = llm_preds_df['JHNT_MBN'].astype(str)
 
@@ -328,14 +507,27 @@ def main():
         batch_results = []
 
         for dag_idx in dag_indices:
+            
+            dag_dir = Path("./kubig_experiments/dags/")
+            dag_file = dag_dir / f"dag_{dag_idx}.txt"
+            if not dag_file.exists():
+                continue
+            graph_txt = dag_file.read_text(encoding="utf-8")
+            roles = extract_roles_general(graph_txt, outcome="ACQ_180_YN")
+            dag_treatment = roles["treatment"]
+            
+            treatment_type = get_treatment_type(batch_df, dag_treatment)
+
             main_logger.info("-" * 50)
-            main_logger.info(f"[Batch {i+1}] Processing DAG index: {dag_idx}")
-            result_dict = validate_tabpfn_estimator(dag_idx, main_logger, batch_df)
+            main_logger.info(f"[Batch {i+1}] Processing DAG index: {dag_idx} (Treatment: {dag_treatment}, Type: {treatment_type})")
             
-            result_dict["batch_id"] = i + 1 
-            result_dict["batch_size"] = len(batch_df) 
+            result_dict = validate_tabpfn_estimator(dag_idx, main_logger, batch_df, treatment_type) 
             
-            batch_results.append(result_dict)
+            if result_dict:
+                result_dict["batch_id"] = i + 1 
+                result_dict["batch_size"] = len(batch_df) 
+                
+                batch_results.append(result_dict)
         
         if batch_results:
             batch_results_df = pd.DataFrame(batch_results)

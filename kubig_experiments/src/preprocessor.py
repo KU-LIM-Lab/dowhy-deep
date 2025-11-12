@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Callable
 import pandas as pd
 import numpy as np
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -483,7 +484,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
 # =========================
 # 6) 후처리 (옵션)
 # =========================
-def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame:
+def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir) -> pd.DataFrame:
     logger.info("Starting postprocessing: Binary mapping and date calculation.")
     
     # ---- (1) 바이너리 매핑 ----
@@ -538,18 +539,38 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter) -> pd.DataFrame
         logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
     
     # ---- (4) label encoding ----
-    excluded_cols = ["SELF_INTRO_CONT", "JHNT_MBN", "JHNT_CTN"]
+    base_excluded_cols = ["SELF_INTRO_CONT", "JHNT_MBN", "JHNT_CTN", "JHCR_DE", "CLOS_YM"]
+    clos_ym_prefix_cols = [c for c in df.columns if c.startswith('CLOS_YM')]
+    jhcr_de_prefix_cols = [c for c in df.columns if c.startswith('JHCR_DE')]
+    excluded_cols = list(set(base_excluded_cols + clos_ym_prefix_cols + jhcr_de_prefix_cols))
+    
     cat_cols = [c for c in df.select_dtypes(include=['object','category']).columns if c not in excluded_cols]
 
-    df = df.assign(**{c: pd.Categorical(df[c], categories=sorted(df[c].dropna().unique())).codes
-                       for c in cat_cols}) \
-             .assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+    encoding_map = {}
+    for c in cat_cols:
+        cat_dtype = pd.Categorical(df[c], categories=sorted(df[c].dropna().unique()))
+        
+        mapping = {label: code for code, label in enumerate(cat_dtype.categories)}
+        encoding_map[c] = mapping
+        
+        df[c] = cat_dtype.codes
+
+    df = df.assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+    df[cat_cols] = df[cat_cols].astype('str')
 
     # 로깅 추가
     if cat_cols:
         logger.info(f"Applied Label Encoding to {len(cat_cols)} columns:")
         logger.info(f"    Encoded Columns: {cat_cols}") 
         logger.info(f"    Excluded Columns: {', '.join(excluded_cols)}")
+
+        map_path = data_output_dir / "label_encoding_map.json"
+        try:
+            with map_path.open("w", encoding="utf-8") as f:
+                json.dump(encoding_map, f, indent=4, ensure_ascii=False, default=str)
+            logger.info(f"Label Encoding Map saved to: {map_path.name}")
+        except Exception as e:
+            logger.error(f"Failed to save Label Encoding Map to {map_path.name}: {e}")
     else:
         logger.info(f"No categorical columns (excluding {', '.join(excluded_cols)}) found for Label Encoding.")
     
