@@ -7,16 +7,9 @@ import numpy as np
 import logging
 import json
 
+from kubig_experiments.config import RAW_CSV, RESUME_DIR, COVER_DIR, TRAINING_DIR, LICENSE_DIR, EXCLUDE_COLS
+
 logger = logging.getLogger(__name__)
-
-ROOT = Path(__file__).resolve().parent.parent / "data"
-
-RAW_CSV = ROOT / "synthetic_data_raw.csv"
-
-RESUME_DIR   = ROOT / "RESUME_JSON/ver1"
-COVER_DIR    = ROOT / "COVERLETTERS_JSON/ver1"
-TRAINING_DIR = ROOT / "TRAININGS_JSON"
-LICENSE_DIR  = ROOT / "LICENSES_JSON"
 
 
 def _read_json_safe(p: Path) -> Dict[str, Any]:
@@ -539,11 +532,10 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
         logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
     
     # ---- (4) label encoding ----
-    base_excluded_cols = ["SELF_INTRO_CONT", "JHNT_MBN", "JHNT_CTN", "JHCR_DE", "CLOS_YM"]
     clos_ym_prefix_cols = [c for c in df.columns if c.startswith('CLOS_YM')]
     jhcr_de_prefix_cols = [c for c in df.columns if c.startswith('JHCR_DE')]
-    excluded_cols = list(set(base_excluded_cols + clos_ym_prefix_cols + jhcr_de_prefix_cols))
-    
+    excluded_cols = list(set(EXCLUDE_COLS + clos_ym_prefix_cols + jhcr_de_prefix_cols))
+
     cat_cols = [c for c in df.select_dtypes(include=['object','category']).columns if c not in excluded_cols]
 
     encoding_map = {}

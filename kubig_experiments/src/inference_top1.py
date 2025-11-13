@@ -7,7 +7,7 @@ from tqdm import tqdm
 from pathlib import Path
 import logging
 
-MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
+from kubig_experiments.config import MODEL_DIR
 
 BATCH_SIZE = 32
 MAX_LENGTH = 384
