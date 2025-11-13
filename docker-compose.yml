@@ -1,0 +1,24 @@
+services:
+  app:
+    image: dowhydeep:cuda12.4-py312
+    build: .
+    working_dir: /workspace/dowhy-deep
+    tty: true
+    stdin_open: true
+    shm_size: "32g"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - PYTHONPATH=/workspace/dowhy-deep
+    volumes:
+      - ./:/workspace/dowhy-deep
+      - dd-data:/workspace/dowhy-deep/data
+      - dd-logs:/workspace/dowhy-deep/logs
+    command: bash
+
+volumes:
+  dd-data:
+  dd-logs:

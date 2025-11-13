@@ -1,0 +1,16 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+logs/
+outputs/
+data/
+.cache/
+.ipynb_checkpoints/
+.env
+.venv
