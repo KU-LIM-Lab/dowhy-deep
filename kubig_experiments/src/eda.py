@@ -83,25 +83,35 @@ def plot_cat_cardinality_simple_strict(
     """
     preprocessor의 cat_cols(= label_encoding_map.json의 키)만 대상으로
     x=컬럼명, y=nunique 의 단일 바플롯 저장.
-    (매핑값 사용 없음. df는 이미 df[cat_cols].astype('str') 상태)
+    - 범주 수 20개 이하: 파란색
+    - 범주 수 20개 초과: 회색
+    - y=20 위치에 빨간 점선 수평선
     """
     cat_cols = _get_postprocess_cat_cols(output_dir, df, outcome_col, exclude_cols, logger)
     if not cat_cols:
         logger.info("[EDA] No categorical columns to plot (cat_cols empty).")
         return
 
-    nunique_s = df[cat_cols].nunique(dropna=True).sort_values(ascending=False)
+    # 각 컬럼별 고유값 개수 계산 후 오름차순 정렬
+    nunique_s = df[cat_cols].nunique(dropna=True).sort_values(ascending=True)
+
+    colors = ["tab:blue" if v <= 20 else "lightgray" for v in nunique_s.values]
 
     plt.figure(figsize=(max(10, 0.6 * len(nunique_s)), 6))
-    ax = sns.barplot(x=nunique_s.index, y=nunique_s.values)  # 팔레트 불필요하면 기본값
+
+    ax = sns.barplot(x=nunique_s.index, y=nunique_s.values, palette=colors)
     ax.set_xlabel("Categorical Columns (postprocess cat_cols)")
-    ax.set_ylabel("Number of Unique Values (nunique)")
+    ax.set_ylabel("Number of Unique Categories")
     ax.set_title("Cardinality of Categorical Columns (df[cat_cols])")
-    plt.xticks(rotation=75, ha="right")
+
+    # 4) y=20 기준선 (빨간 점선)
+    ax.axhline(y=20, linestyle="--", color="red")
+
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
 
-    out_path = Path(output_dir) / "05_cat_cardinality_simple.png"
-    plt.savefig(out_path, dpi=200)
+    out_path = output_dir / "05_cat_cardinality_simple.png"
+    plt.savefig(out_path)
     plt.close()
     logger.info(f" -> Saved categorical cardinality plot: {out_path.name}")
 
