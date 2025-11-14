@@ -1,6 +1,7 @@
-# do_whynot
+# 🤷‍♀️ do_whynot
 
 한국고용정보원의 구직인증데이터 및 이력서/자기소개서/직업훈련/자격증 데이터를 기반으로
+
 **다양한 DAG 시나리오에서 인과효과(ATE)를 추정하고 검증하여 취업확률을 예측**하는 파이프라인
 
 ---
@@ -87,7 +88,7 @@ do_whynot/
 
 ---
 
-## ⚙️ config.py 사용 방법
+## config.py 사용 방법
 
 `do_whynot/config.py`는 파이프라인 전체 설정을 관리하는 핵심 파일입니다.
 
@@ -121,7 +122,7 @@ do_whynot/models/pytorch_model.bin
 
 ---
 
-## 🛠 설치 & 실행 방법
+## 설치 & 실행 방법
 
 ### 1. Graphviz 설치
 
