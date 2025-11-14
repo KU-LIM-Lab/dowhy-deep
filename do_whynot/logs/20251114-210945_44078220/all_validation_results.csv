@@ -1,0 +1,5 @@
+dag_idx,dag_file,treatment,lr_ate,tabpfn_ate,multi_class_baseline,multi_class_treatment_value,placebo_p_value,random_cc_p_value,is_successful,skip_reason,batch_id,batch_size
+1,dag_1.txt,MDTN_HOPE_GRD_CD,0.4327024466877427,0.25043848156929016,,,0.96,0.58,True,,1,50
+10,dag_10.txt,FRFT_AFTR_JHNT_REQR_DYCT,0.0028942086404353806,-0.0007129311561584473,,,0.92,0.24,True,,1,50
+1,dag_1.txt,MDTN_HOPE_GRD_CD,-0.19841191581060025,-0.007595539093017578,,,0.9,0.92,True,,2,50
+10,dag_10.txt,FRFT_AFTR_JHNT_REQR_DYCT,0.001184869386798737,-0.0012252628803253174,,,0.66,0.24,True,,2,50

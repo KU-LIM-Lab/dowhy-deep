@@ -60,7 +60,7 @@ def llm_inference(df: pd.DataFrame, logger: logging.LoggerAdapter,
     model.to(device).eval()
 
     if "SELF_INTRO_CONT" not in df.columns or "JHNT_MBN" not in df.columns:
-        raise ValueError(f"Columns {"SELF_INTRO_CONT"} and {"JHNT_MBN"} must exist in input CSV")
+        raise ValueError(f"Columns {{SELF_INTRO_CONT}} and {{JHNT_MBN}} must exist in input CSV")
 
     texts = df["SELF_INTRO_CONT"].astype(str).fillna("").tolist()
     uuids = df["JHNT_MBN"].astype(str).tolist()
