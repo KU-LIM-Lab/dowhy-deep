@@ -17,6 +17,7 @@ from kubig_experiments.src.inference_top1 import llm_inference
 from kubig_experiments.src.interpretator import load_and_consolidate_data, analyze_results
 from kubig_experiments.src.eda import perform_eda
 from kubig_experiments.src.estimation import get_treatment_type, validate_tabpfn_estimator, run_tabpfn_estimation
+from kubig_experiments.src.prediction import run_prediction_pipeline, _normalize_top_dags
 
 from config import IS_TEST_MODE, TEST_SAMPLE_SIZE, BATCH_SIZE, DATA_OUTPUT_DIR, DAG_INDICES_TEST, DAG_INDICES, DAG_DIR
 
@@ -264,7 +265,24 @@ def main():
     df_consolidated = load_and_consolidate_data(RESULTS_DIR, main_logger)
     top_dags_info = analyze_results(df_consolidated, main_logger)
     
+    top_5_dags_info = _normalize_top_dags(top_dags_info, final_df)
+    main_logger.info(
+        f"[Prediction] normalized top_5_dags_info: {top_5_dags_info}"
+    )
     main_logger.info("Interpretation analysis complete.")
+
+    # --- 4. 최종 예측 로직 ---
+    pred_result = run_prediction_pipeline(
+        final_df=final_df,
+        top_5_dags_info=top_5_dags_info,
+        outcome_name="ACQ_180_YN",
+        data_output_dir=DATA_OUTPUT_DIR,
+        logger=main_logger,
+        is_test_mode=IS_TEST_MODE,
+        batch_size=BATCH_SIZE,
+    )
+    main_logger.info(f"[Prediction done] 결과 요약: {pred_result}")
+    main_logger.info("Prediction complete.")
 
 if __name__ == "__main__":
     main()
