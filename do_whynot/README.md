@@ -4,7 +4,6 @@
 
 **다양한 DAG 시나리오에서 인과효과(ATE)를 추정하고 검증하여 취업확률을 예측**하는 파이프라인
 
----
 
 ## 전체 프로세스 개요
 
@@ -41,7 +40,7 @@
    - TabPFN estimator의 predict_fn 사용
    - `data/output/`에 `prediction_dag_{dag_num}.csv`로 결과 저장
 
----
+
 
 ## 디렉토리 구조
 
@@ -86,7 +85,7 @@ do_whynot/
     └── eda.py
 ```
 
----
+
 
 ## config.py 사용 방법
 
@@ -105,7 +104,7 @@ do_whynot/
 | **MULTICLASS_THRESHOLD** | 카테고리 개수가 너무 큰 변수 필터링 기준 |
 
 
----
+
 
 ## 모델 파일 다운로드
 
@@ -120,7 +119,7 @@ do_whynot/models/models.safetensors
 do_whynot/models/pytorch_model.bin
 ```
 
----
+
 
 ## 설치 & 실행 방법
 
@@ -145,4 +144,4 @@ python do_whynot/main.py
 
 결과는 데이터 관련 결과물은 `data/output/`에, 실행 결과 및 로그는 `logs/`에 저장됩니다.
 
----
+
