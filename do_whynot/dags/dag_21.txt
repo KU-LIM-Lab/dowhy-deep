@@ -1,0 +1,46 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    HPAR_CSCY_SCOR [label="희망지역일치도점수 (trt)"];
+
+    MDTN_HOPE_YN   [label="알선희망여부 (mediator)"];
+    SFID_LTTR_NUM  [label="자기소개서글자수 (mediator)"];
+    SFID_IEM_NUM   [label="자기소개서항목수 (mediator)"];
+
+    ACQ_180_YN     [label="구직인증 후 180일이내 취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    ACCR_CD    [label="학력코드"];
+    SXDS_CD    [label="성별"];
+    JO_DRNG_RATE [label="구인배수비율"];
+    RCIT_NMPR    [label="모집인원수"];
+
+    AGE -> HPAR_CSCY_SCOR;
+    ACCR_CD -> HPAR_CSCY_SCOR;
+    SXDS_CD -> HPAR_CSCY_SCOR;
+    JO_DRNG_RATE -> HPAR_CSCY_SCOR;
+    RCIT_NMPR -> HPAR_CSCY_SCOR;
+
+    AGE -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+    SXDS_CD -> ACQ_180_YN;
+    JO_DRNG_RATE -> ACQ_180_YN;
+    RCIT_NMPR -> ACQ_180_YN;
+
+    AGE -> MDTN_HOPE_YN;      AGE -> SFID_LTTR_NUM;      AGE -> SFID_IEM_NUM;
+    ACCR_CD -> MDTN_HOPE_YN;  ACCR_CD -> SFID_LTTR_NUM;  ACCR_CD -> SFID_IEM_NUM;
+    SXDS_CD -> MDTN_HOPE_YN;  SXDS_CD -> SFID_LTTR_NUM;  SXDS_CD -> SFID_IEM_NUM;
+    JO_DRNG_RATE -> MDTN_HOPE_YN;  JO_DRNG_RATE -> SFID_LTTR_NUM;  JO_DRNG_RATE -> SFID_IEM_NUM;
+    RCIT_NMPR -> MDTN_HOPE_YN;     RCIT_NMPR -> SFID_LTTR_NUM;     RCIT_NMPR -> SFID_IEM_NUM;
+
+    HPAR_CSCY_SCOR -> MDTN_HOPE_YN;
+    HPAR_CSCY_SCOR -> SFID_LTTR_NUM;
+    HPAR_CSCY_SCOR -> SFID_IEM_NUM;
+
+    MDTN_HOPE_YN  -> ACQ_180_YN;
+    SFID_LTTR_NUM -> ACQ_180_YN;
+    SFID_IEM_NUM  -> ACQ_180_YN;
+
+    HPAR_CSCY_SCOR -> ACQ_180_YN;
+}

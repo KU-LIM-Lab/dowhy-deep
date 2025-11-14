@@ -1,0 +1,31 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    BFR_OCTR_CT   [label="이전직업훈련건수 (trt)"];
+
+    SFID_IEM_NUM  [label="자기소개서항목개수 (mediator)"];
+
+    ACQ_180_YN    [label="180일이내취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    SXDS_CD    [label="성별코드"];
+    ACCR_CD    [label="학력코드"];
+    CYC1       [label="경력년수1"];
+    CARR_MYCT1 [label="경력월수1"];
+
+    BFR_EJAP_CT [label="이전이메일입사지원건수 (Z: mediator-only)"];
+
+    AGE     -> BFR_OCTR_CT;    AGE     -> ACQ_180_YN;
+    SXDS_CD -> BFR_OCTR_CT;    SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> BFR_OCTR_CT;    ACCR_CD -> ACQ_180_YN;
+    CYC1    -> BFR_OCTR_CT;    CYC1    -> ACQ_180_YN;
+    CARR_MYCT1 -> BFR_OCTR_CT; CARR_MYCT1 -> ACQ_180_YN;
+
+    BFR_OCTR_CT  -> SFID_IEM_NUM;
+    SFID_IEM_NUM -> ACQ_180_YN;
+
+    BFR_OCTR_CT  -> ACQ_180_YN;
+
+    BFR_EJAP_CT -> SFID_IEM_NUM;
+}

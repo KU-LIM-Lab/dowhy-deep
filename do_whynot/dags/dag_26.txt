@@ -1,0 +1,43 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    DRV_PSBL_YN  [label="운전가능여부 (trt)"];
+
+    EMPL_STLE_CD [label="고용형태코드 (mediator)"];
+
+    ACQ_180_YN   [label="180일이내취업여부 (outcome)"];
+
+    AGE              [label="연령"];
+    SXDS_CD          [label="성별코드"];
+    ACCR_CD          [label="학력코드"];
+    CYC1             [label="경력년수1"];
+    AREA_CD          [label="지역코드"];
+    KECO_CD1          [label="KECO코드"];
+    BFR_WTM6_JHCR_CT [label="이전6개월이내구직인증건수"];
+
+    HPAR_CD1 [label="희망지역코드1 (Z: mediator-only)"];
+
+    AGE -> DRV_PSBL_YN;          AGE -> ACQ_180_YN;
+    SXDS_CD -> DRV_PSBL_YN;      SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> DRV_PSBL_YN;      ACCR_CD -> ACQ_180_YN;
+    CYC1 -> DRV_PSBL_YN;         CYC1 -> ACQ_180_YN;
+    AREA_CD -> DRV_PSBL_YN;      AREA_CD -> ACQ_180_YN;
+    KECO_CD1 -> DRV_PSBL_YN;      KECO_CD1 -> ACQ_180_YN;
+    BFR_WTM6_JHCR_CT -> DRV_PSBL_YN;  BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+
+    AGE -> EMPL_STLE_CD;
+    SXDS_CD -> EMPL_STLE_CD;
+    ACCR_CD -> EMPL_STLE_CD;
+    CYC1 -> EMPL_STLE_CD;
+    AREA_CD -> EMPL_STLE_CD;
+    KECO_CD1 -> EMPL_STLE_CD;
+    BFR_WTM6_JHCR_CT -> EMPL_STLE_CD;
+
+    DRV_PSBL_YN -> EMPL_STLE_CD;
+    EMPL_STLE_CD -> ACQ_180_YN;
+
+    DRV_PSBL_YN -> ACQ_180_YN;
+
+    HPAR_CD1 -> EMPL_STLE_CD;
+}

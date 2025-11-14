@@ -1,0 +1,43 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액 (trt)"];
+
+    HPAR_CSCY_SCOR   [label="희망지역일치도점수 (mediator)"];
+
+    ACQ_180_YN       [label="180일이내취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    SXDS_CD    [label="성별코드"];
+    ACCR_CD    [label="학력코드"];
+    CYC1       [label="경력년수1"];
+    CARR_MYCT1 [label="경력월수1"];
+    CRQF_CT    [label="자격증건수"];
+    KECO_CD1   [label="KECO코드1"];
+
+    FRFT_AFTR_JHNT_REQR_DYCT [label="상실이후구직인증소요일수 (Z: mediator-only)"];
+
+    AGE -> HOPE_WAGE_SM_AMT;        AGE -> ACQ_180_YN;
+    SXDS_CD -> HOPE_WAGE_SM_AMT;    SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> HOPE_WAGE_SM_AMT;    ACCR_CD -> ACQ_180_YN;
+    CYC1 -> HOPE_WAGE_SM_AMT;       CYC1 -> ACQ_180_YN;
+    CARR_MYCT1 -> HOPE_WAGE_SM_AMT; CARR_MYCT1 -> ACQ_180_YN;
+    CRQF_CT -> HOPE_WAGE_SM_AMT;    CRQF_CT -> ACQ_180_YN;
+    KECO_CD1 -> HOPE_WAGE_SM_AMT;   KECO_CD1 -> ACQ_180_YN;
+
+    AGE -> HPAR_CSCY_SCOR;
+    SXDS_CD -> HPAR_CSCY_SCOR;
+    ACCR_CD -> HPAR_CSCY_SCOR;
+    CYC1 -> HPAR_CSCY_SCOR;
+    CARR_MYCT1 -> HPAR_CSCY_SCOR;
+    CRQF_CT -> HPAR_CSCY_SCOR;
+    KECO_CD1 -> HPAR_CSCY_SCOR;
+
+    HOPE_WAGE_SM_AMT -> HPAR_CSCY_SCOR;
+    HPAR_CSCY_SCOR   -> ACQ_180_YN;
+
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+
+    FRFT_AFTR_JHNT_REQR_DYCT -> HPAR_CSCY_SCOR;
+}

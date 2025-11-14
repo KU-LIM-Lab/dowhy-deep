@@ -1,0 +1,40 @@
+dag = """
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    # Treatment
+    COMM_WAGE_TYCD   [label="상용임금유형코드 (trt)"];
+
+    # Mediator
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액 (mediator)"];
+
+    # Outcome
+    ACQ_180_YN       [label="180일이내취업여부 (outcome)"];
+
+    # Confounders
+    AGE   [label="연령"];
+    ACCR_CD [label="학력코드"];
+    CYC1  [label="경력년수1"];
+
+    # ---- Edges ----
+    # Confounders -> Treatment
+    AGE    -> COMM_WAGE_TYCD;
+    ACCR_CD -> COMM_WAGE_TYCD;
+    CYC1   -> COMM_WAGE_TYCD;
+
+    # Confounders -> Outcome
+    AGE    -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+    CYC1   -> ACQ_180_YN;
+
+    # (권장) Confounders -> Mediator  # 매개-결과 경로의 교란 완화
+    AGE    -> HOPE_WAGE_SM_AMT;
+    ACCR_CD -> HOPE_WAGE_SM_AMT;
+    CYC1   -> HOPE_WAGE_SM_AMT;
+
+    COMM_WAGE_TYCD   -> HOPE_WAGE_SM_AMT;
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+
+    COMM_WAGE_TYCD -> ACQ_180_YN;
+}

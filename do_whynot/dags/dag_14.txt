@@ -1,0 +1,40 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    OCTR_HOPE_JSFC_CSCY_SCOR1 [label="직업훈련희망직종일치도점수1 (trt)"];
+
+    HOPE_JSCD1 [label="희망직종코드1 (mediator)"];
+
+    ACQ_180_YN [label="180일이내취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    SXDS_CD    [label="성별코드"];
+    ACCR_CD    [label="학력코드"];
+    CYC1       [label="경력년수1"];
+    CARR_MYCT1 [label="경력월수1"];
+    CRQF_CT    [label="자격증건수"];
+
+    HPAR_CD1 [label="희망지역코드1 (Z: mediator-only)"];
+
+    AGE -> OCTR_HOPE_JSFC_CSCY_SCOR1;        AGE -> ACQ_180_YN;
+    SXDS_CD -> OCTR_HOPE_JSFC_CSCY_SCOR1;    SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> OCTR_HOPE_JSFC_CSCY_SCOR1;    ACCR_CD -> ACQ_180_YN;
+    CYC1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;       CYC1 -> ACQ_180_YN;
+    CARR_MYCT1 -> OCTR_HOPE_JSFC_CSCY_SCOR1; CARR_MYCT1 -> ACQ_180_YN;
+    CRQF_CT -> OCTR_HOPE_JSFC_CSCY_SCOR1;    CRQF_CT -> ACQ_180_YN;
+
+    AGE -> HOPE_JSCD1;
+    SXDS_CD -> HOPE_JSCD1;
+    ACCR_CD -> HOPE_JSCD1;
+    CYC1 -> HOPE_JSCD1;
+    CARR_MYCT1 -> HOPE_JSCD1;
+    CRQF_CT -> HOPE_JSCD1;
+
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> HOPE_JSCD1;
+    HOPE_JSCD1 -> ACQ_180_YN;
+
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+
+    HPAR_CD1 -> HOPE_JSCD1;
+}

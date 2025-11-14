@@ -1,0 +1,27 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    OCTR_HOPE_JSFC_CSCY_SCOR1 [label="직업훈련희망직종일치도점수1 (trt)"];
+    ACQ_180_YN                [label="180일이내취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    ACCR_CD    [label="학력코드"];
+    MAJR_CD1   [label="전공코드1"];
+    UEPS_RECP_YN [label="실업급여수급여부"];
+    HPAR_CSCY_SCOR [label="희망지역일치도점수"];
+
+    AGE           -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    ACCR_CD       -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    MAJR_CD1      -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    UEPS_RECP_YN  -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    HPAR_CSCY_SCOR -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+
+    AGE           -> ACQ_180_YN;
+    ACCR_CD       -> ACQ_180_YN;
+    MAJR_CD1      -> ACQ_180_YN;
+    UEPS_RECP_YN  -> ACQ_180_YN;
+    HPAR_CSCY_SCOR -> ACQ_180_YN;
+
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+}

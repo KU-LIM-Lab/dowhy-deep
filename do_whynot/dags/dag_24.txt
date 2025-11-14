@@ -1,0 +1,43 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    COMM_WAGE_TYCD   [label="상용임금유형코드 (trt)"];
+
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액 (mediator)"];
+
+    ACQ_180_YN       [label="180일이내취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    SXDS_CD    [label="성별코드"];
+    ACCR_CD    [label="학력코드"];
+    CYC1       [label="경력년수1"];
+    CARR_MYCT1 [label="경력월수1"];
+    RCIT_NMPR  [label="모집인원수"];
+
+    AGE -> COMM_WAGE_TYCD;
+    SXDS_CD -> COMM_WAGE_TYCD;
+    ACCR_CD -> COMM_WAGE_TYCD;
+    CYC1 -> COMM_WAGE_TYCD;
+    CARR_MYCT1 -> COMM_WAGE_TYCD;
+    RCIT_NMPR -> COMM_WAGE_TYCD;
+
+    AGE -> ACQ_180_YN;
+    SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+    CYC1 -> ACQ_180_YN;
+    CARR_MYCT1 -> ACQ_180_YN;
+    RCIT_NMPR -> ACQ_180_YN;
+
+    AGE -> HOPE_WAGE_SM_AMT;
+    SXDS_CD -> HOPE_WAGE_SM_AMT;
+    ACCR_CD -> HOPE_WAGE_SM_AMT;
+    CYC1 -> HOPE_WAGE_SM_AMT;
+    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+    RCIT_NMPR -> HOPE_WAGE_SM_AMT;
+
+    COMM_WAGE_TYCD   -> HOPE_WAGE_SM_AMT;
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+
+    COMM_WAGE_TYCD -> ACQ_180_YN;
+}

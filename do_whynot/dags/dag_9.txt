@@ -1,0 +1,35 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    CRQF_CT    [label="자격증건수 (trt)"];
+
+    HOPE_JSCD1 [label="희망직종코드1 (mediator)"];
+
+    ACQ_180_YN [label="180일이내취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    SXDS_CD    [label="성별코드"];
+    ACCR_CD    [label="학력코드"];
+    CYC1       [label="경력년수1"];
+    CARR_MYCT1 [label="경력월수1"];
+    KECO_CD1   [label="KECO코드1"];
+    RCIT_NMPR  [label="모집인원수"];
+
+    HPAR_CD1 [label="희망지역코드1 (Z: mediator-only)"];
+
+    AGE -> CRQF_CT;        AGE -> ACQ_180_YN;
+    SXDS_CD -> CRQF_CT;    SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> CRQF_CT;    ACCR_CD -> ACQ_180_YN;
+    CYC1 -> CRQF_CT;       CYC1 -> ACQ_180_YN;
+    CARR_MYCT1 -> CRQF_CT; CARR_MYCT1 -> ACQ_180_YN;
+    KECO_CD1 -> CRQF_CT;   KECO_CD1 -> ACQ_180_YN;
+    RCIT_NMPR -> CRQF_CT;  RCIT_NMPR -> ACQ_180_YN;
+
+    CRQF_CT   -> HOPE_JSCD1;
+    HOPE_JSCD1 -> ACQ_180_YN;
+
+    CRQF_CT   -> ACQ_180_YN;
+
+    HPAR_CD1 -> HOPE_JSCD1;
+}

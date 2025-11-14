@@ -1,0 +1,36 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    FRFT_AFTR_JHNT_REQR_DYCT [label="상실이후구직인증소요일수 (trt)"];
+    ACQ_180_YN               [label="180일이내취업여부 (outcome)"];
+
+    AGE                      [label="연령"];
+    ACCR_CD                  [label="학력코드"];
+    ACCR_STCD                [label="학력상태코드"];
+    UEPS_RECP_YN             [label="실업급여수급여부"];
+    BFR_WTM6_JHCR_CT         [label="이전6개월이내구직인증건수"];
+    HPAR_CSCY_SCOR           [label="희망지역일치도점수"];
+    OCTR_HOPE_JSFC_CSCY_SCOR1 [label="직업훈련희망직종일치도점수1"];
+    OCTR_HOPE_JSFC_CSCY_SCOR2 [label="직업훈련희망직종일치도점수2"];
+
+    AGE                      -> FRFT_AFTR_JHNT_REQR_DYCT;
+    ACCR_CD                  -> FRFT_AFTR_JHNT_REQR_DYCT;
+    ACCR_STCD                -> FRFT_AFTR_JHNT_REQR_DYCT;
+    UEPS_RECP_YN             -> FRFT_AFTR_JHNT_REQR_DYCT;
+    BFR_WTM6_JHCR_CT         -> FRFT_AFTR_JHNT_REQR_DYCT;
+    HPAR_CSCY_SCOR           -> FRFT_AFTR_JHNT_REQR_DYCT;
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> FRFT_AFTR_JHNT_REQR_DYCT;
+    OCTR_HOPE_JSFC_CSCY_SCOR2 -> FRFT_AFTR_JHNT_REQR_DYCT;
+
+    AGE                      -> ACQ_180_YN;
+    ACCR_CD                  -> ACQ_180_YN;
+    ACCR_STCD                -> ACQ_180_YN;
+    UEPS_RECP_YN             -> ACQ_180_YN;
+    BFR_WTM6_JHCR_CT         -> ACQ_180_YN;
+    HPAR_CSCY_SCOR           -> ACQ_180_YN;
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+    OCTR_HOPE_JSFC_CSCY_SCOR2 -> ACQ_180_YN;
+
+    FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
+}

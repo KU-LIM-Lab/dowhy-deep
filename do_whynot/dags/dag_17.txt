@@ -1,0 +1,63 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    SAEIL_CNTC_AGRE_YN [label="여성새로일하기센터연계동의여부 (trt)"];
+
+    MDTN_HOPE_YN     [label="알선희망여부 (mediator)"];
+    MDTN_HOPE_GRD_CD [label="알선희망수준코드 (mediator)"];
+
+    ACQ_180_YN       [label="구직인증 후 180일이내 취업여부 (outcome)"];
+
+    AGE       [label="연령"];
+    ACCR_CD   [label="학력코드"];
+    ACCR_STCD [label="학력상태코드"];
+    SXDS_CD   [label="성별코드"];
+    AREA_CD   [label="지역코드"];
+
+    HPAR_CD1      [label="희망지역코드"];
+    JHNT_PPOS_CD  [label="구직목적코드"];
+    EMPL_STLE_CD  [label="희망고용형태코드"];
+    HOPE_JSCD1    [label="희망직종코드1"];
+
+    BFR_EJAP_CT     [label="이전이메일입사지원건수"];
+    BFR_OCTR_YN     [label="이전직업훈련여부"];
+    BFR_WTM6_JHCR_CT [label="이전6개월이내구직인증건수"];
+
+    AGE       -> SAEIL_CNTC_AGRE_YN;
+    ACCR_CD   -> SAEIL_CNTC_AGRE_YN;
+    ACCR_STCD -> SAEIL_CNTC_AGRE_YN;
+    SXDS_CD   -> SAEIL_CNTC_AGRE_YN;
+    AREA_CD   -> SAEIL_CNTC_AGRE_YN;
+
+    HPAR_CD1     -> SAEIL_CNTC_AGRE_YN;
+    JHNT_PPOS_CD -> SAEIL_CNTC_AGRE_YN;
+    EMPL_STLE_CD -> SAEIL_CNTC_AGRE_YN;
+    HOPE_JSCD1   -> SAEIL_CNTC_AGRE_YN;
+
+    BFR_EJAP_CT     -> SAEIL_CNTC_AGRE_YN;
+    BFR_OCTR_YN     -> SAEIL_CNTC_AGRE_YN;
+    BFR_WTM6_JHCR_CT -> SAEIL_CNTC_AGRE_YN;
+
+    AGE       -> ACQ_180_YN;
+    ACCR_CD   -> ACQ_180_YN;
+    ACCR_STCD -> ACQ_180_YN;
+    SXDS_CD   -> ACQ_180_YN;
+    AREA_CD   -> ACQ_180_YN;
+
+    HPAR_CD1     -> ACQ_180_YN;
+    JHNT_PPOS_CD -> ACQ_180_YN;
+    EMPL_STLE_CD -> ACQ_180_YN;
+    HOPE_JSCD1   -> ACQ_180_YN;
+
+    BFR_EJAP_CT     -> ACQ_180_YN;
+    BFR_OCTR_YN     -> ACQ_180_YN;
+    BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+
+    SAEIL_CNTC_AGRE_YN -> MDTN_HOPE_YN;
+    SAEIL_CNTC_AGRE_YN -> MDTN_HOPE_GRD_CD;
+    MDTN_HOPE_YN       -> ACQ_180_YN;
+    MDTN_HOPE_GRD_CD   -> ACQ_180_YN;
+
+    SAEIL_CNTC_AGRE_YN -> ACQ_180_YN;
+}

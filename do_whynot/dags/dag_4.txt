@@ -1,0 +1,46 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    MDTN_HOPE_GRD_CD [label="알선희망수준코드 (trt)"];
+
+    SFID_LTTR_NUM    [label="자기소개서글자개수 (mediator)"];
+
+    ACQ_180_YN       [label="180일이내취업여부 (outcome)"];
+
+    AGE                [label="연령"];
+    SXDS_CD            [label="성별코드"];
+    ACCR_CD            [label="학력코드"];
+    CYC1               [label="경력년수1"];
+    CARR_MYCT1         [label="경력월수1"];
+    SAEIL_CNTC_AGRE_YN [label="여성새로일하기센터연계동의여부"];
+    SHRS_IDIF_AOFR_YN  [label="대체인력개인정보제공동의여부"];
+    SULC_IDIF_AOFR_YN  [label="서울시개인정보제공동의여부"];
+
+    BFR_EJAP_CT [label="이전이메일입사지원건수 (Z: mediator-only)"];
+
+    AGE -> MDTN_HOPE_GRD_CD;            AGE -> ACQ_180_YN;
+    SXDS_CD -> MDTN_HOPE_GRD_CD;        SXDS_CD -> ACQ_180_YN;
+    ACCR_CD -> MDTN_HOPE_GRD_CD;        ACCR_CD -> ACQ_180_YN;
+    CYC1 -> MDTN_HOPE_GRD_CD;           CYC1 -> ACQ_180_YN;
+    CARR_MYCT1 -> MDTN_HOPE_GRD_CD;     CARR_MYCT1 -> ACQ_180_YN;
+    SAEIL_CNTC_AGRE_YN -> MDTN_HOPE_GRD_CD;   SAEIL_CNTC_AGRE_YN -> ACQ_180_YN;
+    SHRS_IDIF_AOFR_YN  -> MDTN_HOPE_GRD_CD;   SHRS_IDIF_AOFR_YN  -> ACQ_180_YN;
+    SULC_IDIF_AOFR_YN  -> MDTN_HOPE_GRD_CD;   SULC_IDIF_AOFR_YN  -> ACQ_180_YN;
+
+    AGE -> SFID_LTTR_NUM;
+    SXDS_CD -> SFID_LTTR_NUM;
+    ACCR_CD -> SFID_LTTR_NUM;
+    CYC1 -> SFID_LTTR_NUM;
+    CARR_MYCT1 -> SFID_LTTR_NUM;
+    SAEIL_CNTC_AGRE_YN -> SFID_LTTR_NUM;
+    SHRS_IDIF_AOFR_YN  -> SFID_LTTR_NUM;
+    SULC_IDIF_AOFR_YN  -> SFID_LTTR_NUM;
+
+    MDTN_HOPE_GRD_CD -> SFID_LTTR_NUM;
+    SFID_LTTR_NUM    -> ACQ_180_YN;
+
+    MDTN_HOPE_GRD_CD -> ACQ_180_YN;
+
+    BFR_EJAP_CT -> SFID_LTTR_NUM;
+}

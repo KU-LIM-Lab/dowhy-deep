@@ -1,0 +1,54 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    MDTN_HOPE_GRD_CD [label="알선희망수준코드 (trt)"];
+
+    INFO_OTPB_GRAD_CD [label="개인정보제공동의여부 (mediator)"];
+    SMS_RCYN          [label="SMS수신여부 (mediator)"];
+    EMAIL_OTPB_YN     [label="이메일공개여부 (mediator)"];
+
+    ACQ_180_YN [label="구직인증 후 180일이내 취업여부 (outcome)"];
+
+    AGE          [label="연령"];
+    ACCR_CD      [label="학력코드"];
+    SXDS_CD      [label="성별"];
+    AREA_CD      [label="지역"];
+    JO_DRNG_RATE [label="구인배수비율"];
+    RCIT_NMPR    [label="모집인원수"];
+    EMPL_STLE_CD [label="희망고용형태"];
+
+    AGE -> MDTN_HOPE_GRD_CD;
+    ACCR_CD -> MDTN_HOPE_GRD_CD;
+    SXDS_CD -> MDTN_HOPE_GRD_CD;
+    AREA_CD -> MDTN_HOPE_GRD_CD;
+    JO_DRNG_RATE -> MDTN_HOPE_GRD_CD;
+    RCIT_NMPR -> MDTN_HOPE_GRD_CD;
+    EMPL_STLE_CD -> MDTN_HOPE_GRD_CD;
+
+    AGE -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+    SXDS_CD -> ACQ_180_YN;
+    AREA_CD -> ACQ_180_YN;
+    JO_DRNG_RATE -> ACQ_180_YN;
+    RCIT_NMPR -> ACQ_180_YN;
+    EMPL_STLE_CD -> ACQ_180_YN;
+
+    AGE -> INFO_OTPB_GRAD_CD;     AGE -> SMS_RCYN;          AGE -> EMAIL_OTPB_YN;
+    ACCR_CD -> INFO_OTPB_GRAD_CD; ACCR_CD -> SMS_RCYN;      ACCR_CD -> EMAIL_OTPB_YN;
+    SXDS_CD -> INFO_OTPB_GRAD_CD; SXDS_CD -> SMS_RCYN;      SXDS_CD -> EMAIL_OTPB_YN;
+    AREA_CD -> INFO_OTPB_GRAD_CD; AREA_CD -> SMS_RCYN;      AREA_CD -> EMAIL_OTPB_YN;
+    JO_DRNG_RATE -> INFO_OTPB_GRAD_CD; JO_DRNG_RATE -> SMS_RCYN; JO_DRNG_RATE -> EMAIL_OTPB_YN;
+    RCIT_NMPR -> INFO_OTPB_GRAD_CD;   RCIT_NMPR -> SMS_RCYN;   RCIT_NMPR -> EMAIL_OTPB_YN;
+    EMPL_STLE_CD -> INFO_OTPB_GRAD_CD; EMPL_STLE_CD -> SMS_RCYN; EMPL_STLE_CD -> EMAIL_OTPB_YN;
+
+    MDTN_HOPE_GRD_CD -> INFO_OTPB_GRAD_CD;
+    MDTN_HOPE_GRD_CD -> SMS_RCYN;
+    MDTN_HOPE_GRD_CD -> EMAIL_OTPB_YN;
+
+    INFO_OTPB_GRAD_CD -> ACQ_180_YN;
+    SMS_RCYN          -> ACQ_180_YN;
+    EMAIL_OTPB_YN     -> ACQ_180_YN;
+
+    MDTN_HOPE_GRD_CD -> ACQ_180_YN;
+}

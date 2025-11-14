@@ -1,0 +1,20 @@
+digraph {
+    rankdir=LR; node [shape=box, style="rounded,filled", fillcolor="#F8F9FB"];
+
+    RESUME_ITEM_1_NM [label="봉사활동(이력 항목) (trt)"];
+    TRNG_CRSN        [label="훈련과정명 (mediator)"];
+    ACQ_180_YN       [label="180일이내취업여부 (outcome)"];
+
+    AGE [label="연령"]; ACCR_CD [label="학력코드"]; ACCR_STCD [label="학력상태코드"];
+    SXDS_CD [label="성별코드"]; AREA_CD [label="지역코드"];
+
+    AGE->RESUME_ITEM_1_NM; ACCR_CD->RESUME_ITEM_1_NM; ACCR_STCD->RESUME_ITEM_1_NM; 
+    SXDS_CD->RESUME_ITEM_1_NM; AREA_CD->RESUME_ITEM_1_NM;
+    AGE->ACQ_180_YN; ACCR_CD->ACQ_180_YN; ACCR_STCD->ACQ_180_YN; SXDS_CD->ACQ_180_YN; AREA_CD->ACQ_180_YN;
+    AGE->TRNG_CRSN; ACCR_CD->TRNG_CRSN; ACCR_STCD->TRNG_CRSN; SXDS_CD->TRNG_CRSN; AREA_CD->TRNG_CRSN;
+
+    RESUME_ITEM_1_NM -> TRNG_CRSN;
+    TRNG_CRSN -> ACQ_180_YN;
+
+    RESUME_ITEM_1_NM -> ACQ_180_YN;
+}

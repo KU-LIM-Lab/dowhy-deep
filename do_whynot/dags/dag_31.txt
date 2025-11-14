@@ -1,0 +1,22 @@
+digraph {
+    rankdir=LR; node [shape=box, style="rounded,filled", fillcolor="#F8F9FB"];
+
+    HIST_ITEM_GRDCD [label="이력항목등급코드 (trt)"];
+    CRQF_CT         [label="자격증건수 (mediator)"];
+    TRNG_CRSN       [label="훈련과정명 (mediator)"];
+    ACQ_180_YN      [label="180일이내취업여부 (outcome)"];
+
+    AGE [label="연령"]; ACCR_CD [label="학력코드"]; ACCR_STCD [label="학력상태코드"]; SXDS_CD [label="성별코드"]; AREA_CD [label="지역코드"];
+
+    AGE->HIST_ITEM_GRDCD; ACCR_CD->HIST_ITEM_GRDCD; ACCR_STCD->HIST_ITEM_GRDCD; SXDS_CD->HIST_ITEM_GRDCD; AREA_CD->HIST_ITEM_GRDCD;
+    AGE->ACQ_180_YN; ACCR_CD->ACQ_180_YN; ACCR_STCD->ACQ_180_YN; SXDS_CD->ACQ_180_YN; AREA_CD->ACQ_180_YN;
+    AGE->CRQF_CT; ACCR_CD->CRQF_CT; ACCR_STCD->CRQF_CT; SXDS_CD->CRQF_CT; AREA_CD->CRQF_CT;
+    AGE->TRNG_CRSN; ACCR_CD->TRNG_CRSN; ACCR_STCD->TRNG_CRSN; SXDS_CD->TRNG_CRSN; AREA_CD->TRNG_CRSN;
+
+    HIST_ITEM_GRDCD -> CRQF_CT;
+    HIST_ITEM_GRDCD -> TRNG_CRSN;
+    CRQF_CT   -> ACQ_180_YN;
+    TRNG_CRSN -> ACQ_180_YN;
+
+    HIST_ITEM_GRDCD -> ACQ_180_YN;
+}

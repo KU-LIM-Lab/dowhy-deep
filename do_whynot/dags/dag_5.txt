@@ -1,0 +1,36 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    RCIT_NMPR  [label="모집인원수 (trt)"];
+    ACQ_180_YN [label="180일이내취업여부 (outcome)"];
+
+    HOPE_JSCD1          [label="희망직종코드1"];
+    HPAR_CD1            [label="희망지역코드1"];
+    ACCR_CD             [label="학력코드"];
+    CARR_MYCT1          [label="경력월수1"];
+    JHNT_RQUT_CHNL_SECD [label="구직신청채널구분코드"];
+    MDTN_HOPE_GRD_CD    [label="알선희망수준코드"];
+    RQAG_HOPE_YN        [label="재신청희망여부"];
+    FRFT_AFTR_JHNT_REQR_DYCT             [label="상실이후구직인증까지소요일수"];
+
+    HOPE_JSCD1          -> RCIT_NMPR;
+    HPAR_CD1            -> RCIT_NMPR;
+    ACCR_CD             -> RCIT_NMPR;
+    CARR_MYCT1          -> RCIT_NMPR;
+    JHNT_RQUT_CHNL_SECD -> RCIT_NMPR;
+    MDTN_HOPE_GRD_CD    -> RCIT_NMPR;
+    RQAG_HOPE_YN        -> RCIT_NMPR;
+    FRFT_AFTR_JHNT_REQR_DYCT             -> RCIT_NMPR;
+
+    HOPE_JSCD1          -> ACQ_180_YN;
+    HPAR_CD1            -> ACQ_180_YN;
+    ACCR_CD             -> ACQ_180_YN;
+    CARR_MYCT1          -> ACQ_180_YN;
+    JHNT_RQUT_CHNL_SECD -> ACQ_180_YN;
+    MDTN_HOPE_GRD_CD    -> ACQ_180_YN;
+    RQAG_HOPE_YN        -> ACQ_180_YN;
+    FRFT_AFTR_JHNT_REQR_DYCT             -> ACQ_180_YN;
+
+    RCIT_NMPR -> ACQ_180_YN;
+}

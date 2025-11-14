@@ -1,0 +1,61 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    BFR_EJAP_CT   [label="이전입사지원건수 (trt)"];
+
+    MDTN_HOPE_YN      [label="알선희망여부 (mediator)"];
+    IDIF_IQRY_AGRE_YN [label="이메일 동의여부 (mediator)"];
+    SFID_IEM_NUM      [label="자기소개서 항목 수 (mediator)"];
+    SFID_LTTR_NUM     [label="자기소개서 글자 수 (mediator)"];
+
+    ACQ_180_YN    [label="구직인증 후 180일이내 취업여부 (outcome)"];
+
+    AGE        [label="연령"];
+    ACCR_CD    [label="학력코드"];
+    ACCR_STCD  [label="학력상태코드"];
+    SXDS_CD    [label="성별코드"];
+    AREA_CD    [label="지역코드"];
+
+    HOPE_JSCD1 [label="희망직종코드1"];
+    HPAR_CD1   [label="희망지역코드1"];
+    EMPL_STLE_CD [label="희망고용형태코드"];
+
+    JBHT_NMPR   [label="구직자인원수"];
+    RCIT_NMPR   [label="모집인원수"];
+    JO_DRNG_RATE [label="구인배수비율"];
+
+    BFR_OCTR_YN     [label="이전 직업훈련 여부"];
+    BFR_OCTR_CT     [label="이전직업훈련횟수"];
+    BFR_WTM6_JHCR_CT [label="이전 6개월 구직인증 건수"];
+
+    AGE -> BFR_EJAP_CT;     ACCR_CD -> BFR_EJAP_CT;   ACCR_STCD -> BFR_EJAP_CT;
+    SXDS_CD -> BFR_EJAP_CT; AREA_CD  -> BFR_EJAP_CT;
+
+    HOPE_JSCD1 -> BFR_EJAP_CT;  HPAR_CD1 -> BFR_EJAP_CT;  EMPL_STLE_CD -> BFR_EJAP_CT;
+
+    JBHT_NMPR -> BFR_EJAP_CT;   RCIT_NMPR -> BFR_EJAP_CT;   JO_DRNG_RATE -> BFR_EJAP_CT;
+
+    BFR_OCTR_YN -> BFR_EJAP_CT; BFR_OCTR_CT -> BFR_EJAP_CT; BFR_WTM6_JHCR_CT -> BFR_EJAP_CT;
+
+    AGE -> ACQ_180_YN;      ACCR_CD -> ACQ_180_YN;   ACCR_STCD -> ACQ_180_YN;
+    SXDS_CD -> ACQ_180_YN;  AREA_CD  -> ACQ_180_YN;
+
+    HOPE_JSCD1 -> ACQ_180_YN; HPAR_CD1 -> ACQ_180_YN; EMPL_STLE_CD -> ACQ_180_YN;
+
+    JBHT_NMPR -> ACQ_180_YN; RCIT_NMPR -> ACQ_180_YN; JO_DRNG_RATE -> ACQ_180_YN;
+
+    BFR_OCTR_YN -> ACQ_180_YN; BFR_OCTR_CT -> ACQ_180_YN; BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+
+    BFR_EJAP_CT -> MDTN_HOPE_YN;
+    BFR_EJAP_CT -> IDIF_IQRY_AGRE_YN;
+    BFR_EJAP_CT -> SFID_IEM_NUM;
+    BFR_EJAP_CT -> SFID_LTTR_NUM;
+
+    MDTN_HOPE_YN      -> ACQ_180_YN;
+    IDIF_IQRY_AGRE_YN -> ACQ_180_YN;
+    SFID_IEM_NUM      -> ACQ_180_YN;
+    SFID_LTTR_NUM     -> ACQ_180_YN;
+
+    BFR_EJAP_CT -> ACQ_180_YN;
+}

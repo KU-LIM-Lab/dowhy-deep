@@ -1,0 +1,39 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    QULF_LCNS_LCFN [label="자격증 대분류 (trt)"];
+
+    CRQF_CT         [label="자격증 개수 (mediator)"];
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액 (mediator)"];
+    MDTN_HOPE_YN     [label="알선희망여부 (mediator)"];
+
+    ACQ_180_YN [label="180일이내취업여부 (outcome)"];
+
+    AGE           [label="연령"];
+    ACCR_CD       [label="학력코드"];
+    SXDS_CD       [label="성별코드"];
+    AREA_CD       [label="지역코드"];
+    HOPE_JSCD1    [label="희망직종코드1"];
+    CAREER_MMCNT  [label="경력월수"];
+
+    AGE->QULF_LCNS_LCFN; ACCR_CD->QULF_LCNS_LCFN; SXDS_CD->QULF_LCNS_LCFN; AREA_CD->QULF_LCNS_LCFN; HOPE_JSCD1->QULF_LCNS_LCFN; CAREER_MMCNT->QULF_LCNS_LCFN;
+
+    AGE->CRQF_CT; ACCR_CD->CRQF_CT; SXDS_CD->CRQF_CT; AREA_CD->CRQF_CT; HOPE_JSCD1->CRQF_CT; CAREER_MMCNT->CRQF_CT;
+    AGE->HOPE_WAGE_SM_AMT; ACCR_CD->HOPE_WAGE_SM_AMT; SXDS_CD->HOPE_WAGE_SM_AMT; AREA_CD->HOPE_WAGE_SM_AMT; HOPE_JSCD1->HOPE_WAGE_SM_AMT; CAREER_MMCNT->HOPE_WAGE_SM_AMT;
+    AGE->MDTN_HOPE_YN; ACCR_CD->MDTN_HOPE_YN; SXDS_CD->MDTN_HOPE_YN; AREA_CD->MDTN_HOPE_YN; HOPE_JSCD1->MDTN_HOPE_YN; CAREER_MMCNT->MDTN_HOPE_YN;
+
+    AGE->ACQ_180_YN; ACCR_CD->ACQ_180_YN; SXDS_CD->ACQ_180_YN; AREA_CD->ACQ_180_YN; HOPE_JSCD1->ACQ_180_YN; CAREER_MMCNT->ACQ_180_YN;
+
+    QULF_LCNS_LCFN -> CRQF_CT;
+    QULF_LCNS_LCFN -> HOPE_WAGE_SM_AMT;
+    QULF_LCNS_LCFN -> MDTN_HOPE_YN;
+
+    CRQF_CT -> HOPE_WAGE_SM_AMT;
+    CRQF_CT -> MDTN_HOPE_YN;
+
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    MDTN_HOPE_YN     -> ACQ_180_YN;
+
+    QULF_LCNS_LCFN -> ACQ_180_YN;
+}

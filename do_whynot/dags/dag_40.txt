@@ -1,0 +1,29 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    CAREER_MMCNT    [label="경력월수 (trt)"];
+
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액 (mediator)"];
+    MDTN_HOPE_YN     [label="알선희망여부 (mediator)"];
+
+    ACQ_180_YN      [label="180일이내취업여부 (outcome)"];
+
+    AGE     [label="연령"];
+    ACCR_CD [label="학력코드"];
+    SXDS_CD [label="성별코드"];
+    AREA_CD [label="지역코드"];
+
+    AGE->CAREER_MMCNT;   ACCR_CD->CAREER_MMCNT;   SXDS_CD->CAREER_MMCNT;   AREA_CD->CAREER_MMCNT;
+    AGE->HOPE_WAGE_SM_AMT; ACCR_CD->HOPE_WAGE_SM_AMT; SXDS_CD->HOPE_WAGE_SM_AMT; AREA_CD->HOPE_WAGE_SM_AMT;
+    AGE->MDTN_HOPE_YN;     ACCR_CD->MDTN_HOPE_YN;     SXDS_CD->MDTN_HOPE_YN;     AREA_CD->MDTN_HOPE_YN;
+    AGE->ACQ_180_YN;     ACCR_CD->ACQ_180_YN;     SXDS_CD->ACQ_180_YN;     AREA_CD->ACQ_180_YN;
+
+    CAREER_MMCNT -> HOPE_WAGE_SM_AMT;
+    CAREER_MMCNT -> MDTN_HOPE_YN;
+
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    MDTN_HOPE_YN     -> ACQ_180_YN;
+
+    CAREER_MMCNT -> ACQ_180_YN;
+}

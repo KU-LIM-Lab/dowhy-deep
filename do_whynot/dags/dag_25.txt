@@ -1,0 +1,27 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    DRV_PSBL_YN  [label="운전가능여부 (trt)"];
+
+    HOPE_JSCD1   [label="희망직종코드1 (mediator)"];
+
+    ACQ_180_YN   [label="180일이내취업여부 (outcome)"];
+
+    AGE     [label="연령"];
+    ACCR_CD [label="학력코드"];
+    CYC1    [label="경력년수1"];
+
+    HPAR_CD1 [label="희망지역코드1 (Z: mediator-only)"];
+
+    AGE     -> DRV_PSBL_YN;   AGE     -> ACQ_180_YN;
+    ACCR_CD -> DRV_PSBL_YN;   ACCR_CD -> ACQ_180_YN;
+    CYC1    -> DRV_PSBL_YN;   CYC1    -> ACQ_180_YN;
+
+    DRV_PSBL_YN -> HOPE_JSCD1;
+    HOPE_JSCD1  -> ACQ_180_YN;
+
+    DRV_PSBL_YN -> ACQ_180_YN;
+
+    HPAR_CD1 -> HOPE_JSCD1;
+}

@@ -1,0 +1,23 @@
+digraph {
+    rankdir=LR; node [shape=box, style="rounded,filled", fillcolor="#F8F9FB"];
+
+    JSCD            [label="직종코드 (trt)"];
+    TRNG_JSCD       [label="훈련직종코드 (mediator)"];
+    SELF_INTRO_CONT_LABEL [label="자기소개내용 (mediator)"];
+    ACQ_180_YN      [label="180일이내취업여부 (outcome)"];
+
+    AGE [label="연령"]; ACCR_CD [label="학력코드"]; ACCR_STCD [label="학력상태코드"]; SXDS_CD [label="성별코드"]; AREA_CD [label="지역코드"];
+
+    AGE->JSCD; ACCR_CD->JSCD; ACCR_STCD->JSCD; SXDS_CD->JSCD; AREA_CD->JSCD;
+    AGE->ACQ_180_YN; ACCR_CD->ACQ_180_YN; ACCR_STCD->ACQ_180_YN; SXDS_CD->ACQ_180_YN; AREA_CD->ACQ_180_YN;
+
+    AGE->TRNG_JSCD; ACCR_CD->TRNG_JSCD; ACCR_STCD->TRNG_JSCD; SXDS_CD->TRNG_JSCD; AREA_CD->TRNG_JSCD;
+    AGE->SELF_INTRO_CONT_LABEL; ACCR_CD->SELF_INTRO_CONT_LABEL; ACCR_STCD->SELF_INTRO_CONT_LABEL; SXDS_CD->SELF_INTRO_CONT_LABEL; AREA_CD->SELF_INTRO_CONT_LABEL;
+
+    JSCD -> TRNG_JSCD;
+    JSCD -> SELF_INTRO_CONT_LABEL;
+    TRNG_JSCD -> ACQ_180_YN;
+    SELF_INTRO_CONT_LABEL -> ACQ_180_YN;
+
+    JSCD -> ACQ_180_YN;
+}

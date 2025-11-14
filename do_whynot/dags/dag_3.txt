@@ -1,0 +1,40 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    MDTN_HOPE_GRD_CD [label="알선희망수준코드 (trt)"];
+
+    SFID_LTTR_NUM  [label="자기소개서글자개수 (mediator)"];
+    SFID_IEM_SECD  [label="자기소개서항목구분코드 (mediator)"];
+    SELF_INTRO_CONT_LABEL [label="자기소개서항목의내용 (mediator)"];
+    SFID_SJNM      [label="자기소개서항목의제목 (mediator)"];
+
+    ACQ_180_YN [label="180일이내취업여부 (outcome)"];
+
+    AGE     [label="연령"];
+    ACCR_CD [label="학력코드"];
+    CYC1    [label="경력년수1"];
+
+    BFR_EJAP_CT [label="이전이메일입사지원건수 (Z: mediator-only)"];
+
+    AGE     -> MDTN_HOPE_GRD_CD;   AGE     -> ACQ_180_YN;
+    ACCR_CD -> MDTN_HOPE_GRD_CD;   ACCR_CD -> ACQ_180_YN;
+    CYC1    -> MDTN_HOPE_GRD_CD;   CYC1    -> ACQ_180_YN;
+
+    MDTN_HOPE_GRD_CD -> SFID_LTTR_NUM;
+    MDTN_HOPE_GRD_CD -> SFID_IEM_SECD;
+    MDTN_HOPE_GRD_CD -> SELF_INTRO_CONT_LABEL;
+    MDTN_HOPE_GRD_CD -> SFID_SJNM;
+
+    SFID_LTTR_NUM   -> ACQ_180_YN;
+    SFID_IEM_SECD   -> ACQ_180_YN;
+    SELF_INTRO_CONT_LABEL -> ACQ_180_YN;
+    SFID_SJNM       -> ACQ_180_YN;
+
+    MDTN_HOPE_GRD_CD -> ACQ_180_YN;
+
+    BFR_EJAP_CT -> SFID_LTTR_NUM;
+    BFR_EJAP_CT -> SFID_IEM_SECD;
+    BFR_EJAP_CT -> SELF_INTRO_CONT_LABEL;
+    BFR_EJAP_CT -> SFID_SJNM;
+}
