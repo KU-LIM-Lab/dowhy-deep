@@ -45,44 +45,48 @@
 ## 디렉토리 구조
 
 ```bash
-do_whynot/
-├── main.py
-├── config.py
-├── requirements.txt
-│
-├── dags/
-│   ├── dag_1.txt
-│   ├── dag_2.txt
-│   └── ...
-│
-├── data/
-│   ├── synthetic_data_raw.csv
-│   ├── synthetic_data_raw_10000.csv
-│   │
-│   ├── RESUME_JSON/ver1/*.json
-│   ├── COVERLETTERS_JSON/ver1/*.json
-│   ├── TRAININGS_JSON/output/*.json
-│   ├── LICENSES_JSON/output/*.json
-│   └── output/
-│
-├── models/
-│   ├── config.json
-│   ├── metrics_best.json
-│   ├── tokenizer.json
-│   ├── tokenizer_config.json
-│   ├── tokenizer_config.json
-│   ├── vocab.txt
-│   ├── models.safetensors   # drive에서 저장 및 models에 로드
-│   └── pytorch_model.bin    # drive에서 저장 및 models에 로드
-│
-└── src/
-    ├── dag_parser.py
-    ├── preprocessor.py
-    ├── estimation.py
-    ├── inference_top1.py
-    ├── interpretator.py
-    ├── prediction.py
-    └── eda.py
+dowhy-deep/                      
+├── dockerfile
+├── docker-compose.yml
+├── requirements.txt             
+└── do_whynot/
+   ├── main.py
+   ├── config.py
+   ├── requirements.txt
+   │
+   ├── dags/
+   │   ├── dag_1.txt
+   │   ├── dag_2.txt
+   │   └── ...
+   │
+   ├── data/
+   │   ├── synthetic_data_raw.csv
+   │   ├── synthetic_data_raw_10000.csv
+   │   │
+   │   ├── RESUME_JSON/ver1/*.json
+   │   ├── COVERLETTERS_JSON/ver1/*.json
+   │   ├── TRAININGS_JSON/output/*.json
+   │   ├── LICENSES_JSON/output/*.json
+   │   └── output/
+   │
+   ├── models/
+   │   ├── config.json
+   │   ├── metrics_best.json
+   │   ├── tokenizer.json
+   │   ├── tokenizer_config.json
+   │   ├── tokenizer_config.json
+   │   ├── vocab.txt
+   │   ├── models.safetensors   # drive에서 저장 및 models에 로드
+   │   └── pytorch_model.bin    # drive에서 저장 및 models에 로드
+   │
+   └── src/
+      ├── dag_parser.py
+      ├── preprocessor.py
+      ├── estimation.py
+      ├── inference_top1.py
+      ├── interpretator.py
+      ├── prediction.py
+      └── eda.py
 ```
 
 
