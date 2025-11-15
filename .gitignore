@@ -162,3 +162,7 @@ dowhy_env/
 
 /do_whynot/data/TRAININGS_JSON/output/
 /do_whynot/data/TRAININGS_JSON/ver10000/
+
+# ignore logs and data output
+/do_whynot/logs/
+/do_whynot/data/output/
