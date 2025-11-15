@@ -145,3 +145,55 @@ python do_whynot/main.py
 결과는 데이터 관련 결과물은 `data/output/`에, 실행 결과 및 로그는 `logs/`에 저장됩니다.
 
 
+
+
+
+## Docker 환경
+
+**Ubuntu + CUDA + Python 환경**을 도커 이미지로 고정해 두고,
+코드는 로컬(또는 서버)에 있는 레포를 그대로 사용하도록 설계했습니다.
+
+- 기본 이미지: `dowhydeep:keis-v2`
+- 타깃 아키텍처: amd64 (Windows)
+- **폐쇄망 환경**에서는 .tar 파일을 통해 이미지를 전달받길 권장합니다.
+
+## 고용정보원 서버(A100 + Ubuntu) 실행 가이드
+
+1. 준비
+- Docker Desktop 설치
+- `dowhydeep_keis_v2_amd64.tar` (도커 이미지)
+- 레포지토리 전체 (`dowhy-deep/`) (코드 + DAG + 데이터 등)
+
+2. Docker 이미지 로드
+
+```
+docker load -i /path/to/dowhydeep_keis_v2_amd64.tar
+```
+
+3. 프로젝트 복사
+
+예시: 고용정보원 서버에서 /data/dowhy-deep 경로에 프로젝트를 복사
+
+```
+cd /data/dowhy-deep
+```
+
+4. GPU 포함 컨테이너 실행
+
+```
+docker run -it --rm \
+  --gpus all \
+  --shm-size=32g \
+  -v "$(pwd)":/workspace/dowhy-deep \
+  dowhydeep:keis-v2 bash
+```
+
+컨테이너 안에서:
+
+```
+cd /workspace/dowhy-deep
+
+nvidia-smi        # GPU 인식 확인
+
+python3 do_whynot/main.py
+```
