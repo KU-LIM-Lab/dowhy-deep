@@ -6,7 +6,7 @@ from dowhy import CausalModel
 from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 
 from do_whynot.src.dag_parser import extract_roles_general, dot_to_nx
-from do_whynot.config import DAG_DIR, EXCLUDE_COLS, MULTICLASS_THRESHOLD, MULTICLASS_PASS
+from do_whynot.config import DAG_DIR, EXCLUDE_COLS, PREFIX_COLS, MULTICLASS_THRESHOLD, MULTICLASS_PASS
 
 
 def get_treatment_type(df: pd.DataFrame, treatment_col: str) -> str:
@@ -364,11 +364,17 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
     df_copy = df.copy()
     object_cols = df_copy.select_dtypes(include=['object']).columns.tolist()
     
-    cols_to_convert = [c for c in object_cols if c not in EXCLUDE_COLS]
+    excluded_cols = EXCLUDE_COLS.copy()
+    for prefix in PREFIX_COLS:
+        prefix_cols = [c for c in df_copy.columns if c.startswith(prefix)]
+        excluded_cols.extend(prefix_cols)
+
+    excluded_cols = list(set(excluded_cols))
+    cols_to_convert = [c for c in object_cols if c not in excluded_cols]
 
     for col in cols_to_convert:
         try:
-            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').fillna(-1).astype('int')
+            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').astype('int')
             logger.debug(f"[{dag_file_name}] Converted object column '{col}' to Int64.")
         except Exception as e:
             logger.warning(f"[{dag_file_name}] Failed to convert object column '{col}' to Int64: {e}")

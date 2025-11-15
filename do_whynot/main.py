@@ -12,12 +12,12 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from do_whynot.src.preprocessor import build_pipeline_wide, postprocess
-from do_whynot.src.dag_parser import extract_roles_general, dot_to_nx
+from do_whynot.src.dag_parser import extract_roles_general
 from do_whynot.src.inference_top1 import llm_inference
-from do_whynot.src.interpretator import load_and_consolidate_data, analyze_results
+from do_whynot.src.interpretator import load_and_consolidate_batch_results, analyze_results
 from do_whynot.src.eda import perform_eda
 from do_whynot.src.estimation import get_treatment_type, validate_tabpfn_estimator, run_tabpfn_estimation
-from do_whynot.src.prediction import run_prediction_pipeline, _normalize_top_dags
+from do_whynot.src.prediction import run_prediction_pipeline
 
 from do_whynot.config import IS_TEST_MODE, TEST_SAMPLE_SIZE, BATCH_SIZE, DATA_OUTPUT_DIR, DAG_INDICES_TEST, DAG_INDICES, DAG_DIR
 
@@ -147,6 +147,8 @@ def main():
     all_results_df = pd.DataFrame()
     multi_class_fixed_params = {}
 
+    all_llm_preds = pd.DataFrame()
+
     for i in range(num_batches):
         start_idx = i * BATCH_SIZE
         end_idx = min((i + 1) * BATCH_SIZE, total_rows)
@@ -172,7 +174,12 @@ def main():
         )
         main_logger.info(f"Merged LLM predictions into batch dataframe. New shape: {batch_df.shape}")
 
+        all_llm_preds = pd.concat([all_llm_preds, llm_preds_df[['JHNT_MBN', 'SELF_INTRO_CONT_LABEL']]], ignore_index=True)
+
         batch_results = []
+
+        batch_result_folder = RESULTS_DIR / "validations"
+        batch_result_folder.mkdir(parents=True, exist_ok=True)
 
         for dag_idx in dag_indices:
             
@@ -248,7 +255,7 @@ def main():
             batch_results_df = pd.DataFrame(batch_results)
             all_results_df = pd.concat([all_results_df, batch_results_df], ignore_index=True) # 전체 결과에 누적
             
-            batch_result_file = RESULTS_DIR / f"batch_results_{i+1:02d}.csv"
+            batch_result_file = batch_result_folder / f"batch_results_{i+1:02d}.csv"
             batch_results_df.to_csv(batch_result_file, index=False, encoding="utf-8")
             main_logger.info(f" BATCH {i+1} results saved to: {batch_result_file.name}")
     
@@ -256,32 +263,59 @@ def main():
     all_results_df.to_csv(final_result_file, index=False, encoding="utf-8")
     main_logger.info("All validation results saved to: %s", final_result_file.name)
 
+    final_llm_merged_df = final_df.copy()
+
+    final_llm_merged_df['JHNT_MBN'] = final_llm_merged_df['JHNT_MBN'].astype(str)
+    all_llm_preds['JHNT_MBN'] = all_llm_preds['JHNT_MBN'].astype(str)
+
+    final_llm_merged_df = pd.merge(final_llm_merged_df, all_llm_preds, on='JHNT_MBN', how='left')
+    final_llm_merged_file = DATA_OUTPUT_DIR / "final_df_with_llm_predictions.csv"
+    main_logger.info("Final DataFrame with all LLM predictions saved to: %s", final_llm_merged_file.name)
+
     main_logger.info("-" * 50)
     main_logger.info("Validation runs complete.")
     
     # --- 3. 최종 해석 로직 ---
     main_logger.info("Starting Causal Interpretation Analysis...")
     
-    df_consolidated = load_and_consolidate_data(RESULTS_DIR, main_logger)
-    top_dags_info = analyze_results(df_consolidated, main_logger)
-    
-    top_5_dags_info = _normalize_top_dags(top_dags_info, final_df)
-    main_logger.info(
-        f"[Prediction] normalized top_5_dags_info: {top_5_dags_info}"
-    )
+    df_consolidated = load_and_consolidate_batch_results(RESULTS_DIR, main_logger)
+    top_5_dags_info = analyze_results(df_consolidated, main_logger)
     main_logger.info("Interpretation analysis complete.")
 
     # --- 4. 최종 예측 로직 ---
-    pred_result = run_prediction_pipeline(
-        final_df=final_df,
-        top_5_dags_info=top_5_dags_info,
-        outcome_name="ACQ_180_YN",
-        data_output_dir=DATA_OUTPUT_DIR,
-        logger=main_logger,
-        is_test_mode=IS_TEST_MODE,
-        batch_size=BATCH_SIZE,
-    )
-    main_logger.info(f"[Prediction done] 결과 요약: {pred_result}")
+    main_logger.info("Starting Prediction Pipeline on Top DAGs...")
+
+    all_final_preds = pd.DataFrame()
+    for i in range(num_batches):
+        start_idx = i * BATCH_SIZE
+        end_idx = min((i + 1) * BATCH_SIZE, total_rows)
+        
+        batch_final_df = final_llm_merged_df.iloc[start_idx:end_idx].copy()
+
+        pred_result = run_prediction_pipeline(
+            final_merged_df=batch_final_df,
+            top_5_dags_info=top_5_dags_info,
+            outcome_name="ACQ_180_YN",
+            data_output_dir=RESULTS_DIR,
+            logger=main_logger,
+            batch_id=i,
+        )
+        
+        all_final_preds = pd.concat([all_final_preds, pred_result], ignore_index=True)
+        main_logger.info(f"Batch{i+1} prediction results accumulated. Current total rows: {len(all_final_preds)}")
+    
+    main_logger.info("Merging all predictions with the final preprocessed DataFrame...")
+    
+    final_llm_merged_df['JHNT_MBN'] = final_llm_merged_df['JHNT_MBN'].astype(str)
+    all_final_preds['JHNT_MBN'] = all_final_preds['JHNT_MBN'].astype(str)
+    
+    final_merged_with_all_preds = pd.merge(final_llm_merged_df, all_final_preds, on='JHNT_MBN', how='left')
+    
+    all_final_preds_file = RESULTS_DIR / "final_df_all_predictions.csv"
+    final_merged_with_all_preds.to_csv(all_final_preds_file, index=False, encoding="utf-8")
+    
+    main_logger.info("Final DataFrame shape: %s", final_merged_with_all_preds.shape)
+    main_logger.info("All final predictions merged and saved to: %s", all_final_preds_file.name)
     main_logger.info("Prediction complete.")
 
 if __name__ == "__main__":

@@ -9,11 +9,11 @@ import logging
 from do_whynot.config import P_VALUE_THRESHOLD
 
 
-def load_and_consolidate_data(results_dir: Path, logger: logging.Logger) -> pd.DataFrame:
+def load_and_consolidate_batch_results(results_dir: Path, logger: logging.Logger) -> pd.DataFrame:
     """지정된 디렉토리에서 모든 배치 결과 CSV 파일을 로드하고 통합합니다."""
     
     # glob을 사용하여 디렉토리 내의 모든 배치 결과 파일 찾기
-    search_pattern = str(results_dir / "batch_results_*.csv")
+    search_pattern = str(results_dir / "validations" / "batch_results_*.csv")
     all_files = glob.glob(search_pattern)
     
     if not all_files:
@@ -133,7 +133,7 @@ def analyze_results(df: pd.DataFrame, logger: logging.Logger) -> dict:
     report_lines.append("[4. Key Findings (Aggregated by Robust DAG-Treatment Runs)]")
     
     # 4-1. Robust Runs의 DAG별 TabPFN ATE 평균 계산
-    dag_ate_summary = df_robust.groupby('dag_idx')['tabpfn_ate'].mean().reset_index(name='mean_tabpfn_ate')
+    dag_ate_summary = df_robust.groupby(['dag_idx', 'treatment'])['tabpfn_ate'].mean().reset_index(name='mean_tabpfn_ate')
     
     # 4-2. 가장 강력한 인과 효과 (TabPFN ATE 평균 기준)
     top_5_positive_dag = dag_ate_summary.sort_values(by='mean_tabpfn_ate', ascending=False).head(5)
@@ -146,12 +146,11 @@ def analyze_results(df: pd.DataFrame, logger: logging.Logger) -> dict:
     report_lines.append(top_5_negative_dag.to_string(index=False, float_format="%.6f"))
 
     # 반환할 딕셔너리 생성
-    top_5_positive_dags = top_5_positive_dag.set_index('dag_idx')['mean_tabpfn_ate'].apply(lambda x: f"{x:.6f}").to_dict()
-
+    top_5_positive_dags_list = top_5_positive_dag.rename(columns={'mean_tabpfn_ate': 'ate_mean', 'treatment': 'treatment_column'}).to_dict('records')
 
     report_lines.append("\n" + "="*80)
     report_lines.append("Report complete.")
     
     logger.info('\n'.join(report_lines))
     
-    return top_5_positive_dags
+    return top_5_positive_dags_list

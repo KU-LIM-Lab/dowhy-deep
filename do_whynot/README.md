@@ -11,7 +11,7 @@
    - `data/` 아래 CSV & JSON 파일 로드
    - 기본 구직인증 테이블 데이터에 이력서, 자소서, 자격증, 직업훈련 데이터 병합
    - binary columns 인코딩, datetime columns 정수화(소요일수화), 전체 NA 컬럼 제거, label encoding 진행
-   - preprocessed_df.csv가 `data/output/`에 저장
+   - preprocessed_df.csv가 `data/output/preprocessed_df.csv`로 저장
 
 2. **DAG 로딩**
    - `dags/`의 DAG txt 파일(`dag_1.txt` ~) 로드
@@ -20,7 +20,7 @@
 
 3. **llm inference**
    - batch별 자기소개서 내용(`SELF_INTRO_CONT`)에 대한 label inference
-   - 결과는 `data/output/`에 `preprocessed_df.csv`로 저장
+   - 결과는 `data/output/`에 `preds_{num}.csv`로 저장
 
 3. **인과효과(ATE) 추정**
    - Linear Regressor 기반 ATE 추정(baseline)
@@ -33,12 +33,14 @@
 
 5. **결과 저장**
    - `logs/`에 DAG별 ATE, p-value, refutation 결과 저장
-   - batch_results_*.csv 및 all_validation_results.csv 저장
+   - `logs/validations`에 `batch_results_*.csv` 저장
+   - `logs/`에 `all_validation_results.csv` 저장
 
 6. **취업확률 예측**
    - 도출된 top_5_dags_info를 바탕으로 취업확률 예측
    - TabPFN estimator의 predict_fn 사용
-   - `data/output/`에 `prediction_dag_{dag_num}.csv`로 결과 저장
+   - `logs/preds`에 `batch_preds_*.csv` 저장
+   - `logs/`에 `final_df_all_predictions.csv` 저장
 
 
 
