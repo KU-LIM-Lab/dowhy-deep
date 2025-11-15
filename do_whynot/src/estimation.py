@@ -30,7 +30,7 @@ def get_treatment_type(df: pd.DataFrame, treatment_col: str) -> str:
     # 2. 숫자형 타입 확인
     if unique_count == 2:
         return "binary"
-    elif unique_count < 20 and pd.api.types.is_numeric_dtype(s): # 카디널리티가 낮은 숫자형은 multi-class로 간주
+    elif unique_count < MULTICLASS_THRESHOLD: # 카디널리티가 낮은 숫자형은 multi-class로 간주
         return "multi-class"
     
     # 3. 그 외 (주로 카디널리티가 높은 숫자형 또는 기타)
@@ -60,6 +60,8 @@ def estimate_tabpfn_ate_multi(model, identified, data, treatment_col, logger,
 
     # 실제 treatment level들
     levels = pd.Series(data[treatment_col].dropna().unique()).tolist()
+    levels = [lvl for lvl in levels if lvl != -1 and lvl != '-1']
+    
     if len(levels) < 2:
         logger.info("[TabPFN/Multi] '%s': less than 2 levels, skip", treatment_col)
         return None, None, None, None, None
@@ -366,18 +368,11 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
 
     for col in cols_to_convert:
         try:
-            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').astype('Int64')
+            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').fillna(-1).astype('int')
             logger.debug(f"[{dag_file_name}] Converted object column '{col}' to Int64.")
         except Exception as e:
             logger.warning(f"[{dag_file_name}] Failed to convert object column '{col}' to Int64: {e}")
     
-    if treatment_type == "multi-class":
-        try:
-            df_copy[dag_treatment] = df_copy[dag_treatment].astype('category')
-            logger.info(f"[{dag_file_name}] Multi-class treatment '{dag_treatment}' explicitly converted to 'category' type for Refutation stability.")
-        except Exception as e:
-            logger.error(f"[{dag_file_name}] Failed to convert multi-class treatment to category: {e}")
-
     # 그래프 생성 및 노드 이름 조정
     nx_graph = dot_to_nx(graph_txt)
     

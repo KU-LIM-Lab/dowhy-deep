@@ -6,9 +6,8 @@ import glob
 import sys
 import os
 import logging
+from do_whynot.config import P_VALUE_THRESHOLD
 
-# 유의성 기준 (인과성 반박이 실패하지 않았다고 간주하는 P-value의 하한선)
-P_VALUE_THRESHOLD = 0.05
 
 def load_and_consolidate_data(results_dir: Path, logger: logging.Logger) -> pd.DataFrame:
     """지정된 디렉토리에서 모든 배치 결과 CSV 파일을 로드하고 통합합니다."""

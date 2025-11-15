@@ -10,6 +10,8 @@ DAG_INDICES = range(1, 43)  # 실행할 DAG 인덱스 범위
 MULTICLASS_THRESHOLD = 20  # 다중 클래스 판단 기준 (고유값 수)
 MULTICLASS_PASS = False    # threshold 이상의 레이블을 갖는 다중 클래스 처리 허용 여부
 
+P_VALUE_THRESHOLD = 0.05   # 유의성 기준 (인과성 반박이 실패하지 않았다고 간주하는 P-value의 하한선)
+
 ## directory settings
 from pathlib import Path
 
