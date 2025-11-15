@@ -157,7 +157,7 @@ python do_whynot/main.py
 - 타깃 아키텍처: amd64 (Windows)
 - **폐쇄망 환경**에서는 .tar 파일을 통해 이미지를 전달받길 권장합니다.
 
-## 서버(A100 + Ubuntu) 실행 가이드
+### 서버(A100 + Ubuntu) 실행 가이드
 
 1. **준비**
 - Docker Desktop 설치
