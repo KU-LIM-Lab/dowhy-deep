@@ -156,7 +156,7 @@ def run_prediction_pipeline(
     preds_dir = data_output_dir / "preds"
     preds_dir.mkdir(parents=True, exist_ok=True)
     
-    save_path = preds_dir / f"batch_preds_{{batch_id+1:02d}}.csv" 
+    save_path = preds_dir / f"batch_preds_{batch_id+1:02d}.csv" 
     pred_result_df.to_csv(save_path, index=False, encoding="utf-8")
     logger.info(f"[predict] Batch prediction result saved to: {save_path.name}")
 
