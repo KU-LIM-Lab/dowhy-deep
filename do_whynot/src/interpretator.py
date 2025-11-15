@@ -133,7 +133,11 @@ def analyze_results(df: pd.DataFrame, logger: logging.Logger) -> dict:
     report_lines.append("[4. Key Findings (Aggregated by Robust DAG-Treatment Runs)]")
     
     # 4-1. Robust Runs의 DAG별 TabPFN ATE 평균 계산
-    dag_ate_summary = df_robust.groupby(['dag_idx', 'treatment'])['tabpfn_ate'].mean().reset_index(name='mean_tabpfn_ate')
+    dag_ate_summary = df_robust.groupby(['dag_idx', 'treatment']).agg(
+            mean_tabpfn_ate=('tabpfn_ate', 'mean'),
+            baseline=('multi_class_baseline', 'first'),
+            treatment_value=('multi_class_treatment_value', 'first')
+        ).reset_index()    
     
     # 4-2. 가장 강력한 인과 효과 (TabPFN ATE 평균 기준)
     top_5_positive_dag = dag_ate_summary.sort_values(by='mean_tabpfn_ate', ascending=False).head(5)
@@ -146,8 +150,15 @@ def analyze_results(df: pd.DataFrame, logger: logging.Logger) -> dict:
     report_lines.append(top_5_negative_dag.to_string(index=False, float_format="%.6f"))
 
     # 반환할 딕셔너리 생성
-    top_5_positive_dags_list = top_5_positive_dag.rename(columns={'mean_tabpfn_ate': 'ate_mean', 'treatment': 'treatment_column'}).to_dict('records')
-
+    top_5_positive_dags_list = top_5_positive_dag.rename(
+            columns={
+                'mean_tabpfn_ate': 'ate_mean', 
+                'treatment': 'treatment_column',
+                'baseline': 'multi_class_baseline',
+                'treatment_value': 'multi_class_treatment_value'
+            }
+        ).to_dict('records')
+    
     report_lines.append("\n" + "="*80)
     report_lines.append("Report complete.")
     

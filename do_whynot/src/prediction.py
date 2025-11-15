@@ -36,6 +36,8 @@ def predict_for_one_dag(
     roles: Dict[str, Any],
     outcome_name: str,
     logger: logging.Logger,
+    treatment_value: Optional[Any] = None, 
+    control_value: Optional[Any] = None,
 ) -> pd.Series:
     """
     TabpfnEstimator 내부의 `_build_model()` + `predict_fn()`을 사용해
@@ -67,6 +69,8 @@ def predict_for_one_dag(
         outcome=outcome_name,
         test_significance=False,
         method_params={"n_estimators": 8, "model_type": "auto"}, 
+        control_value=control_value,    
+        treatment_value=treatment_value,
     )
 
     # 필요하면 안전장치로 confounder/mediator 이름 주입
@@ -122,6 +126,19 @@ def run_prediction_pipeline(
         dag_treatment = info.get("treatment_column")
         colname = f"{outcome_name}_PRED_dag{dag_idx if dag_idx != -1 else 'X'}"
 
+        baseline_val = info.get("multi_class_baseline")
+        treatment_val = info.get("multi_class_treatment_value")
+
+        if pd.isna(baseline_val):
+            baseline_val = None
+        if pd.isna(treatment_val):
+            treatment_val = None
+        
+        if baseline_val is not None or treatment_val is not None:
+             logger.info(f"[predict] DAG {dag_idx}: Applying Multi-Class values. Control={baseline_val}, Treatment={treatment_val}")
+        else:
+             logger.info(f"[predict] DAG {dag_idx}: No Multi-Class values found. Using default CausalEstimator values (Control=0, Treatment=1) for ATE calculation.")
+
         if not isinstance(dag_treatment, str):
             logger.error(f"[predict] DAG {dag_idx} failed: 'treatment_column' is missing or invalid in top_5_dags_info.")
             continue
@@ -148,7 +165,7 @@ def run_prediction_pipeline(
             continue
 
         try:
-            preds = predict_for_one_dag(df_copy, roles, outcome_name, logger)
+            preds = predict_for_one_dag(df_copy, roles, outcome_name, logger, control_value=baseline_val, treatment_value=treatment_val)
             pred_result_df[colname] = preds
             logger.info(f"[predict] DAG {dag_idx}: Prediction column '{colname}' added to batch result.")
         except Exception as e:

@@ -83,9 +83,9 @@ def estimate_tabpfn_ate_multi(model, identified, data, treatment_col, logger,
                 method_params={
                     "estimator": TabpfnEstimator,
                     "n_estimators": 8,
-                    "treatment_value": lvl,
-                    "control_value": baseline,
                 },
+                treatment_value=lvl,
+                control_value=baseline,
             )
 
             val = getattr(est, "value", None)
@@ -127,10 +127,10 @@ def estimate_tabpfn_ate_multi(model, identified, data, treatment_col, logger,
                 method_name="backdoor.tabpfn",
                 method_params={
                     "estimator": TabpfnEstimator,
-                    "n_estimators": 8,
-                    "treatment_value": lvl,
-                    "control_value": baseline,
+                    "n_estimators": 8
                 },
+                treatment_value=lvl,
+                control_value=baseline,
             )
 
             val = getattr(est, "value", None)
@@ -155,11 +155,29 @@ def estimate_tabpfn_ate_multi(model, identified, data, treatment_col, logger,
     # 한 DAG 내에서 '절댓값'이 가장 큰 ATE 선택 
     best_level, best_ate = max(ate_dict.items(), key=lambda kv: abs(kv[1]))
 
+    selected_treatment_value = best_level
+    selected_baseline = baseline
+
+    # ate가 음수일 경우 baseline과 treatment swap
+    if best_ate < 0:
+        best_ate = abs(best_ate)
+        
+        selected_treatment_value = baseline
+        selected_baseline = best_level
+
+        logger.info(
+            "[TabPFN/Multi] ATE was negative (%.6f). Flipped treatment/baseline: New Treatment=%r, New Baseline=%r, New ATE=%.6f", 
+            ate_dict[best_level], selected_treatment_value, selected_baseline, best_ate
+        )
+    else:
+        logger.info("[TabPFN/Multi] ATE is non-negative (%.6f). Retain original treatment/baseline: Treatment=%r, Baseline=%r",
+                    best_ate, selected_treatment_value, selected_baseline)
+        
     logger.info("[TabPFN/Multi] Selected best ATE (max absolute) for '%s': level=%r, ate=%.6f", treatment_col, best_level, best_ate)
 
     best_est = est_dict[best_level]
 
-    return float(best_ate), best_level, baseline, ate_dict, best_est
+    return float(best_ate), selected_treatment_value, selected_baseline, ate_dict, best_est
 
 
 def estimate_tabpfn_ate_binary_continuous(model, identified, dag_treatment, logger):
