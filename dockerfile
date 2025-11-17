@@ -13,9 +13,10 @@ WORKDIR /workspace/dowhy-deep
 ENV PYTHONPATH=/workspace/dowhy-deep
 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/requirements.txt
 
-# 코드 복사 없음!! (개발에서 중요)
-# COPY . /workspace/dowhy-deep  ❌❌ 사용 안 함
+RUN mkdir -p /root/.cache/tabpfn
+COPY tabpfn_ckpt/tabpfn-v2-classifier-finetuned-zk73skhh.ckpt \
+     /root/.cache/tabpfn/tabpfn-v2-classifier-finetuned-zk73skhh.ckpt
 
 CMD ["/bin/bash"]
