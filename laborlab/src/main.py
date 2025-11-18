@@ -410,6 +410,222 @@ def save_predictions_to_excel(df_with_predictions, output_dir=None, filename=Non
     return str(filepath)
 
 
+def run_analysis_without_preprocessing(
+    merged_df_clean: pd.DataFrame,
+    graph_file: str,
+    treatment: str,
+    outcome: str,
+    estimator: str,
+    logger=None,
+    experiment_id: str = None
+):
+    """
+    전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
+    (estimation → refutation → prediction만 수행)
+    
+    Args:
+        merged_df_clean: 전처리 및 정리된 데이터프레임
+        graph_file: 그래프 파일 경로
+        treatment: 처치 변수명
+        outcome: 결과 변수명
+        estimator: 추정 방법
+        logger: 로거 객체
+        experiment_id: 실험 ID (선택적)
+    
+    Returns:
+        dict: 분석 결과
+    """
+    try:
+        step_times = {}
+        step_start = time.time()
+        
+        if experiment_id:
+            print(f"\n{'='*80}")
+            print(f"실험 ID: {experiment_id}")
+            print(f"그래프: {Path(graph_file).name}")
+            print(f"Treatment: {treatment}, Outcome: {outcome}")
+            print(f"Estimator: {estimator}")
+            print(f"{'='*80}\n")
+        
+        # 1. 그래프 로드
+        print("1️⃣ 인과 그래프 로드 중...")
+        step_start = time.time()
+        causal_graph = create_causal_graph(graph_file)
+        step_times['그래프 로드'] = time.time() - step_start
+        print(f"⏱️ 그래프 로드 소요 시간: {step_times['그래프 로드']:.2f}초")
+        print(f"✅ 인과 그래프: {causal_graph.number_of_nodes()}개 노드, {causal_graph.number_of_edges()}개 엣지")
+        
+        # 2. 그래프 변수에 맞게 데이터 필터링
+        print("2️⃣ 그래프 변수에 맞게 데이터 필터링 중...")
+        step_start = time.time()
+        
+        graph_variables = set(causal_graph.nodes())
+        data_variables = set(merged_df_clean.columns)
+        
+        # 필수 변수 (treatment, outcome, 병합 키)
+        essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        
+        # 유지할 변수: 그래프 변수 + 필수 변수
+        vars_to_keep = (graph_variables | essential_vars) & data_variables
+        
+        # 데이터 필터링
+        df_for_analysis = merged_df_clean[list(vars_to_keep)].copy()
+        
+        # 필수 변수 확인
+        missing_vars = [var for var in [treatment, outcome] if var not in df_for_analysis.columns]
+        if missing_vars:
+            raise ValueError(f"필수 변수가 데이터에 없습니다: {missing_vars}")
+        
+        step_times['데이터 필터링'] = time.time() - step_start
+        print(f"⏱️ 데이터 필터링 소요 시간: {step_times['데이터 필터링']:.2f}초")
+        print(f"✅ 필터링된 데이터: {len(df_for_analysis)}건, {len(df_for_analysis.columns)}개 변수")
+        
+        # 3. 인과모델 생성
+        print("3️⃣ 인과모델 생성 중...")
+        step_start = time.time()
+        model = CausalModel(
+            data=df_for_analysis,
+            treatment=treatment,
+            outcome=outcome,
+            graph=causal_graph
+        )
+        step_times['인과모델 생성'] = time.time() - step_start
+        print(f"⏱️ 인과모델 생성 소요 시간: {step_times['인과모델 생성']:.2f}초")
+        
+        # 4. 인과효과 식별
+        print("4️⃣ 인과효과 식별 중...")
+        step_start = time.time()
+        identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
+        step_times['인과효과 식별'] = time.time() - step_start
+        print(f"⏱️ 인과효과 식별 소요 시간: {step_times['인과효과 식별']:.2f}초")
+        
+        # 5. 인과효과 추정
+        print("5️⃣ 인과효과 추정 중...")
+        step_start = time.time()
+        estimate = estimation.estimate_causal_effect(
+            model,
+            identified_estimand,
+            estimator,
+            logger
+        )
+        step_times['인과효과 추정'] = time.time() - step_start
+        print(f"⏱️ 인과효과 추정 소요 시간: {step_times['인과효과 추정']:.2f}초")
+        
+        # 6. 예측
+        print("6️⃣ 예측 중...")
+        step_start = time.time()
+        essential_vars_for_pred = {treatment, outcome}
+        df_for_pred = clean_dataframe_for_causal_model(
+            df_for_analysis,
+            required_vars=list(essential_vars_for_pred),
+            logger=logger
+        )
+        accuracy, df_with_predictions = estimation.predict_conditional_expectation(
+            estimate, df_for_pred, logger=logger
+        )
+        step_times['예측'] = time.time() - step_start
+        print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
+        print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
+        
+        # 예측 결과 저장
+        if experiment_id:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"predictions_{experiment_id}_{timestamp}.xlsx"
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"predictions_{timestamp}.xlsx"
+        
+        step_start = time.time()
+        excel_path = save_predictions_to_excel(df_with_predictions, filename=filename, logger=logger)
+        step_times['예측 결과 저장'] = time.time() - step_start
+        print(f"⏱️ 예측 결과 저장 소요 시간: {step_times['예측 결과 저장']:.2f}초")
+        print(f"✅ 예측 결과 저장 완료: {excel_path}")
+        
+        # 7. 검증 테스트 (refutation)
+        print("7️⃣ 검증 테스트 실행 중...")
+        step_start = time.time()
+        validation_results = estimation.run_validation_tests(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['검증 테스트'] = time.time() - step_start
+        print(f"⏱️ 검증 테스트 소요 시간: {step_times['검증 테스트']:.2f}초")
+        
+        # 8. 민감도 분석
+        print("8️⃣ 민감도 분석 실행 중...")
+        step_start = time.time()
+        sensitivity_df = estimation.run_sensitivity_analysis(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['민감도 분석'] = time.time() - step_start
+        print(f"⏱️ 민감도 분석 소요 시간: {step_times['민감도 분석']:.2f}초")
+        
+        # 9. 시각화
+        print("9️⃣ 시각화 생성 중...")
+        step_start = time.time()
+        heatmap_path = estimation.create_sensitivity_heatmap(
+            sensitivity_df,
+            logger
+        ) if not sensitivity_df.empty else None
+        step_times['시각화 생성'] = time.time() - step_start
+        print(f"⏱️ 시각화 생성 소요 시간: {step_times['시각화 생성']:.2f}초")
+        
+        # 10. 요약 보고서
+        print("🔟 최종 요약 보고서 출력 중...")
+        step_start = time.time()
+        estimation.print_summary_report(estimate, validation_results, sensitivity_df)
+        step_times['요약 보고서'] = time.time() - step_start
+        print(f"⏱️ 요약 보고서 출력 소요 시간: {step_times['요약 보고서']:.2f}초")
+        
+        # 전체 소요 시간
+        total_time = sum(step_times.values())
+        step_times['전체'] = total_time
+        
+        # 시간 요약 출력
+        print("\n" + "="*60)
+        print("⏱️ 단계별 소요 시간 요약")
+        print("="*60)
+        for step_name, elapsed_time in step_times.items():
+            percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+            print(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+        print("="*60)
+        
+        if logger:
+            logger.info("분석 완료")
+            logger.info("="*60)
+            logger.info("단계별 소요 시간 요약")
+            logger.info("="*60)
+            for step_name, elapsed_time in step_times.items():
+                percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+                logger.info(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+            logger.info("="*60)
+        
+        print(f"\n✅ 분석 완료! (총 소요 시간: {total_time:.2f}초)")
+        
+        return {
+            "status": "success",
+            "estimate": estimate,
+            "validation_results": validation_results,
+            "sensitivity_df": sensitivity_df,
+            "accuracy": accuracy,
+            "excel_path": excel_path,
+            "step_times": step_times
+        }
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"분석 중 오류 발생: {e}")
+        print(f"❌ 분석 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
 def setup_logging(args):
     """로깅을 설정하는 통합 함수"""
     if args.no_logs:

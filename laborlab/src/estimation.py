@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime
 import os
 import sys
+from scipy import stats
 
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
 
@@ -196,6 +197,52 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
             logger.error(f"❌ 인과효과 추정 실패: {e}")
         raise
 
+def calculate_refutation_pvalue(refutation_result, test_type="placebo"):
+    """
+    Refutation 테스트 결과의 p-value를 계산합니다.
+    
+    Args:
+        refutation_result: CausalRefutation 객체
+        test_type: 테스트 타입 ("placebo", "unobserved", "subset", "dummy")
+    
+    Returns:
+        float: p-value (계산 불가능한 경우 None)
+    """
+    try:
+        # refutation_result에서 refutation_results 속성 확인
+        if hasattr(refutation_result, 'refutation_results') and refutation_result.refutation_results:
+            # refutation_results는 리스트일 수 있음
+            results = refutation_result.refutation_results
+            if isinstance(results, list) and len(results) > 0:
+                # 각 결과에서 effect 값 추출
+                effects = []
+                for r in results:
+                    if hasattr(r, 'value'):
+                        effects.append(r.value)
+                    elif isinstance(r, dict) and 'value' in r:
+                        effects.append(r['value'])
+                
+                if len(effects) > 1:
+                    # 효과들이 0과 유의하게 다른지 t-test
+                    t_stat, p_value = stats.ttest_1samp(effects, 0)
+                    return p_value
+        
+        # refutation_results가 없으면 new_effect와 estimated_effect 비교
+        if hasattr(refutation_result, 'new_effect') and hasattr(refutation_result, 'estimated_effect'):
+            if test_type == "placebo" or test_type == "dummy":
+                # new_effect가 0과 유의하게 다른지 (단일 값이므로 직접 비교 불가)
+                # 대신 new_effect의 절대값이 작으면 통과로 간주
+                return None
+            elif test_type == "unobserved" or test_type == "subset":
+                # new_effect와 estimated_effect가 유의하게 다른지
+                # 단일 값이므로 직접 t-test 불가, 차이의 절대값으로 판단
+                return None
+        
+        return None
+    except Exception as e:
+        return None
+
+
 def log_validation_results(logger, validation_results):
     """
     검증 결과를 로깅하는 함수
@@ -212,46 +259,71 @@ def log_validation_results(logger, validation_results):
     if validation_results.get('placebo'):
         placebo = validation_results['placebo']
         effect_change = abs(placebo.new_effect - placebo.estimated_effect)
+        p_value = calculate_refutation_pvalue(placebo, "placebo")
+        # 효과 변화가 작으면 통과 (0.01 이하)
         status = "통과" if effect_change < 0.01 else "실패"
         logger.info(f"가상 원인 테스트: {status}")
         logger.info(f"  - 기존 추정치: {placebo.estimated_effect:.6f}")
         logger.info(f"  - 가상처치 후 추정치: {placebo.new_effect:.6f}")
         logger.info(f"  - 효과 변화: {effect_change:.6f}")
+        if p_value is not None:
+            logger.info(f"  - P-value: {p_value:.6f}")
+            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
     
     # 미관측 교란 테스트
     if validation_results.get('unobserved'):
         unobserved = validation_results['unobserved']
-        change_rate = abs(unobserved.new_effect - unobserved.estimated_effect) / abs(unobserved.estimated_effect)
+        change_rate = abs(unobserved.new_effect - unobserved.estimated_effect) / abs(unobserved.estimated_effect) if abs(unobserved.estimated_effect) > 0 else float('inf')
+        p_value = calculate_refutation_pvalue(unobserved, "unobserved")
+        # 변화율이 20% 미만이면 강건함
         status = "강건함" if change_rate < 0.2 else "민감함"
         logger.info(f"미관측 교란 테스트: {status}")
         logger.info(f"  - 기존 추정치: {unobserved.estimated_effect:.6f}")
         logger.info(f"  - 교란 추가 후 추정치: {unobserved.new_effect:.6f}")
         logger.info(f"  - 변화율: {change_rate:.2%}")
+        if p_value is not None:
+            logger.info(f"  - P-value: {p_value:.6f}")
+            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
     
     # 부분표본 안정성 테스트
     if validation_results.get('subset'):
         subset = validation_results['subset']
-        logger.info(f"부분표본 안정성 테스트:")
+        effect_change = abs(subset.new_effect - subset.estimated_effect)
+        p_value = calculate_refutation_pvalue(subset, "subset")
+        # 효과 변화가 작으면 통과 (10% 이하)
+        change_rate = abs(subset.estimated_effect) > 0 and abs(effect_change / subset.estimated_effect) or float('inf')
+        status = "통과" if change_rate < 0.1 else "실패"
+        logger.info(f"부분표본 안정성 테스트: {status}")
         logger.info(f"  - 기존 추정치: {subset.estimated_effect:.6f}")
         logger.info(f"  - 부분표본 추정치: {subset.new_effect:.6f}")
+        logger.info(f"  - 효과 변화: {effect_change:.6f}")
+        if p_value is not None:
+            logger.info(f"  - P-value: {p_value:.6f}")
+            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
     
     # 더미 결과 테스트
     if validation_results.get('dummy'):
         dummy = validation_results['dummy']
+        p_value = calculate_refutation_pvalue(dummy, "dummy")
+        # new_effect가 0에 가까우면 통과 (0.01 이하)
         status = "통과" if abs(dummy.new_effect) < 0.01 else "실패"
         logger.info(f"더미 결과 테스트: {status}")
         logger.info(f"  - 더미 결과 추정치: {dummy.new_effect:.6f}")
+        if p_value is not None:
+            logger.info(f"  - P-value: {p_value:.6f}")
+            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
 
 def run_validation_tests(model, identified_estimand, estimate, logger=None):
-    """검증 테스트를 실행하는 함수"""
+    """검증 테스트를 실행하는 함수 (4개 테스트 모두 포함)"""
     if logger:
         logger.info("="*60)
-        logger.info("검증 테스트 실행 시작")
+        logger.info("검증 테스트 실행 시작 (4개 테스트)")
         logger.info("="*60)
     
     validation_results = {}
     
-    # 가상 원인 테스트
+    # 1. 가상 원인 테스트 (Placebo Treatment)
+    print("1️⃣ 가상 원인 테스트 실행 중...")
     if logger:
         logger.info("1️⃣ 가상 원인 테스트 실행 중...")
     
@@ -264,21 +336,35 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
         )
         validation_results['placebo'] = refute_placebo
         
+        effect_change = abs(refute_placebo.new_effect - refute_placebo.estimated_effect)
+        p_value = calculate_refutation_pvalue(refute_placebo, "placebo")
+        status = "통과" if effect_change < 0.01 else "실패"
+        
+        print(f"✅ 가상 원인 테스트 완료: {status}")
+        print(f"   기존 추정치: {refute_placebo.estimated_effect:.6f}")
+        print(f"   가상처치 후 추정치: {refute_placebo.new_effect:.6f}")
+        print(f"   효과 변화: {effect_change:.6f}")
+        if p_value is not None:
+            print(f"   P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+        
         if logger:
             logger.info("✅ 가상 원인 테스트 성공")
-            effect_change = abs(refute_placebo.new_effect - refute_placebo.estimated_effect)
-            status = "통과" if effect_change < 0.01 else "실패"
             logger.info(f"테스트 결과: {status}")
             logger.info(f"기존 추정치: {refute_placebo.estimated_effect:.6f}")
             logger.info(f"가상처치 후 추정치: {refute_placebo.new_effect:.6f}")
             logger.info(f"효과 변화: {effect_change:.6f}")
+            if p_value is not None:
+                logger.info(f"P-value: {p_value:.6f}")
+                logger.info(f"통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
             
     except Exception as e:
         validation_results['placebo'] = None
+        print(f"❌ 가상 원인 테스트 실패: {e}")
         if logger:
             logger.error(f"❌ 가상 원인 테스트 실패: {e}")
     
-    # 미관측 교란 테스트
+    # 2. 미관측 교란 테스트 (Add Unobserved Common Cause)
+    print("2️⃣ 미관측 교란 테스트 실행 중...")
     if logger:
         logger.info("2️⃣ 미관측 교란 테스트 실행 중...")
     
@@ -294,24 +380,122 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
         )
         validation_results['unobserved'] = refute_unobserved
         
+        change_rate = abs(refute_unobserved.new_effect - refute_unobserved.estimated_effect) / abs(refute_unobserved.estimated_effect) if abs(refute_unobserved.estimated_effect) > 0 else float('inf')
+        p_value = calculate_refutation_pvalue(refute_unobserved, "unobserved")
+        status = "강건함" if change_rate < 0.2 else "민감함"
+        
+        print(f"✅ 미관측 교란 테스트 완료: {status}")
+        print(f"   기존 추정치: {refute_unobserved.estimated_effect:.6f}")
+        print(f"   교란 추가 후 추정치: {refute_unobserved.new_effect:.6f}")
+        print(f"   변화율: {change_rate:.2%}")
+        if p_value is not None:
+            print(f"   P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+        
         if logger:
             logger.info("✅ 미관측 교란 테스트 성공")
-            change_rate = abs(refute_unobserved.new_effect - refute_unobserved.estimated_effect) / abs(refute_unobserved.estimated_effect)
-            status = "강건함" if change_rate < 0.2 else "민감함"
             logger.info(f"테스트 결과: {status}")
             logger.info(f"기존 추정치: {refute_unobserved.estimated_effect:.6f}")
             logger.info(f"교란 추가 후 추정치: {refute_unobserved.new_effect:.6f}")
             logger.info(f"변화율: {change_rate:.2%}")
+            if p_value is not None:
+                logger.info(f"P-value: {p_value:.6f}")
+                logger.info(f"통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
             
     except Exception as e:
         validation_results['unobserved'] = None
+        print(f"❌ 미관측 교란 테스트 실패: {e}")
         if logger:
             logger.error(f"❌ 미관측 교란 테스트 실패: {e}")
     
+    # 3. 부분표본 안정성 테스트 (Data Subset)
+    print("3️⃣ 부분표본 안정성 테스트 실행 중...")
+    if logger:
+        logger.info("3️⃣ 부분표본 안정성 테스트 실행 중...")
+    
+    try:
+        refute_subset = model.refute_estimate(
+            identified_estimand, estimate,
+            method_name="data_subset_refuter",
+            subset_fraction=0.8,  # 80% 서브셋 사용
+            num_simulations=100
+        )
+        validation_results['subset'] = refute_subset
+        
+        effect_change = abs(refute_subset.new_effect - refute_subset.estimated_effect)
+        change_rate = abs(refute_subset.estimated_effect) > 0 and abs(effect_change / refute_subset.estimated_effect) or float('inf')
+        p_value = calculate_refutation_pvalue(refute_subset, "subset")
+        status = "통과" if change_rate < 0.1 else "실패"  # 10% 이내 변화면 통과
+        
+        print(f"✅ 부분표본 안정성 테스트 완료: {status}")
+        print(f"   기존 추정치: {refute_subset.estimated_effect:.6f}")
+        print(f"   부분표본 추정치: {refute_subset.new_effect:.6f}")
+        print(f"   효과 변화: {effect_change:.6f} ({change_rate:.2%})")
+        if p_value is not None:
+            print(f"   P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+        
+        if logger:
+            logger.info("✅ 부분표본 안정성 테스트 성공")
+            logger.info(f"테스트 결과: {status}")
+            logger.info(f"기존 추정치: {refute_subset.estimated_effect:.6f}")
+            logger.info(f"부분표본 추정치: {refute_subset.new_effect:.6f}")
+            logger.info(f"효과 변화: {effect_change:.6f} ({change_rate:.2%})")
+            if p_value is not None:
+                logger.info(f"P-value: {p_value:.6f}")
+                logger.info(f"통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
+            
+    except Exception as e:
+        validation_results['subset'] = None
+        print(f"❌ 부분표본 안정성 테스트 실패: {e}")
+        if logger:
+            logger.error(f"❌ 부분표본 안정성 테스트 실패: {e}")
+    
+    # 4. 더미 결과 테스트 (Dummy Outcome)
+    print("4️⃣ 더미 결과 테스트 실행 중...")
+    if logger:
+        logger.info("4️⃣ 더미 결과 테스트 실행 중...")
+    
+    try:
+        refute_dummy = model.refute_estimate(
+            identified_estimand, estimate,
+            method_name="dummy_outcome_refuter",
+            num_simulations=100
+        )
+        validation_results['dummy'] = refute_dummy
+        
+        p_value = calculate_refutation_pvalue(refute_dummy, "dummy")
+        # new_effect가 0에 가까우면 통과 (0.01 이하)
+        status = "통과" if abs(refute_dummy.new_effect) < 0.01 else "실패"
+        
+        print(f"✅ 더미 결과 테스트 완료: {status}")
+        print(f"   더미 결과 추정치: {refute_dummy.new_effect:.6f}")
+        print(f"   (0에 가까울수록 좋음, 0.01 이하면 통과)")
+        if p_value is not None:
+            print(f"   P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+        
+        if logger:
+            logger.info("✅ 더미 결과 테스트 성공")
+            logger.info(f"테스트 결과: {status}")
+            logger.info(f"더미 결과 추정치: {refute_dummy.new_effect:.6f}")
+            logger.info(f"(0에 가까울수록 좋음, 0.01 이하면 통과)")
+            if p_value is not None:
+                logger.info(f"P-value: {p_value:.6f}")
+                logger.info(f"통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
+            
+    except Exception as e:
+        validation_results['dummy'] = None
+        print(f"❌ 더미 결과 테스트 실패: {e}")
+        if logger:
+            logger.error(f"❌ 더미 결과 테스트 실패: {e}")
+    
+    print("="*60)
+    print("검증 테스트 완료 (4개 테스트)")
+    print("="*60)
+    
     if logger:
         logger.info("="*60)
-        logger.info("검증 테스트 완료")
+        logger.info("검증 테스트 완료 (4개 테스트)")
         logger.info("="*60)
+        log_validation_results(logger, validation_results)
     
     return validation_results
 
@@ -609,26 +793,56 @@ def print_summary_report(estimate, validation_results, sensitivity_df):
         significance = "유의함" if estimate.p_value <= 0.05 else "유의하지 않음"
         print(f"  - 통계적 유의성: {significance} (p-value: {estimate.p_value:.6f})")
     
-    # 검증 결과 요약
-    print(f"\n🔬 검증 결과 요약:")
+    # 검증 결과 요약 (4개 테스트)
+    print(f"\n🔬 검증 결과 요약 (4개 테스트):")
     
     if validation_results.get('placebo'):
         placebo = validation_results['placebo']
         effect_change = abs(placebo.new_effect - placebo.estimated_effect)
-        print(f"  - 가상 원인 테스트: {'통과' if effect_change < 0.01 else '실패'}")
+        p_value = calculate_refutation_pvalue(placebo, "placebo")
+        status = "통과" if effect_change < 0.01 else "실패"
+        print(f"  1. 가상 원인 테스트: {status}")
+        print(f"     - 효과 변화: {effect_change:.6f}")
+        if p_value is not None:
+            print(f"     - P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+    else:
+        print(f"  1. 가상 원인 테스트: 실행 실패")
     
     if validation_results.get('unobserved'):
         unobserved = validation_results['unobserved']
-        change_rate = abs(unobserved.new_effect - unobserved.estimated_effect) / abs(unobserved.estimated_effect)
-        print(f"  - 미관측 교란 테스트: {'강건함' if change_rate < 0.2 else '민감함'}")
+        change_rate = abs(unobserved.new_effect - unobserved.estimated_effect) / abs(unobserved.estimated_effect) if abs(unobserved.estimated_effect) > 0 else float('inf')
+        p_value = calculate_refutation_pvalue(unobserved, "unobserved")
+        status = "강건함" if change_rate < 0.2 else "민감함"
+        print(f"  2. 미관측 교란 테스트: {status}")
+        print(f"     - 변화율: {change_rate:.2%}")
+        if p_value is not None:
+            print(f"     - P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+    else:
+        print(f"  2. 미관측 교란 테스트: 실행 실패")
     
     if validation_results.get('subset'):
         subset = validation_results['subset']
-        print(f"  - 부분표본 안정성: 추정치 변화 확인됨")
+        effect_change = abs(subset.new_effect - subset.estimated_effect)
+        change_rate = abs(subset.estimated_effect) > 0 and abs(effect_change / subset.estimated_effect) or float('inf')
+        p_value = calculate_refutation_pvalue(subset, "subset")
+        status = "통과" if change_rate < 0.1 else "실패"
+        print(f"  3. 부분표본 안정성 테스트: {status}")
+        print(f"     - 효과 변화율: {change_rate:.2%}")
+        if p_value is not None:
+            print(f"     - P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+    else:
+        print(f"  3. 부분표본 안정성 테스트: 실행 실패")
     
     if validation_results.get('dummy'):
         dummy = validation_results['dummy']
-        print(f"  - 더미 결과 테스트: {'통과' if abs(dummy.new_effect) < 0.01 else '실패'}")
+        p_value = calculate_refutation_pvalue(dummy, "dummy")
+        status = "통과" if abs(dummy.new_effect) < 0.01 else "실패"
+        print(f"  4. 더미 결과 테스트: {status}")
+        print(f"     - 더미 결과 추정치: {dummy.new_effect:.6f}")
+        if p_value is not None:
+            print(f"     - P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
+    else:
+        print(f"  4. 더미 결과 테스트: 실행 실패")
     
     # 민감도 분석 요약
     if not sensitivity_df.empty:

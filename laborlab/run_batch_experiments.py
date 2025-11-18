@@ -13,6 +13,8 @@ from pathlib import Path
 from datetime import datetime
 import itertools
 from typing import List, Dict, Any, Optional
+import time
+import logging
 
 # graph_parser 모듈 임포트 (src/__init__.py를 거치지 않고 직접 임포트)
 # __init__.py가 preprocess를 임포트하면서 의존성 문제가 발생할 수 있으므로
@@ -32,6 +34,10 @@ find_all_graph_files = graph_parser.find_all_graph_files
 extract_treatments_from_graph = graph_parser.extract_treatments_from_graph
 get_treatments_from_all_graphs = graph_parser.get_treatments_from_all_graphs
 
+# main 모듈 임포트 (전처리 및 분석 함수 사용)
+sys.path.insert(0, str(Path(__file__).parent))
+from src import main as main_module
+
 
 def load_experiment_config(config_file: str) -> Dict[str, Any]:
     """실험 설정 파일을 로드합니다."""
@@ -41,55 +47,27 @@ def load_experiment_config(config_file: str) -> Dict[str, Any]:
 
 
 def run_single_experiment(
-    data_dir: str,
+    merged_df_clean,
     graph_file: str,
     treatment: str,
     outcome: str,
     estimator: str,
-    base_dir: Path,
     experiment_id: str,
-    api_key: Optional[str] = None,
-    no_logs: bool = False,
-    verbose: bool = False
+    logger=None
 ) -> Dict[str, Any]:
-    """단일 실험을 실행합니다."""
-    print(f"\n{'='*80}")
-    print(f"실험 ID: {experiment_id}")
-    print(f"그래프: {Path(graph_file).name}")
-    print(f"Treatment: {treatment}, Outcome: {outcome}")
-    print(f"Estimator: {estimator}")
-    print(f"{'='*80}\n")
-    
-    # 명령어 구성
-    cmd = [
-        sys.executable,
-        "-m", "src.main",
-        "--data-dir", data_dir,
-        "--graph", graph_file,
-        "--treatment", treatment,
-        "--outcome", outcome,
-        "--estimator", estimator,
-    ]
-    
-    if api_key:
-        cmd.extend(["--api-key", api_key])
-    if no_logs:
-        cmd.append("--no-logs")
-    if verbose:
-        cmd.append("--verbose")
-    
-    # 실험 실행
+    """단일 실험을 실행합니다 (전처리된 데이터 사용)."""
     start_time = datetime.now()
     try:
-        # 실시간 출력을 위해 capture_output=False 사용
-        # stdout/stderr는 직접 파일로 리다이렉트되므로 여기서는 실시간으로 보여줌
-        result = subprocess.run(
-            cmd,
-            cwd=base_dir,  # laborlab 디렉토리에서 실행
-            capture_output=False,  # 실시간 출력을 위해 False로 변경
-            text=True,
-            check=True
+        result = main_module.run_analysis_without_preprocessing(
+            merged_df_clean=merged_df_clean,
+            graph_file=graph_file,
+            treatment=treatment,
+            outcome=outcome,
+            estimator=estimator,
+            logger=logger,
+            experiment_id=experiment_id
         )
+        
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
         
@@ -101,16 +79,15 @@ def run_single_experiment(
             "treatment": treatment,
             "outcome": outcome,
             "estimator": estimator,
-            "stdout": "",  # 실시간 출력이므로 빈 문자열
-            "stderr": "",  # 실시간 출력이므로 빈 문자열
+            "accuracy": result.get("accuracy"),
+            "excel_path": result.get("excel_path"),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
         }
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
         
-        # 실패한 경우에도 출력은 이미 터미널에 표시됨
         return {
             "experiment_id": experiment_id,
             "status": "failed",
@@ -119,8 +96,6 @@ def run_single_experiment(
             "treatment": treatment,
             "outcome": outcome,
             "estimator": estimator,
-            "stdout": "",  # 실시간 출력이므로 빈 문자열
-            "stderr": "",  # 실시간 출력이므로 빈 문자열
             "error": str(e),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
@@ -267,30 +242,122 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
         print(f"   - Outcome: {len(outcomes)}개")
     print(f"   - Estimator: {len(estimators)}개\n")
     
+    # ============================================================
+    # 전처리를 한 번만 수행
+    # ============================================================
+    print("="*80)
+    print("🔄 데이터 전처리 시작 (한 번만 수행)")
+    print("="*80)
+    
+    preprocessing_start = time.time()
+    
+    # 1. 데이터 파일 경로 수집
+    print("1️⃣ 데이터 파일 경로 수집 중...")
+    file_list, _ = main_module.load_all_data(str(data_dir_path), graph_file=None)
+    
+    # 2. 전처리 및 병합
+    print("2️⃣ 데이터 전처리 및 병합 중...")
+    print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
+    if api_key:
+        print(f"🔑 API 키: config 파일에서 사용")
+    else:
+        print(f"⚠️ API 키가 설정되지 않았습니다. LLM 기능을 사용할 수 없습니다.")
+    
+    merged_df = main_module.preprocess_and_merge_data(file_list, str(data_dir_path), api_key=api_key)
+    print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
+    
+    # 3. 모든 그래프의 변수를 수집하여 데이터 정리
+    print("3️⃣ 모든 그래프의 변수 수집 및 데이터 정리 중...")
+    
+    # 모든 그래프 파일에서 변수 수집
+    all_graph_variables = set()
+    for graph_file in graph_files:
+        graph_path = Path(graph_file)
+        try:
+            causal_graph = main_module.create_causal_graph(str(graph_path))
+            all_graph_variables.update(causal_graph.nodes())
+        except Exception as e:
+            print(f"⚠️ 그래프 파일 로드 실패 ({graph_path.name}): {e}")
+    
+    print(f"📋 모든 그래프에서 수집된 변수 수: {len(all_graph_variables)}개")
+    
+    # 필수 변수 (모든 treatment, outcome, 병합 키)
+    all_treatments = set()
+    all_outcomes = set()
+    for graph_file in graph_files:
+        if graph_file in graph_treatments_map:
+            all_treatments.update(graph_treatments_map[graph_file])
+        if graph_file in graph_outcomes_map:
+            all_outcomes.add(graph_outcomes_map[graph_file])
+    if not auto_extract_treatments:
+        all_treatments.update(treatments)
+    if not graph_outcomes_map:
+        all_outcomes.update(outcomes)
+    
+    essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+    required_vars = list(all_graph_variables | essential_vars)
+    
+    # 데이터 정리
+    merged_df_clean = main_module.clean_dataframe_for_causal_model(
+        merged_df, 
+        required_vars=required_vars, 
+        logger=None
+    )
+    
+    # 그래프에 정의되지 않은 변수 제거
+    data_variables = set(merged_df_clean.columns)
+    vars_to_keep = (all_graph_variables | essential_vars) & data_variables
+    vars_to_remove = data_variables - vars_to_keep
+    
+    if vars_to_remove:
+        print(f"🗑️ 그래프에 정의되지 않은 변수 제거 중 ({len(vars_to_remove)}개)...")
+        merged_df_clean = merged_df_clean[list(vars_to_keep)]
+    
+    preprocessing_elapsed = time.time() - preprocessing_start
+    print(f"⏱️ 전처리 완료! 소요 시간: {preprocessing_elapsed:.2f}초")
+    print(f"✅ 정리된 데이터: {len(merged_df_clean)}건, {len(merged_df_clean.columns)}개 변수")
+    print("="*80 + "\n")
+    
     # 결과 저장
     results = []
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_file = base_dir / "log" / f"batch_experiments_{timestamp}.json"
     results_file.parent.mkdir(exist_ok=True)
     
+    # 로거 설정 (선택적)
+    logger = None
+    if not config.get("no_logs", False):
+        log_dir = base_dir / "log"
+        log_dir.mkdir(exist_ok=True)
+        log_filename = f"batch_experiments_{timestamp}.log"
+        log_filepath = log_dir / log_filename
+        
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_filepath, encoding='utf-8'),
+                logging.StreamHandler()
+            ]
+        )
+        logger = logging.getLogger(__name__)
+        logger.info(f"배치 실험 시작 - {timestamp}")
+        logger.info(f"총 실험 수: {total_experiments}")
+    
     # 실험 실행
     for idx, (graph_file, treatment, outcome, estimator) in enumerate(experiment_combinations, 1):
         experiment_id = f"exp_{idx:04d}_{Path(graph_file).stem}_{treatment}_{outcome}_{estimator}"
         
-        print(f"⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
         print(f"\n[{idx}/{total_experiments}] 실험 실행 중...")
         
         result = run_single_experiment(
-            data_dir=str(data_dir_path),
+            merged_df_clean=merged_df_clean,
             graph_file=graph_file,
             treatment=treatment,
             outcome=outcome,
             estimator=estimator,
-            base_dir=base_dir,
             experiment_id=experiment_id,
-            api_key=api_key,
-            no_logs=config.get("no_logs", False),
-            verbose=config.get("verbose", False)
+            logger=logger
         )
         
         results.append(result)
