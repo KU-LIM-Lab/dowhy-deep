@@ -1,0 +1,99 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACQ_180_YN        [label="180일이내취업여부"];
+    ACCR_CD           [label="학력코드"];
+    ACCR_STCD         [label="학력상태코드"];
+    MAJR_CD1          [label="전공코드1"];
+    AGE               [label="연령"];
+    SXDS_CD           [label="성별코드"];
+
+    CARR_MYCT1        [label="경력월수1"];
+    HOPE_JSCD1        [label="희망직종코드1"];
+    HOPE_WAGE_SM_AMT  [label="희망임금합계금액"];
+    CRQF_CT           [label="자격증건수"];
+
+    // 인과관계
+    SXDS_CD  -> ACCR_CD;
+    SXDS_CD  -> MAJR_CD1;
+
+    AGE      -> ACCR_CD;
+    AGE      -> ACCR_STCD;
+    AGE      -> CARR_MYCT1;
+
+    ACCR_CD  -> MAJR_CD1;
+    ACCR_CD  -> CARR_MYCT1;
+    ACCR_CD  -> HOPE_JSCD1;
+    ACCR_CD  -> HOPE_WAGE_SM_AMT;
+    ACCR_CD  -> CRQF_CT;
+
+    ACCR_STCD -> HOPE_JSCD1;
+
+    MAJR_CD1 -> CARR_MYCT1;
+    MAJR_CD1 -> HOPE_JSCD1;
+
+    CARR_MYCT1       -> HOPE_WAGE_SM_AMT;
+    CARR_MYCT1       -> ACQ_180_YN;
+    CRQF_CT          -> ACQ_180_YN;
+    HOPE_JSCD1       -> ACQ_180_YN;
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    ACCR_CD          -> ACQ_180_YN;
+    ACCR_STCD        -> ACQ_180_YN;
+    MAJR_CD1         -> ACQ_180_YN;
+    AGE              -> ACQ_180_YN;
+    SXDS_CD          -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: ACCR_CD",
+            role="treatment_meta",
+            treatment_var="ACCR_CD",
+            treatment_name="ACCR_CD",
+            treatment_def="학력코드 수준 차이의 효과",
+            treatment_question="최종학력이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T2 [
+            label="T2: ACCR_STCD",
+            role="treatment_meta",
+            treatment_var="ACCR_STCD",
+            treatment_name="ACCR_STCD",
+            treatment_def="학력상태(재학·졸업 등) 차이의 효과",
+            treatment_question="재학/졸업 상태가 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T3 [
+            label="T3: MAJR_CD1",
+            role="treatment_meta",
+            treatment_var="MAJR_CD1",
+            treatment_name="MAJR_CD1",
+            treatment_def="전공코드 차이의 효과",
+            treatment_question="전공이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T4 [
+            label="T4: AGE",
+            role="treatment_meta",
+            treatment_var="AGE",
+            treatment_name="AGE",
+            treatment_def="연령 수준 차이의 효과",
+            treatment_question="연령이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T5 [
+            label="T5: SXDS_CD",
+            role="treatment_meta",
+            treatment_var="SXDS_CD",
+            treatment_name="SXDS_CD",
+            treatment_def="성별코드 차이의 효과",
+            treatment_question="성별이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+    }
+}

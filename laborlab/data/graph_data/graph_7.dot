@@ -1,0 +1,112 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACQ_180_YN       [label="180일이내취업여부"];
+    DSPT_LABR_YN     [label="파견근로여부"];
+    DLY_LABR_HOPE_YN [label="일용근로희망여부"];
+    EMPL_STLE_CD     [label="고용형태코드"];
+    DRV_PSBL_YN      [label="운전가능여부"];
+    RQAG_HOPE_YN     [label="재신청희망여부"];
+    SHSY_YN          [label="교대제가능여부"];
+
+    AGE              [label="연령"];
+    SXDS_CD          [label="성별코드"];
+    ACCR_CD          [label="학력코드"];
+    AREA_CD          [label="지역코드"];
+    HOPE_JSCD1       [label="희망직종코드1"];
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
+
+    // 인과관계
+    AGE     -> ACCR_CD;
+    AGE     -> EMPL_STLE_CD;
+    AGE     -> DLY_LABR_HOPE_YN;
+    AGE     -> DRV_PSBL_YN;
+    AGE     -> SHSY_YN;
+
+    SXDS_CD -> EMPL_STLE_CD;
+    SXDS_CD -> DLY_LABR_HOPE_YN;
+    SXDS_CD -> SHSY_YN;
+
+    ACCR_CD -> EMPL_STLE_CD;
+    ACCR_CD -> HOPE_WAGE_SM_AMT;
+
+    AREA_CD -> DLY_LABR_HOPE_YN;
+    AREA_CD -> EMPL_STLE_CD;
+
+    DRV_PSBL_YN  -> DSPT_LABR_YN;
+
+    EMPL_STLE_CD     -> HOPE_JSCD1;
+    DLY_LABR_HOPE_YN -> HOPE_JSCD1;
+    DSPT_LABR_YN     -> HOPE_JSCD1;
+    RQAG_HOPE_YN     -> HOPE_JSCD1;
+    SHSY_YN          -> HOPE_JSCD1;
+
+    HOPE_JSCD1       -> HOPE_WAGE_SM_AMT;
+
+    // 취업
+    DSPT_LABR_YN     -> ACQ_180_YN;
+    DLY_LABR_HOPE_YN -> ACQ_180_YN;
+    EMPL_STLE_CD     -> ACQ_180_YN;
+    DRV_PSBL_YN      -> ACQ_180_YN;
+    RQAG_HOPE_YN     -> ACQ_180_YN;
+    SHSY_YN          -> ACQ_180_YN;
+    HOPE_JSCD1       -> ACQ_180_YN;
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    AGE              -> ACQ_180_YN;
+    ACCR_CD          -> ACQ_180_YN;
+    AREA_CD          -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: DSPT_LABR_YN",
+            role="treatment_meta",
+            treatment_var="DSPT_LABR_YN",
+            treatment_name="DSPT_LABR_YN",
+            treatment_def="파견근로 여부 차이의 효과",
+            treatment_question="파견근로가 가능한 사람과 불가능한 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T2 [
+            label="T2: DLY_LABR_HOPE_YN",
+            role="treatment_meta",
+            treatment_var="DLY_LABR_HOPE_YN",
+            treatment_name="DLY_LABR_HOPE_YN",
+            treatment_def="일용근로 희망 여부 차이의 효과",
+            treatment_question="일용근로를 희망하는 사람과 희망하지 않는 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T3 [
+            label="T3: EMPL_STLE_CD",
+            role="treatment_meta",
+            treatment_var="EMPL_STLE_CD",
+            treatment_name="EMPL_STLE_CD",
+            treatment_def="희망 고용형태 차이의 효과",
+            treatment_question="고용형태 선호가 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T4 [
+            label="T4: DRV_PSBL_YN",
+            role="treatment_meta",
+            treatment_var="DRV_PSBL_YN",
+            treatment_name="DRV_PSBL_YN",
+            treatment_def="운전 가능 여부 차이의 효과",
+            treatment_question="운전이 가능한 구직자와 불가능한 구직자의 6개월 내 취업 확률 차이?"
+        ];
+
+        T5 [
+            label="T5: RQAG_HOPE_YN",
+            role="treatment_meta",
+            treatment_var="RQAG_HOPE_YN",
+            treatment_name="RQAG_HOPE_YN",
+            treatment_def="재신청 희망 여부 차이의 효과",
+            treatment_question="재신청을 희망하는 구직자와 그렇지 않은 구직자의 6개월 내 취업 확률 차이?"
+        ];
+    }
+}

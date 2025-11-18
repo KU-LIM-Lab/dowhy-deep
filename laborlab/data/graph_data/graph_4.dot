@@ -2,171 +2,98 @@ digraph {
     rankdir=LR;
     node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
 
-    // ==== 노드 라벨 정의 (Outcome + 기본 배경) ====
-    ACQ_180_YN                  [label="180일이내취업여부"];
-    AGE                         [label="연령"];
-    SXDS_CD                     [label="성별코드"];
-    ACCR_CD                     [label="학력코드"];
-    CARR_MYCT1                  [label="경력월수1"];
-    AREA_CD                     [label="지역코드"];
-    AGREE_LEVEL                 [label="정보활용적극성"];
+    ACQ_180_YN               [label="180일이내취업여부"];
+    HOPE_WAGE_SM_AMT         [label="희망임금합계금액"];
+    COMM_WAGE_TYCD           [label="임금형태코드"];
+    AFIV_RDJT_PSBL_YN        [label="면접후재조정가능여부"];
+    AVG_OTIO_MYAV_RMNT_AMT   [label="평균입직월평균보수금액"];
+    AVG_HOPE_WAGE_SM_AMT     [label="평균희망임금합계금액"];
 
-    // ==== 훈련 관련 structured 변수 ====
-    BFR_OCTR_CT                 [label="이전직업훈련건수"];
-    FRFT_AFTR_JHNT_REQR_DYCT    [label="상실이후구직인증소요일수"];
-    KECO_CD1                    [label="KECO코드1(가장 가까운 훈련)"];
-    OCTR_HOPE_JSFC_CSCY_SCOR1   [label="직업훈련희망직종일치도점수1"];
-    OCTR_HOPE_JSFC_CSCY_SCOR2   [label="직업훈련희망직종일치도점수2"];
-    HOPE_JSCD1                  [label="희망직종코드1"];
-    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
-    IPS_VS_JBHT_RATE            [label="피보험자대비구직자비율"];
-    IPS_IRDS_NMPR               [label="피보험자증감인원수"];
-    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
+    AREA_CD                  [label="지역코드"];
+    HOPE_JSCD1               [label="희망직종코드1"];
+    ACCR_CD                  [label="학력코드"];
+    CARR_MYCT1               [label="경력월수1"];
+    AGE                      [label="연령"];
 
-    // ==== training 테이블 변수 ====
-    CLOS_YM                     [label="마감년월(훈련데이터)"];
-    JHNT_CTN                    [label="구직인증번호"];
-    JHCR_DE                     [label="구직인증일자"];
-    CRSE_ID                     [label="훈련과정ID"];
-    TGCR_TME                    [label="훈련과정회차"];
-    TRNG_CRSN                   [label="훈련과정명"];
-    TRNG_BGDE                   [label="훈련시작일자"];
-    TRNG_ENDE                   [label="훈련종료일자"];
-    TRNG_JSCD                   [label="훈련직종코드"];
-    KECO_CD                     [label="훈련KECO코드"];
-    SORT_SN                     [label="훈련정렬순번"];
+    // 인과관계
+    AGE      -> ACCR_CD;
+    ACCR_CD  -> CARR_MYCT1;
+    ACCR_CD  -> HOPE_JSCD1;
+    ACCR_CD  -> HOPE_WAGE_SM_AMT;
 
-    // ============================================================
-    // ==== Treatment definitions (메타데이터용 노드) ==============
-    // role="treatment_meta"로 태깅한 노드에 treatment 정보를 저장한다.
-    // 파이프라인에서 pygraphviz로 읽어 DoWhy/TabPFN에 넘길 때 사용.
+    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
 
+    AREA_CD    -> AVG_OTIO_MYAV_RMNT_AMT;
+    AREA_CD    -> AVG_HOPE_WAGE_SM_AMT;
+    HOPE_JSCD1 -> AVG_OTIO_MYAV_RMNT_AMT;
+    HOPE_JSCD1 -> AVG_HOPE_WAGE_SM_AMT;
+
+    AVG_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
+    AVG_HOPE_WAGE_SM_AMT   -> HOPE_WAGE_SM_AMT;
+
+    HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
+    HOPE_WAGE_SM_AMT -> AFIV_RDJT_PSBL_YN;
+
+    HOPE_WAGE_SM_AMT       -> ACQ_180_YN;
+    COMM_WAGE_TYCD         -> ACQ_180_YN;
+    AFIV_RDJT_PSBL_YN      -> ACQ_180_YN;
+    AVG_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
+    AVG_HOPE_WAGE_SM_AMT   -> ACQ_180_YN;
+    ACCR_CD                -> ACQ_180_YN;
+    CARR_MYCT1             -> ACQ_180_YN;
+    AREA_CD                -> ACQ_180_YN;
+    HOPE_JSCD1             -> ACQ_180_YN;
+
+    // Treatments
     subgraph cluster_treatments {
-        label="Treatments (outcome: ACQ_180_YN, focus: Training history)";
+        label="Treatments (outcome: ACQ_180_YN)";
         style=dashed;
         color="#CCCCCC";
         node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
 
-        // T1: 이전 직업훈련 경험 유무
         T1 [
-            label="T1: any_prev_training",
+            label="T1: HOPE_WAGE_SM_AMT",
             role="treatment_meta",
-            treatment_var="BFR_OCTR_CT",
-            treatment_name="any_prev_training",
-            treatment_def="BFR_OCTR_CT > 0 (과거 직업훈련을 한 번이라도 수강한 구직자)",
-            treatment_question="과거 직업훈련을 한 번이라도 수강한 구직자는 전혀 수강하지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_var="HOPE_WAGE_SM_AMT",
+            treatment_name="HOPE_WAGE_SM_AMT",
+            treatment_def="희망임금 수준 차이의 효과",
+            treatment_question="희망임금이 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
         ];
 
-        // T2: 이전 직업훈련 다회 수강 (훈련 강도)
         T2 [
-            label="T2: multiple_prev_training",
+            label="T2: COMM_WAGE_TYCD",
             role="treatment_meta",
-            treatment_var="BFR_OCTR_CT",
-            treatment_name="multiple_prev_training",
-            treatment_def="BFR_OCTR_CT >= 2 또는 분포 상위 분위(예: 상위 30%)이면 1, 그 외 0",
-            treatment_question="직업훈련을 여러 차례 수강한 구직자는 한두 번만 수강했거나 수강 경험이 없는 구직자보다 6개월 이내 취업 확률이 얼마나 다른가?"
+            treatment_var="COMM_WAGE_TYCD",
+            treatment_name="COMM_WAGE_TYCD",
+            treatment_def="임금형태코드 차이의 효과",
+            treatment_question="임금형태(월급/시급 등)가 다른 구직자 간 6개월 내 취업 확률 차이?"
         ];
 
-        // T3: 최근에 종료된 직업훈련 이수 여부
         T3 [
-            label="T3: recent_training",
+            label="T3: AVG_OTIO_MYAV_RMNT_AMT",
             role="treatment_meta",
-            treatment_var="TRNG_ENDE",
-            treatment_name="recent_training",
-            treatment_def="개인별 가장 최근 TRNG_ENDE와 구직인증일자(JHCR_DE)의 차이가 일정 기준 이내(예: 6개월 이내)인 경우 1, 그 외 0",
-            treatment_question="구직인증 직전 일정 기간 이내(예: 6개월)까지 직업훈련을 받고 있었던 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_var="AVG_OTIO_MYAV_RMNT_AMT",
+            treatment_name="AVG_OTIO_MYAV_RMNT_AMT",
+            treatment_def="직종×지역 평균입직임금 수준 차이의 효과",
+            treatment_question="평균 입직임금이 높은 환경과 낮은 환경의 구직자 6개월 내 취업 확률 차이?"
         ];
 
-        // T4: 장기 훈련과정 이수 여부 (훈련 기간 길이)
         T4 [
-            label="T4: long_duration_training",
+            label="T4: AVG_HOPE_WAGE_SM_AMT",
             role="treatment_meta",
-            treatment_var="TRNG_BGDE,TRNG_ENDE",
-            treatment_name="long_duration_training",
-            treatment_def="개인별 수강한 과정 중 (TRNG_ENDE - TRNG_BGDE) 기간이 일정 기준 이상(예: 분포 상위 30%)인 과정을 가진 경우 1, 그 외 0",
-            treatment_question="장기 직업훈련 과정을 이수한 구직자는 단기 과정만 수강했거나 훈련 경험이 없는 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_var="AVG_HOPE_WAGE_SM_AMT",
+            treatment_name="AVG_HOPE_WAGE_SM_AMT",
+            treatment_def="직종×지역 평균희망임금 수준 차이의 효과",
+            treatment_question="주변 구직자들의 평균 희망임금이 높은 환경과 낮은 환경에서의 6개월 내 취업 확률 차이?"
         ];
 
-        // T5: 훈련-희망직종 일치도가 높은 구직자
         T5 [
-            label="T5: high_training_job_match",
+            label="T5: AFIV_RDJT_PSBL_YN",
             role="treatment_meta",
-            treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR1",
-            treatment_name="high_training_job_match",
-            treatment_def="OCTR_HOPE_JSFC_CSCY_SCOR1이 분포 상위 분위(예: 상위 30%)이면 1, 그 외 0",
-            treatment_question="가장 가까운 직업훈련과 본인의 희망직종 간 일치도가 높은 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_var="AFIV_RDJT_PSBL_YN",
+            treatment_name="AFIV_RDJT_PSBL_YN",
+            treatment_def="면접후재조정가능여부 차이의 효과",
+            treatment_question="임금 재조정이 가능하다고 응답한 사람과 불가능하다고 응답한 사람의 6개월 내 취업 확률 차이?"
         ];
     }
-
-    // ============================================================
-    // ==== Causal structure (DAG for Training history) ===========
-
-    // --- 인구학적/배경 변수 ---
-    SXDS_CD -> ACCR_CD;                    // 성별에 따라 학력 경로가 달라질 수 있음
-    SXDS_CD -> AGREE_LEVEL;                // 성별에 따른 정보 활용/동의 행태 차이
-
-    AGE -> ACCR_CD;                        // 나이가 많을수록 높은 학력일 가능성
-    AGE -> CARR_MYCT1;                     // 나이가 많을수록 경력월수 증가
-    AGE -> FRFT_AFTR_JHNT_REQR_DYCT;       // 경력단절/재취업 준비 기간에 영향
-    AGE -> ACQ_180_YN;                     // 연령에 따른 취업확률 차이
-
-    AREA_CD -> NTR_BPLC_PSNT_WAGE_AMT;     // 지역에 따라 제시임금 수준 차이
-    AREA_CD -> IPS_VS_RCIT_RATE;           // 지역별 모집비율 차이
-    AREA_CD -> IPS_VS_JBHT_RATE;           // 지역별 구직자비율 차이
-    AREA_CD -> ACQ_180_YN;                 // 지역 노동시장 여건 차이
-
-    ACCR_CD -> HOPE_JSCD1;                 // 학력에 따라 선택 가능한 직종이 달라짐
-    ACCR_CD -> BFR_OCTR_CT;                // 학력이 높을수록 직업훈련을 더 많이 이용할 수 있음
-    ACCR_CD -> ACQ_180_YN;                 // 학력이 직접 취업확률에 영향
-
-    CARR_MYCT1 -> HOPE_JSCD1;              // 경력 직종에 머무를 가능성
-    CARR_MYCT1 -> BFR_OCTR_CT;             // 경력 많은 사람이 추가훈련을 받을 가능성
-    CARR_MYCT1 -> ACQ_180_YN;              // 경력 자체가 취업 가능성에 직접 영향
-
-    AGREE_LEVEL -> BFR_OCTR_CT;            // 정보활용에 적극적일수록 직업훈련 정보 탐색/수강 가능성 증가
-
-    // --- 직업훈련 이용 및 구성 ---
-    // 훈련 데이터는 JHNT_CTN(구직인증번호)을 통해 개인과 연결
-    JHNT_CTN -> TRNG_BGDE;                 // 특정 구직인증과 연결된 훈련 시작일
-    JHNT_CTN -> TRNG_ENDE;                 // 훈련 종료일
-    JHNT_CTN -> TRNG_JSCD;                 // 훈련 직종코드
-    JHNT_CTN -> KECO_CD;                   // 훈련 KECO 코드
-    JHNT_CTN -> SORT_SN;                   // 한 구직인증에 여러 훈련이 있을 때 순번
-
-    BFR_OCTR_CT -> KECO_CD1;               // 과거 훈련 경험이 많을수록 '가장 가까운 훈련'의 KECO코드를 가지게 됨
-    BFR_OCTR_CT -> FRFT_AFTR_JHNT_REQR_DYCT; // 훈련을 많이 받을수록 상실 이후 구직인증까지 시간이 길어질 수 있음
-    BFR_OCTR_CT -> ACQ_180_YN;             // 훈련 경험량이 취업 가능성에 직접 영향
-
-    // 훈련 일정과 구직인증 시점 관계
-    TRNG_ENDE -> JHCR_DE;                  // (시간축 상) 훈련이 끝난 이후 구직인증이 이뤄짐
-    TRNG_BGDE -> TRNG_ENDE;                // 훈련 시작·종료일로 기간이 정의됨
-
-    TRNG_JSCD -> KECO_CD;                  // 훈련 직종코드와 KECO 코드가 연결
-    TRNG_JSCD -> KECO_CD1;                 // 가장 가까운 훈련의 직종/KECO가 KECO_CD1로 요약
-
-    // --- 훈련-희망직종 매칭 구조 ---
-    HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1; // 희망직종과 가장 가까운 훈련 간 일치도
-    HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR2; // 희망직종과 두 번째 가까운 훈련 간 일치도
-    KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;   // 실제로 연결된 최인접 훈련의 KECO와 희망직종 간 매칭
-    KECO_CD1 -> ACQ_180_YN;                 // 가장 가까운 훈련의 분야 자체가 취업 가능성에 영향
-
-    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN; // 훈련-희망직종 일치도가 높을수록 취업 가능성 증가
-    OCTR_HOPE_JSFC_CSCY_SCOR2 -> ACQ_180_YN; // 두 번째 인접 훈련과의 일치도도 추가적인 효과 가능
-
-    // --- 상실 이후 구직인증까지의 기간 ---
-    FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;   // 상실 이후 구직인증까지의 기간이 길수록 재취업이 어려울 수 있음
-
-    // --- 노동시장 상태 지표 ---
-    IPS_IRDS_NMPR -> IPS_VS_RCIT_RATE;     // 피보험자 증감이 모집비율에 영향
-    IPS_IRDS_NMPR -> IPS_VS_JBHT_RATE;     // 피보험자 증감이 구직자비율에도 영향
-
-    IPS_VS_RCIT_RATE -> ACQ_180_YN;        // 모집비율이 높을수록 취업 가능성이 증가
-    IPS_VS_JBHT_RATE -> ACQ_180_YN;        // 구직자비율이 높을수록 경쟁 심화로 취업확률 감소
-
-    // --- 임금 수준 ---
-    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;  // 지역·직종의 제시임금 수준이 매칭 성사에 영향
-
-    // --- 데이터 마감 구조 (정보가 관측되는 방식) ---
-    CLOS_YM -> ACQ_180_YN;                 // 관측 기간(마감년월)에 따라 180일 내 취업 여부 관측 가능 여부가 달라질 수 있음
-    CLOS_YM -> BFR_OCTR_CT;                // 마감시점 이전까지의 훈련건수만 관측됨
 }

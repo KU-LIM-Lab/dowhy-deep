@@ -2,171 +2,108 @@ digraph {
     rankdir=LR;
     node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
 
-    // ==== 노드 라벨 정의 ====
     ACQ_180_YN                  [label="180일이내취업여부"];
-    FRFT_AFTR_JHNT_REQR_DYCT    [label="상실이후구직인증소요일수"];
-    EMPL_STLE_CD                [label="고용형태코드"];
-    ACCR_STCD                   [label="학력상태코드"];
-    DSPT_LABR_YN                [label="파견근로여부"];
-    DRV_PSBL_YN                 [label="운전가능여부"];
-    HOPE_WAGE_SM_AMT            [label="희망임금합계금액"];
-    HOPE_JSCD1                  [label="희망직종코드1"];
-    CARR_MYCT1                  [label="경력월수1"];
-    ACCR_CD                     [label="학력코드"];
-    NTR_BPLC_PSNT_WAGE_AMT      [label="중앙사업장제시임금금액"];
-    AVG_EMPN_VS_CRQF_CT         [label="평균채용대비자격증건수"];
-    AREA_CD                     [label="지역코드"];
-    AGE                         [label="연령"];
-    SHSY_YN                     [label="교대제여부"];
-    DLY_LABR_HOPE_YN            [label="일용근로희망여부"];
     BFR_OCTR_CT                 [label="이전직업훈련건수"];
-    SFID_IEM_NUM                [label="자기소개서항목개수"];
-    SFID_LTTR_NUM               [label="자기소개서글자개수"];
+    ACCR_CD                     [label="학력코드"];
+    CARR_MYCT1                  [label="경력월수1"];
+    JO_DRNG_RATE                [label="구인배수비율(직종×지역)"];
     OCTR_HOPE_JSFC_CSCY_SCOR1   [label="직업훈련희망직종일치도점수1"];
-    IPS_VS_RCIT_RATE            [label="피보험자대비모집비율"];
-    IPS_VS_JBHT_RATE            [label="피보험자대비구직자비율"];
-    HPAR_CSCY_SCOR              [label="희망지역일치도점수"];
-    JHNT_PPOS_CD                [label="구직목적코드"];
-    MDTN_HOPE_YN                [label="알선희망여부"];
+
+    AGE                         [label="연령"];
     SXDS_CD                     [label="성별코드"];
-    MAJR_CD1                    [label="전공코드"];
+    AREA_CD                     [label="지역코드(거주지)"];
+    HOPE_JSCD1                  [label="희망직종코드1"];
+    HOPE_WAGE_SM_AMT            [label="희망임금합계금액"];
+    CRQF_CT                     [label="자격증건수"];
 
-    // 추가 파생/평가 변수 (영문 ID 유지)
-    cover_score                 [label="자소서평가점수"];
-    cover_typo_count            [label="자소서오탈자수"];
-    days_last_training_to_jobseek [label="직업훈련과구직사이기간"];
-    license_score               [label="자격증일치도점수"];
-    resume_score                [label="이력서평가점수"];
+    // 인과관계
+    AGE      -> ACCR_CD;
+    AGE      -> CARR_MYCT1;
+    AGE      -> BFR_OCTR_CT;
+    AGE      -> CRQF_CT;
+    AGE      -> ACQ_180_YN;
 
-    // ============================================================
-    // ==== Treatment definitions (메타데이터용 노드) ==============
-    // DoWhy/TabPFN 파이프라인에서 읽을 수 있도록
-    // role="treatment_meta"로 태깅한 노드 안에 정보를 넣어둔다.
+    SXDS_CD  -> ACCR_CD;
+    SXDS_CD  -> HOPE_JSCD1;
+    SXDS_CD  -> ACQ_180_YN;
 
+    ACCR_CD  -> CARR_MYCT1;
+    ACCR_CD  -> BFR_OCTR_CT;
+    ACCR_CD  -> CRQF_CT;
+    ACCR_CD  -> HOPE_JSCD1;
+    ACCR_CD  -> HOPE_WAGE_SM_AMT;
+    ACCR_CD  -> ACQ_180_YN;
+
+    CARR_MYCT1 -> HOPE_JSCD1;
+    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+    CARR_MYCT1 -> ACQ_180_YN;
+
+    AREA_CD     -> JO_DRNG_RATE;
+    AREA_CD     -> ACQ_180_YN;
+
+    HOPE_JSCD1  -> JO_DRNG_RATE;
+    HOPE_JSCD1  -> ACQ_180_YN;
+
+    JO_DRNG_RATE -> ACQ_180_YN;
+
+    BFR_OCTR_CT               -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    BFR_OCTR_CT               -> CRQF_CT;
+    BFR_OCTR_CT               -> ACQ_180_YN;
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+    CRQF_CT                   -> ACQ_180_YN;
+
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+
+    // Treatments
     subgraph cluster_treatments {
         label="Treatments (outcome: ACQ_180_YN)";
         style=dashed;
         color="#CCCCCC";
         node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
 
-        // T1: 이전 직업훈련 경험 (training exposure)
         T1 [
-            label="T1: prev_training_any",
+            label="T1: BFR_OCTR_CT",
             role="treatment_meta",
             treatment_var="BFR_OCTR_CT",
-            treatment_name="prev_training_any",
-            treatment_def="BFR_OCTR_CT > 0",
-            treatment_question="이전 직업훈련을 한 번이라도 받은 사람은 그렇지 않은 사람보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_name="BFR_OCTR_CT",
+            treatment_def="이전직업훈련건수 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
+            treatment_question="이전 직업훈련을 많이 받은 사람과 거의 받지 않은 사람의 6개월 내 취업 확률 차이는?"
         ];
 
-        // T2: 최종 학력 수준 (education level)
         T2 [
-            label="T2: high_education",
+            label="T2: ACCR_CD",
             role="treatment_meta",
             treatment_var="ACCR_CD",
-            treatment_name="high_education",
-            treatment_def="전문대/대졸 이상=1, 고졸 이하=0 (실제 cut-off는 코드값 보고 결정)",
-            treatment_question="높은 학력을 가진 구직자는 낮은 학력자에 비해 6개월 이내 취업 확률이 얼마나 다른가?"
+            treatment_name="ACCR_CD",
+            treatment_def="학력코드(최종학력) 수준 차이가 ACQ_180_YN에 미치는 인과효과",
+            treatment_question="학력 수준이 다른 구직자 간 6개월 내 취업 확률 차이는?"
         ];
 
-        // T3: 관련 경력 보유 여부 (experience in desired occupation)
         T3 [
-            label="T3: has_experience_hope1",
+            label="T3: CARR_MYCT1",
             role="treatment_meta",
             treatment_var="CARR_MYCT1",
-            treatment_name="has_experience_hope1",
-            treatment_def="CARR_MYCT1 > 0",
-            treatment_question="희망직종1에 대한 관련 경력이 있는 구직자는 무경력자에 비해 6개월 이내 취업 확률이 얼마나 다른가?"
+            treatment_name="CARR_MYCT1",
+            treatment_def="희망직종1 경력 개월 수 차이가 ACQ_180_YN에 미치는 인과효과",
+            treatment_question="희망직종1 관련 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이는?"
         ];
 
-        // T4: 노동시장 매칭 여건 (모집비율 높은 시장 vs 낮은 시장)
         T4 [
-            label="T4: high_vacancy_rate",
+            label="T4: JO_DRNG_RATE",
             role="treatment_meta",
-            treatment_var="IPS_VS_RCIT_RATE",
-            treatment_name="high_vacancy_rate",
-            treatment_def="직종×지역별 모집비율이 상위 q분위(예: 상위 30%)이면 1, 그 외 0",
-            treatment_question="채용공고가 상대적으로 많은 직종·지역에서 구직하는 사람은 6개월 이내 취업 확률이 얼마나 더 높은가?"
+            treatment_var="JO_DRNG_RATE",
+            treatment_name="JO_DRNG_RATE",
+            treatment_def="희망 직종×지역의 구인배수비율 수준 차이가 ACQ_180_YN에 미치는 인과효과",
+            treatment_question="구인배수비율이 높은 직종·지역을 선택한 사람과 낮은 곳을 선택한 사람의 6개월 내 취업 확률 차이는?"
         ];
 
-        // T5: 직업훈련-희망직종 일치도 (training-job match quality)
         T5 [
-            label="T5: high_training_match",
+            label="T5: OCTR_HOPE_JSFC_CSCY_SCOR1",
             role="treatment_meta",
             treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR1",
-            treatment_name="high_training_match",
-            treatment_def="직업훈련-희망직종 일치도 점수가 상위 q분위(예: 상위 30%)이면 1, 그 외 0",
-            treatment_question="직업훈련 내용이 본인이 희망하는 직종과 더 잘 맞는 구직자는 그렇지 않은 사람보다 6개월 이내 취업 확률이 얼마나 높은가?"
+            treatment_name="OCTR_HOPE_JSFC_CSCY_SCOR1",
+            treatment_def="직업훈련과 희망직종 간 일치도 점수 수준 차이가 ACQ_180_YN에 미치는 인과효과",
+            treatment_question="훈련-희망직종 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이는?"
         ];
     }
-
-    // ============================================================
-    // ==== Causal structure (원래 DAG) ===========================
-
-    // --- 운전가능여부 ---
-    DRV_PSBL_YN -> DSPT_LABR_YN;          // 운전이 가능하면 파견 근로의 장벽이 낮아짐
-    DRV_PSBL_YN -> HOPE_JSCD1;            // 운전면허가 필요한 직업군
-    DRV_PSBL_YN -> HPAR_CSCY_SCOR;        // 운전 가능하면 먼 지역 근무도 수용하기 쉬움
-
-    // --- 이전직업훈련건수 ---
-    BFR_OCTR_CT -> FRFT_AFTR_JHNT_REQR_DYCT; // 퇴직 후 훈련을 많이 받을수록 구직활동 지연
-    BFR_OCTR_CT -> SFID_LTTR_NUM;            // 훈련 많이 받은 사람은 자소서에 쓸 내용이 많음
-    BFR_OCTR_CT -> ACQ_180_YN;               // (직접원인) 취업 여부에 영향
-
-    // --- 학력상태코드 ---
-    ACCR_STCD -> EMPL_STLE_CD;           // 재학/휴학/졸업 여부에 따라 고용형태 달라짐
-
-    // --- 학력코드 ---
-    ACCR_CD -> HOPE_WAGE_SM_AMT;         // 이정도 공부했으면 희망임금 상향
-    ACCR_CD -> HOPE_JSCD1;               // 학력에 따라 직업풀이 다름
-    ACCR_CD -> AGE;                      // 박사가 고졸보다 나이 많음
-    ACCR_CD -> ACQ_180_YN;               // (직접원인) 취업 여부에 영향
-
-    // --- 경력월수1 ---
-    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;      // 경력 많으면 희망임금 상향
-    CARR_MYCT1 -> AGE;                   // 경력 많은 사람은 나이도 많음
-    CARR_MYCT1 -> SFID_IEM_NUM;          // 경력 많으면 자소서 항목 많아짐
-    CARR_MYCT1 -> ACQ_180_YN;            // (직접원인) 취업 여부에 영향
-
-    // --- 희망직종코드1 ---
-    HOPE_JSCD1 -> HOPE_WAGE_SM_AMT;      // 직종에 따라 희망임금 달라짐
-    HOPE_JSCD1 -> SHSY_YN;               // 직종에 따라 교대제 필요
-    HOPE_JSCD1 -> DLY_LABR_HOPE_YN;      // 직종에 따라 일용근무 여부 달라짐
-
-    // --- 중앙사업장제시임금금액 ---
-    NTR_BPLC_PSNT_WAGE_AMT -> HOPE_WAGE_SM_AMT; // 제시 임금 수준이 희망임금에 영향
-    NTR_BPLC_PSNT_WAGE_AMT -> ACQ_180_YN;       // (직접원인) 취업 여부에 영향
-
-    // --- 평균채용대비자격증건수 ---
-    AVG_EMPN_VS_CRQF_CT -> HOPE_WAGE_SM_AMT;    // 자격증 많으면 희망임금 상향
-    AVG_EMPN_VS_CRQF_CT -> ACQ_180_YN;          // (직접원인) 취업 여부에 영향
-
-    // --- 지역코드 ---
-    AREA_CD -> HOPE_WAGE_SM_AMT;                // 지역 차이로 희망임금 달라짐
-    AREA_CD -> ACQ_180_YN;                      // (직접원인) 취업 여부에 영향
-
-    // --- 연령 ---
-    AGE -> HOPE_WAGE_SM_AMT;                    // 연령 높을수록 희망임금 상향
-
-    // --- 구직목적코드 ---
-    JHNT_PPOS_CD -> MDTN_HOPE_YN;               // 구직 목적에 따라 알선 희망 여부 달라짐
-
-    // --- 성별코드 ---
-    SXDS_CD -> MAJR_CD1;                        // 성별에 따라 전공 선택이 다름
-
-    // --- 자기소개서/이력·자격 관련 파생지표 ---
-    cover_score -> ACQ_180_YN;                  // 자소서 평가점수는 취업에 직접 영향
-    cover_typo_count -> ACQ_180_YN;             // 오탈자 수는 취업에 직접 영향
-    days_last_training_to_jobseek -> ACQ_180_YN; // 마지막 훈련~구직기간 길면 취업에 영향
-    license_score -> ACQ_180_YN;                // 자격증 일치도는 취업에 직접 영향
-    resume_score -> ACQ_180_YN;                 // 이력서 점수는 취업에 직접 영향
-
-    // --- 취업 여부의 기타 직접 원인 ---
-    DSPT_LABR_YN -> ACQ_180_YN;                 // 파견근로여부
-    DLY_LABR_HOPE_YN -> ACQ_180_YN;             // 일용근로희망여부
-    SFID_IEM_NUM -> ACQ_180_YN;                 // 자기소개서항목개수
-    SFID_LTTR_NUM -> ACQ_180_YN;                // 자기소개서글자개수
-    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;    // 직업훈련희망직종일치도점수1
-    IPS_VS_RCIT_RATE -> ACQ_180_YN;             // 피보험자대비모집비율
-    IPS_VS_JBHT_RATE -> ACQ_180_YN;             // 피보험자대비구직자비율
 }
