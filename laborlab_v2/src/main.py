@@ -1,0 +1,1398 @@
+"""
+DoWhy 라이브러리를 이용한 인과모델 구축, 추정, 검증 End-to-End 파이프라인
+
+수정 사항:
+- 정형 데이터와 비정형 데이터(JSON) 통합 로드
+- JHNT_CTN을 PK로 데이터 병합
+- treatment 파라미터를 argparser로 입력받아 다양한 실험 지원
+"""
+
+import argparse
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import warnings
+from pathlib import Path
+import logging
+from datetime import datetime
+import os
+import sys
+import json
+import re
+import time
+from typing import Dict, Any
+
+# DoWhy 라이브러리 임포트
+import dowhy
+from dowhy import CausalModel
+import networkx as nx
+
+# 로컬 DoWhy 라이브러리 경로 추가
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+# 모듈 임포트
+from . import preprocess
+from . import estimation
+from . import graph_parser
+
+# 경고 메시지 무시
+warnings.filterwarnings("ignore")
+
+# DoWhy 로거 레벨 설정
+import logging as dowhy_logging
+dowhy_logging.getLogger("dowhy.causal_estimator").setLevel(dowhy_logging.WARNING)
+dowhy_logging.getLogger("dowhy.causal_estimators").setLevel(dowhy_logging.WARNING)
+
+# 한글 폰트 설정
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+# ============================================================================
+# GPT API 키 설정
+# ============================================================================
+# API 키는 experiment_config.json의 api_key 필드에서 설정합니다.
+# run_batch_experiments.py를 통해 실행하면 config의 api_key가 자동으로 전달됩니다.
+# 직접 실행하는 경우 --api-key 인자로 전달할 수 있습니다.
+# ============================================================================
+
+
+def create_causal_graph(graph_file):
+    """
+    DOT 형식 그래프 파일을 읽어서 NetworkX 인과 그래프를 생성하는 함수
+    
+    Args:
+        graph_file (str): 그래프 파일 경로 (DOT 형식)
+    
+    Returns:
+        nx.DiGraph: 인과 그래프 객체
+    """
+    # 무조건 DOT 형식으로 파싱
+    return _parse_dot_graph(graph_file)
+
+
+def _parse_dot_graph(graph_file):
+    """DOT 형식 그래프 파일을 파싱합니다."""
+    try:
+        # pydot을 사용하여 DOT 파일 읽기
+        import pydot
+        graphs = pydot.graph_from_dot_file(graph_file)
+        if not graphs:
+            raise ValueError(f"DOT 파일에서 그래프를 찾을 수 없습니다: {graph_file}")
+        
+        # 첫 번째 그래프 사용
+        dot_graph = graphs[0]
+        
+        # NetworkX 그래프로 변환
+        G = nx.drawing.nx_pydot.from_pydot(dot_graph)
+        
+        # 방향성 그래프로 변환 (digraph인 경우)
+        if not G.is_directed():
+            # digraph인지 확인
+            with open(graph_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if content.strip().startswith('digraph'):
+                G = G.to_directed()
+        
+        return G
+    except ImportError:
+        # pydot이 없으면 수동 파싱
+        return _parse_dot_manual(graph_file)
+    except Exception as e:
+        # pydot 파싱 실패 시 수동 파싱 시도
+        try:
+            return _parse_dot_manual(graph_file)
+        except Exception as e2:
+            raise ValueError(f"DOT 파일 파싱 실패: {e}. 수동 파싱도 실패: {e2}")
+
+
+def _parse_dot_manual(graph_file):
+    """DOT 형식을 수동으로 파싱합니다 (pydot 없이)."""
+    with open(graph_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    G = nx.DiGraph()
+    
+    # digraph인지 확인
+    is_digraph = content.strip().startswith('digraph')
+    
+    # subgraph cluster_treatments 블록 제거 (treatment 메타데이터는 DAG에 포함하지 않음)
+    # subgraph cluster_treatments { ... } 블록 제거
+    content_without_subgraph = re.sub(
+        r'subgraph\s+cluster_treatments\s*\{[^}]*\}',
+        '',
+        content,
+        flags=re.DOTALL
+    )
+    
+    # 노드 정의 찾기: node_id [label="..."]
+    # 노드 ID는 변수명 (예: ACQ_180_YN, cover_score 등)
+    # 노드명이 라벨 정의에 나타남
+    node_pattern = r'([A-Za-z_][A-Za-z0-9_]*)\s*\[[^\]]*label\s*=\s*"([^"]+)"'
+    for match in re.finditer(node_pattern, content_without_subgraph):
+        node_id = match.group(1)
+        label = match.group(2)
+        # T1, T2 등의 treatment 노드는 제외
+        if not re.match(r'^T\d+$', node_id):
+            G.add_node(node_id, label=label)
+    
+    # 엣지 찾기: source -> target; 또는 source -> target [label="..."]
+    # 주석 처리된 라인은 제외
+    edge_pattern = r'([A-Za-z_][A-Za-z0-9_]*)\s*->\s*([A-Za-z_][A-Za-z0-9_]*)'
+    for match in re.finditer(edge_pattern, content_without_subgraph):
+        source = match.group(1)
+        target = match.group(2)
+        # treatment 노드(T1, T2 등)는 제외
+        if not re.match(r'^T\d+$', source) and not re.match(r'^T\d+$', target):
+            G.add_edge(source, target)
+    
+    # 방향성 그래프로 변환
+    if is_digraph and not G.is_directed():
+        G = G.to_directed()
+    
+    return G
+
+
+def _parse_gml_graph(graph_file):
+    """GML 형식 그래프 파일을 파싱합니다."""
+    # GML 파일 읽기
+    with open(graph_file, 'r', encoding='utf-8') as f:
+        gml_content = f.read()
+    
+    G = nx.DiGraph()
+    
+    # graph [ ... ] 블록 추출
+    graph_match = re.search(r'graph\s*\[(.*?)\]', gml_content, re.DOTALL)
+    if not graph_match:
+        raise ValueError("GML 형식이 올바르지 않습니다: 'graph [' 블록을 찾을 수 없습니다.")
+    
+    graph_body = graph_match.group(1)
+    
+    # directed 플래그 확인
+    directed = re.search(r'directed\s+(\d+)', graph_body)
+    is_directed = directed and directed.group(1) == "1"
+    
+    # 모든 node 블록 추출
+    node_pattern = r'node\s*\[(.*?)\]'
+    for node_match in re.finditer(node_pattern, graph_body, re.DOTALL):
+        node_content = node_match.group(1)
+        
+        # id와 label 추출 (따옴표 처리)
+        id_match = re.search(r'id\s+"([^"]+)"', node_content)
+        label_match = re.search(r'label\s+"([^"]+)"', node_content)
+        
+        if id_match:
+            node_id = id_match.group(1)
+            label = label_match.group(1) if label_match else node_id
+            # treatment_meta role이 있는 노드는 제외
+            role_match = re.search(r'role\s*=\s*"([^"]+)"', node_content)
+            if role_match and role_match.group(1) == "treatment_meta":
+                continue
+            G.add_node(node_id, label=label)
+    
+    # 모든 edge 블록 추출
+    edge_pattern = r'edge\s*\[(.*?)\]'
+    for edge_match in re.finditer(edge_pattern, graph_body, re.DOTALL):
+        edge_content = edge_match.group(1)
+        
+        # source와 target 추출 (따옴표 처리)
+        source_match = re.search(r'source\s+"([^"]+)"', edge_content)
+        target_match = re.search(r'target\s+"([^"]+)"', edge_content)
+        
+        if source_match and target_match:
+            source = source_match.group(1)
+            target = target_match.group(1)
+            # treatment_meta 노드는 제외
+            if source not in ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10']:
+                G.add_edge(source, target)
+    
+    # 방향성 그래프로 변환
+    if not G.is_directed() and is_directed:
+        G = G.to_directed()
+    
+    return G
+
+
+def load_all_data(data_dir, graph_file=None):
+    """
+    정형 데이터와 비정형 데이터(JSON)를 모두 로드하는 함수
+    
+    Args:
+        data_dir (str): 데이터 디렉토리 경로
+        graph_file (str, optional): 그래프 파일 경로. None이면 data_dir/main_graph 사용
+    
+    Returns:
+        tuple: (파일경로_리스트, 인과그래프)
+    """
+    data_path = Path(data_dir)
+    
+    # 1. 정형 데이터 파일 경로 확인 (fixed_data 폴더에서)
+    structured_data_path = data_path / "fixed_data" / "data.csv"
+    if not structured_data_path.exists():
+        # fallback: data_dir 직접 경로
+        structured_data_path = data_path / "data.csv"
+    
+    if not structured_data_path.exists():
+        raise FileNotFoundError(f"정형 데이터 파일을 찾을 수 없습니다: {structured_data_path}")
+    
+    print(f"✅ 정형 데이터 파일 경로: {structured_data_path}")
+    
+    # 2. 비정형 데이터(JSON) 파일 경로 리스트 생성 (variant_data 폴더에서)
+    variant_data_path = data_path / "variant_data"
+    file_list = []
+    
+    json_files = [
+        ("RESUME_JSON.json", "이력서"),
+        ("COVERLETTERS_JSON.json", "자기소개서"),
+        ("TRAININGS_JSON.json", "직업훈련"),
+        ("LICENSES_JSON.json", "자격증")
+    ]
+    
+    # 정형 데이터 파일을 먼저 추가 (Preprocessor의 get_merged_df 방식과 일치)
+    file_list.append(str(structured_data_path))
+    
+    # JSON 파일 경로 추가
+    for filename, json_type in json_files:
+        json_path = variant_data_path / filename
+        if json_path.exists():
+            file_list.append(str(json_path))
+            print(f"✅ {json_type} 파일 경로 추가: {json_path}")
+        else:
+            print(f"⚠️ {json_type} 파일을 찾을 수 없습니다: {json_path}")
+    
+    # 3. 인과 그래프 로드
+    # graph_file이 제공되지 않으면 data_dir/main_graph 또는 data_dir/graph_data/graph_1 사용
+    if graph_file is None:
+        graph_file = data_path / "main_graph"
+        if not graph_file.exists():
+            # fallback: graph_data 폴더에서 첫 번째 그래프 파일 찾기
+            graph_data_path = data_path / "graph_data"
+            if graph_data_path.exists():
+                # .dot 파일 제외하고 GML 형식 파일 우선
+                graph_files = [f for f in graph_data_path.glob("graph_*") if not f.suffix == '.dot']
+                if not graph_files:
+                    # .dot 파일도 포함
+                    graph_files = list(graph_data_path.glob("graph_*"))
+                if graph_files:
+                    graph_file = sorted(graph_files)[0]  # 첫 번째 파일 사용
+                    print(f"⚠️ main_graph를 찾을 수 없어 graph_data 폴더의 {graph_file.name}을 사용합니다.")
+    else:
+        graph_file = Path(graph_file)
+    
+    if not graph_file.exists():
+        raise FileNotFoundError(f"그래프 파일을 찾을 수 없습니다: {graph_file}")
+    
+    causal_graph = create_causal_graph(str(graph_file))
+    print(f"✅ 인과 그래프 로드 완료: {causal_graph.number_of_nodes()}개 노드, {causal_graph.number_of_edges()}개 엣지")
+    
+    return file_list, causal_graph
+
+
+def clean_dataframe_for_causal_model(df, required_vars=None, logger=None):
+    """
+    CausalModel 생성 전에 데이터프레임을 정리하는 함수
+    - Logger 객체나 다른 비데이터 타입 컬럼 제거
+    - 숫자/문자열/불린 타입만 유지
+    - required_vars에 지정된 변수는 항상 유지
+    
+    Args:
+        df (pd.DataFrame): 원본 데이터프레임
+        required_vars (list, optional): 반드시 유지해야 할 변수 리스트 (treatment, outcome 등)
+        logger: 로거 객체
+    
+    Returns:
+        pd.DataFrame: 정리된 데이터프레임
+    """
+    df_clean = df.copy()
+    cols_to_drop = []
+    
+    if required_vars is None:
+        required_vars = []
+    
+    for col in df_clean.columns:
+        # object 타입 컬럼 확인
+        if df_clean[col].dtype == 'object':
+            if len(df_clean) > 0:
+                # NaN이 아닌 첫 번째 값 확인
+                non_null_values = df_clean[col].dropna()
+                if len(non_null_values) > 0:
+                    first_val = non_null_values.iloc[0]
+                    # Logger 같은 객체 타입인지 확인
+                    is_logger_object = isinstance(first_val, logging.Logger) or 'Logger' in str(type(first_val))
+                    is_invalid_type = not isinstance(first_val, (str, int, float, bool, type(None)))
+                    
+                    if is_logger_object or is_invalid_type:
+                        # 필수 변수인 경우 Logger 객체를 NaN으로 대체
+                        if col in required_vars:
+                            if logger:
+                                logger.warning(f"필수 변수 '{col}'의 값이 객체 타입({type(first_val).__name__})이어서 NaN으로 대체합니다.")
+                            else:
+                                print(f"⚠️ 필수 변수 '{col}'의 값이 객체 타입({type(first_val).__name__})이어서 NaN으로 대체합니다.")
+                            df_clean[col] = np.nan
+                        else:
+                            # 필수 변수가 아닌 경우 컬럼 제거
+                            cols_to_drop.append(col)
+                            if logger:
+                                logger.warning(f"컬럼 '{col}'이 객체 타입({type(first_val).__name__})이어서 제거합니다.")
+                            else:
+                                print(f"⚠️ 컬럼 '{col}'이 객체 타입({type(first_val).__name__})이어서 제거합니다.")
+    
+    if cols_to_drop:
+        df_clean = df_clean.drop(columns=cols_to_drop)
+        if logger:
+            logger.info(f"제거된 컬럼: {cols_to_drop}")
+        else:
+            print(f"제거된 컬럼: {cols_to_drop}")
+    
+    return df_clean
+
+
+def preprocess_and_merge_data(file_list, data_dir, api_key=None):
+    """
+    Preprocessor 클래스를 사용하여 모든 데이터를 전처리하고 병합하는 함수
+    
+    Args:
+        file_list (list): 파일 경로 리스트 [정형데이터, 이력서, 자기소개서, 직업훈련, 자격증]
+        data_dir (str): 데이터 디렉토리 경로
+        api_key (str, optional): LLM API 키
+    
+    Returns:
+        pd.DataFrame: 병합된 데이터프레임
+    """
+    # Preprocessor 인스턴스 생성
+    # preprocess.py는 __file__ 기준으로 경로를 계산하므로 작업 디렉토리 변경 불필요
+    preprocessor = preprocess.Preprocessor([], api_key=api_key)
+    
+    # file_list의 경로를 절대 경로로 변환
+    absolute_file_list = [str(Path(f).resolve()) for f in file_list]
+    
+    # get_merged_df를 사용하여 모든 파일을 로드, 전처리, 병합
+    merged_df = preprocessor.get_merged_df(absolute_file_list)
+    
+    print(f"✅ 모든 데이터 전처리 및 병합 완료")
+    return merged_df
+
+
+def save_predictions_to_excel(df_with_predictions, output_dir=None, filename=None, logger=None):
+    """
+    예측값이 포함된 데이터프레임을 Excel 파일로 저장
+    
+    Args:
+        df_with_predictions: 예측값이 포함된 데이터프레임
+        output_dir: 출력 디렉토리 (None이면 log 폴더 사용)
+        filename: 파일명 (None이면 자동 생성)
+        logger: 로거 객체
+    
+    Returns:
+        str: 저장된 파일 경로
+    """
+    if output_dir is None:
+        script_dir = Path(__file__).parent.parent
+        output_dir = script_dir / "log"
+    else:
+        output_dir = Path(output_dir)
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    if filename is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"predictions_{timestamp}.xlsx"
+    
+    filepath = output_dir / filename
+    
+    # Excel 파일로 저장
+    df_with_predictions.to_excel(filepath, index=False, engine='openpyxl')
+    
+    if logger:
+        logger.info(f"예측 결과 저장 완료: {filepath}")
+        file_size = os.path.getsize(filepath)
+        logger.info(f"파일 크기: {file_size:,} bytes")
+    
+    return str(filepath)
+
+
+def run_analysis_without_preprocessing(
+    merged_df_clean: pd.DataFrame,
+    graph_file: str,
+    treatment: str,
+    outcome: str,
+    estimator: str,
+    logger=None,
+    experiment_id: str = None
+):
+    """
+    전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
+    (estimation → refutation → prediction만 수행)
+    
+    Args:
+        merged_df_clean: 전처리 및 정리된 데이터프레임
+        graph_file: 그래프 파일 경로
+        treatment: 처치 변수명
+        outcome: 결과 변수명
+        estimator: 추정 방법
+        logger: 로거 객체
+        experiment_id: 실험 ID (선택적)
+    
+    Returns:
+        dict: 분석 결과
+    """
+    try:
+        step_times = {}
+        step_start = time.time()
+        
+        if experiment_id:
+            print(f"\n{'='*80}")
+            print(f"실험 ID: {experiment_id}")
+            print(f"그래프: {Path(graph_file).name}")
+            print(f"Treatment: {treatment}, Outcome: {outcome}")
+            print(f"Estimator: {estimator}")
+            print(f"{'='*80}\n")
+        
+        # 1. 그래프 로드
+        print("1️⃣ 인과 그래프 로드 중...")
+        step_start = time.time()
+        causal_graph = create_causal_graph(graph_file)
+        step_times['그래프 로드'] = time.time() - step_start
+        print(f"⏱️ 그래프 로드 소요 시간: {step_times['그래프 로드']:.2f}초")
+        print(f"✅ 인과 그래프: {causal_graph.number_of_nodes()}개 노드, {causal_graph.number_of_edges()}개 엣지")
+        
+        # 2. 그래프 변수에 맞게 데이터 필터링
+        print("2️⃣ 그래프 변수에 맞게 데이터 필터링 중...")
+        step_start = time.time()
+        
+        graph_variables = set(causal_graph.nodes())
+        data_variables = set(merged_df_clean.columns)
+        
+        # 필수 변수 (treatment, outcome, 병합 키)
+        essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        
+        # 유지할 변수: 그래프 변수 + 필수 변수
+        vars_to_keep = (graph_variables | essential_vars) & data_variables
+        
+        # 데이터 필터링
+        df_for_analysis = merged_df_clean[list(vars_to_keep)].copy()
+        
+        # 필수 변수 확인
+        missing_vars = [var for var in [treatment, outcome] if var not in df_for_analysis.columns]
+        if missing_vars:
+            raise ValueError(f"필수 변수가 데이터에 없습니다: {missing_vars}")
+        
+        step_times['데이터 필터링'] = time.time() - step_start
+        print(f"⏱️ 데이터 필터링 소요 시간: {step_times['데이터 필터링']:.2f}초")
+        print(f"✅ 필터링된 데이터: {len(df_for_analysis)}건, {len(df_for_analysis.columns)}개 변수")
+        
+        # 3. 인과모델 생성
+        print("3️⃣ 인과모델 생성 중...")
+        step_start = time.time()
+        model = CausalModel(
+            data=df_for_analysis,
+            treatment=treatment,
+            outcome=outcome,
+            graph=causal_graph
+        )
+        step_times['인과모델 생성'] = time.time() - step_start
+        print(f"⏱️ 인과모델 생성 소요 시간: {step_times['인과모델 생성']:.2f}초")
+        
+        # 4. 인과효과 식별
+        print("4️⃣ 인과효과 식별 중...")
+        step_start = time.time()
+        identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
+        step_times['인과효과 식별'] = time.time() - step_start
+        print(f"⏱️ 인과효과 식별 소요 시간: {step_times['인과효과 식별']:.2f}초")
+        
+        # 5. 인과효과 추정
+        print("5️⃣ 인과효과 추정 중...")
+        step_start = time.time()
+        estimate = estimation.estimate_causal_effect(
+            model,
+            identified_estimand,
+            estimator,
+            logger
+        )
+        step_times['인과효과 추정'] = time.time() - step_start
+        print(f"⏱️ 인과효과 추정 소요 시간: {step_times['인과효과 추정']:.2f}초")
+        
+        # 6. 예측
+        print("6️⃣ 예측 중...")
+        step_start = time.time()
+        essential_vars_for_pred = {treatment, outcome}
+        df_for_pred = clean_dataframe_for_causal_model(
+            df_for_analysis,
+            required_vars=list(essential_vars_for_pred),
+            logger=logger
+        )
+        accuracy, df_with_predictions = estimation.predict_conditional_expectation(
+            estimate, df_for_pred, logger=logger
+        )
+        step_times['예측'] = time.time() - step_start
+        print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
+        print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
+        
+        # 예측 결과 저장
+        if experiment_id:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"predictions_{experiment_id}_{timestamp}.xlsx"
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"predictions_{timestamp}.xlsx"
+        
+        step_start = time.time()
+        excel_path = save_predictions_to_excel(df_with_predictions, filename=filename, logger=logger)
+        step_times['예측 결과 저장'] = time.time() - step_start
+        print(f"⏱️ 예측 결과 저장 소요 시간: {step_times['예측 결과 저장']:.2f}초")
+        print(f"✅ 예측 결과 저장 완료: {excel_path}")
+        
+        # 7. 검증 테스트 (refutation)
+        print("7️⃣ 검증 테스트 실행 중...")
+        step_start = time.time()
+        validation_results = estimation.run_validation_tests(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['검증 테스트'] = time.time() - step_start
+        print(f"⏱️ 검증 테스트 소요 시간: {step_times['검증 테스트']:.2f}초")
+        
+        # 8. 민감도 분석
+        print("8️⃣ 민감도 분석 실행 중...")
+        step_start = time.time()
+        sensitivity_df = estimation.run_sensitivity_analysis(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['민감도 분석'] = time.time() - step_start
+        print(f"⏱️ 민감도 분석 소요 시간: {step_times['민감도 분석']:.2f}초")
+        
+        # 9. 시각화
+        print("9️⃣ 시각화 생성 중...")
+        step_start = time.time()
+        heatmap_path = estimation.create_sensitivity_heatmap(
+            sensitivity_df,
+            logger
+        ) if not sensitivity_df.empty else None
+        step_times['시각화 생성'] = time.time() - step_start
+        print(f"⏱️ 시각화 생성 소요 시간: {step_times['시각화 생성']:.2f}초")
+        
+        # 10. 요약 보고서
+        print("🔟 최종 요약 보고서 출력 중...")
+        step_start = time.time()
+        estimation.print_summary_report(estimate, validation_results, sensitivity_df)
+        step_times['요약 보고서'] = time.time() - step_start
+        print(f"⏱️ 요약 보고서 출력 소요 시간: {step_times['요약 보고서']:.2f}초")
+        
+        # 전체 소요 시간
+        total_time = sum(step_times.values())
+        step_times['전체'] = total_time
+        
+        # 시간 요약 출력
+        print("\n" + "="*60)
+        print("⏱️ 단계별 소요 시간 요약")
+        print("="*60)
+        for step_name, elapsed_time in step_times.items():
+            percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+            print(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+        print("="*60)
+        
+        if logger:
+            logger.info("분석 완료")
+            logger.info("="*60)
+            logger.info("단계별 소요 시간 요약")
+            logger.info("="*60)
+            for step_name, elapsed_time in step_times.items():
+                percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+                logger.info(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+            logger.info("="*60)
+        
+        print(f"\n✅ 분석 완료! (총 소요 시간: {total_time:.2f}초)")
+        
+        return {
+            "status": "success",
+            "estimate": estimate,
+            "validation_results": validation_results,
+            "sensitivity_df": sensitivity_df,
+            "accuracy": accuracy,
+            "excel_path": excel_path,
+            "step_times": step_times
+        }
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"분석 중 오류 발생: {e}")
+        print(f"❌ 분석 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+def setup_logging(args):
+    """로깅을 설정하는 통합 함수"""
+    if args.no_logs:
+        return None
+    
+    # log 폴더 생성
+    script_dir = Path(__file__).parent.parent
+    log_dir = script_dir / "log"
+    log_dir.mkdir(exist_ok=True)
+    
+    # 타임스탬프 생성
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # 터미널 출력 로깅 설정
+    output_dir = os.environ.get('TERMINAL_OUTPUT_DIR', 'log')
+    terminal_output_file = os.path.join(output_dir, f'python_output_{timestamp}.log')
+    
+    # 터미널 출력을 파일로 리다이렉션
+    import sys
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    
+    class TeeOutput:
+        def __init__(self, *files):
+            self.files = files
+        def write(self, obj):
+            for f in self.files:
+                f.write(obj)
+                f.flush()
+        def flush(self):
+            for f in self.files:
+                f.flush()
+    
+    output_file = open(terminal_output_file, 'w', encoding='utf-8')
+    sys.stdout = TeeOutput(original_stdout, output_file)
+    sys.stderr = TeeOutput(original_stderr, output_file)
+    
+    # 로그 파일 설정
+    if args.graph:
+        graph_name = Path(args.graph).stem
+    else:
+        graph_name = "main_graph"
+    log_filename = f"{graph_name}_{args.treatment}_{timestamp}.log"
+    log_filepath = log_dir / log_filename
+    
+    # 로깅 설정
+    logging.basicConfig(
+        level=20,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_filepath, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"분석 시작 - {timestamp}")
+    graph_display = args.graph if args.graph else f"{args.data_dir}/main_graph"
+    logger.info(f"데이터: {args.data_dir}, 그래프: {graph_display}")
+    logger.info(f"처치: {args.treatment}, 결과: {args.outcome}, 추정방법: {args.estimator}")
+    
+    return logger
+
+
+def parse_arguments():
+    """명령행 인자를 파싱하는 함수"""
+    parser = argparse.ArgumentParser(description="DoWhy 인과추론 분석")
+    
+    # 기본적으로 config 파일 사용 (Docker 환경에서는 환경변수에서 경로 읽기)
+    default_config = os.environ.get('EXPERIMENT_CONFIG', 'experiment_config.json')
+    parser.add_argument('--config', type=str, default=default_config,
+                       help='설정 파일 경로 (기본값: experiment_config.json 또는 EXPERIMENT_CONFIG 환경변수)')
+    
+    # 단일 실험 옵션 (config 파일 없이 직접 실행할 때만 사용)
+    parser.add_argument('--data-dir', type=str, default=None, help='데이터 디렉토리 경로 (config 파일 우선)')
+    parser.add_argument('--graph', type=str, default=None, help='그래프 파일 경로 (기본값: data_dir/main_graph)')
+    parser.add_argument('--estimator', type=str, choices=['tabpfn', 'linear_regression', 'propensity_score', 'instrumental_variable'],
+                       default=None, help='추정 방법 (config 파일 우선)')
+    parser.add_argument('--treatment', type=str, default=None, help='처치 변수명')
+    parser.add_argument('--outcome', type=str, default=None, help='결과 변수명')
+    parser.add_argument('--api-key', type=str, default=None, help='GPT API 키 (config 파일 우선)')
+    parser.add_argument('--no-logs', action='store_true', help='로그 저장 비활성화')
+    parser.add_argument('--verbose', action='store_true', help='상세 출력 활성화')
+    
+    return parser.parse_args()
+
+
+def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
+    """배치 실험을 실행합니다."""
+    import itertools
+    
+    data_dir = config.get("data_dir", "data")
+    graphs = config.get("graphs", [])
+    treatments = config.get("treatments", [])
+    outcomes = config.get("outcomes", ["ACQ_180_YN"])
+    estimators = config.get("estimators", ["tabpfn"])
+    auto_extract_treatments = config.get("auto_extract_treatments", False)
+    graph_data_dir = config.get("graph_data_dir", "graph_data")
+    api_key = config.get("api_key") or os.environ.get("LLM_API_KEY")
+    log_dir = config.get("log_dir", base_dir / "log")
+    
+    # 절대 경로로 변환
+    if os.path.isabs(data_dir):
+        data_dir_path = Path(data_dir)
+    else:
+        data_dir_path = base_dir / data_dir
+    
+    # 그래프 파일 경로 처리
+    graph_files = []
+    
+    # auto_extract_treatments가 True이면 graph_data 폴더에서 자동으로 찾기
+    if auto_extract_treatments:
+        print(f"🔍 그래프 파일에서 자동으로 treatment 추출 중...")
+        found_graphs = graph_parser.find_all_graph_files(data_dir_path, graph_data_dir)
+        graph_files = [str(g) for g in found_graphs]
+        
+        if not graph_files:
+            print(f"⚠️ {graph_data_dir} 폴더에서 그래프 파일을 찾을 수 없습니다.")
+        else:
+            print(f"✅ {len(graph_files)}개의 그래프 파일 발견:")
+            for g in graph_files:
+                print(f"   - {Path(g).name}")
+    else:
+        # 수동으로 지정된 그래프 파일들
+        for graph in graphs:
+            if isinstance(graph, str):
+                graph_path = base_dir / data_dir / graph
+                if graph_path.exists():
+                    graph_files.append(str(graph_path))
+                else:
+                    # graph_data 폴더에서 찾기
+                    graph_path = base_dir / data_dir / graph_data_dir / graph
+                    if graph_path.exists():
+                        graph_files.append(str(graph_path))
+                    else:
+                        # 절대 경로로 시도
+                        graph_path = Path(graph)
+                        if graph_path.exists():
+                            graph_files.append(str(graph_path))
+                        else:
+                            print(f"⚠️ 그래프 파일을 찾을 수 없습니다: {graph}")
+            else:
+                print(f"⚠️ 잘못된 그래프 경로: {graph}")
+    
+    if not graph_files:
+        print("❌ 유효한 그래프 파일이 없습니다.")
+        return
+    
+    # treatment 자동 추출
+    graph_treatments_map = {}
+    graph_outcomes_map = {}
+    
+    if auto_extract_treatments:
+        print(f"\n🔍 각 그래프 파일에서 treatment 정보 추출 중...")
+        
+        for graph_file in graph_files:
+            graph_path = Path(graph_file)
+            extracted_treatments = graph_parser.extract_treatments_from_graph(graph_path)
+            
+            if extracted_treatments:
+                graph_treatments_map[graph_file] = [t["treatment_var"] for t in extracted_treatments if t.get("treatment_var")]
+                # outcome 추출 (첫 번째 treatment에서)
+                if extracted_treatments[0].get("outcome"):
+                    graph_outcomes_map[graph_file] = extracted_treatments[0]["outcome"]
+                print(f"   ✅ {graph_path.name}: {len(graph_treatments_map[graph_file])}개의 treatment 발견")
+                for t in extracted_treatments:
+                    if t.get("treatment_var"):
+                        print(f"      - {t['treatment_var']}: {t.get('label', '')}")
+            else:
+                print(f"   ⚠️ {graph_path.name}: treatment 정보를 찾을 수 없습니다.")
+        
+        # treatment가 자동 추출된 경우, 각 그래프별로 다른 treatment 사용
+        if graph_treatments_map:
+            print(f"\n📋 자동 추출된 treatment 정보를 사용합니다.")
+    
+    # 실험 조합 생성
+    if auto_extract_treatments and graph_treatments_map:
+        # 각 그래프별로 해당 그래프의 treatment만 사용
+        experiment_combinations = []
+        for graph_file in graph_files:
+            graph_treatments = graph_treatments_map.get(graph_file, treatments)
+            graph_outcome = graph_outcomes_map.get(graph_file, outcomes[0] if outcomes else "ACQ_180_YN")
+            
+            # 해당 그래프의 treatment와 outcome 조합 생성
+            # linear_regression 먼저, 그 다음 tabpfn 순서로 실행
+            for treatment in graph_treatments:
+                # linear_regression 먼저 실행 (빠른 결과 확인)
+                if "linear_regression" in estimators:
+                    experiment_combinations.append((graph_file, treatment, graph_outcome, "linear_regression"))
+                # 그 다음 tabpfn 실행
+                if "tabpfn" in estimators:
+                    experiment_combinations.append((graph_file, treatment, graph_outcome, "tabpfn"))
+                # 다른 estimator들도 순서대로 추가
+                for estimator in estimators:
+                    if estimator not in ["linear_regression", "tabpfn"]:
+                        experiment_combinations.append((graph_file, treatment, graph_outcome, estimator))
+    else:
+        # 기존 방식: 모든 조합 생성하되, estimator 순서를 linear_regression 먼저로 변경
+        sorted_estimators = []
+        if "linear_regression" in estimators:
+            sorted_estimators.append("linear_regression")
+        if "tabpfn" in estimators:
+            sorted_estimators.append("tabpfn")
+        # 나머지 estimator 추가
+        for est in estimators:
+            if est not in sorted_estimators:
+                sorted_estimators.append(est)
+        
+        experiment_combinations = list(itertools.product(
+            graph_files,
+            treatments,
+            outcomes,
+            sorted_estimators
+        ))
+    
+    total_experiments = len(experiment_combinations)
+    print(f"\n📊 총 {total_experiments}개의 실험을 실행합니다.")
+    if auto_extract_treatments and graph_treatments_map:
+        print(f"   - 그래프: {len(graph_files)}개 (각 그래프별 treatment 자동 추출)")
+        total_treatments = sum(len(t) for t in graph_treatments_map.values())
+        print(f"   - 총 Treatment: {total_treatments}개")
+        print(f"   - Outcome: {len(set(graph_outcomes_map.values())) if graph_outcomes_map else len(outcomes)}개")
+    else:
+        print(f"   - 그래프: {len(graph_files)}개")
+        print(f"   - Treatment: {len(treatments)}개")
+        print(f"   - Outcome: {len(outcomes)}개")
+    print(f"   - Estimator: {len(estimators)}개\n")
+    
+    # ============================================================
+    # 전처리를 한 번만 수행
+    # ============================================================
+    print("="*80)
+    print("🔄 데이터 전처리 시작 (한 번만 수행)")
+    print("="*80)
+    
+    preprocessing_start = time.time()
+    
+    # 1. 데이터 파일 경로 수집
+    print("1️⃣ 데이터 파일 경로 수집 중...")
+    file_list, _ = load_all_data(str(data_dir_path), graph_file=None)
+    
+    # 2. 전처리 및 병합
+    print("2️⃣ 데이터 전처리 및 병합 중...")
+    print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
+    if api_key:
+        print(f"🔑 API 키: config 파일에서 사용")
+    else:
+        print(f"⚠️ API 키가 설정되지 않았습니다. LLM 기능을 사용할 수 없습니다.")
+    
+    merged_df = preprocess_and_merge_data(file_list, str(data_dir_path), api_key=api_key)
+    print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
+    
+    # 3. 모든 그래프의 변수를 수집하여 데이터 정리
+    print("3️⃣ 모든 그래프의 변수 수집 및 데이터 정리 중...")
+    
+    # 모든 그래프 파일에서 변수 수집
+    all_graph_variables = set()
+    for graph_file in graph_files:
+        graph_path = Path(graph_file)
+        try:
+            causal_graph = create_causal_graph(str(graph_path))
+            all_graph_variables.update(causal_graph.nodes())
+        except Exception as e:
+            print(f"⚠️ 그래프 파일 로드 실패 ({graph_path.name}): {e}")
+    
+    print(f"📋 모든 그래프에서 수집된 변수 수: {len(all_graph_variables)}개")
+    
+    # 필수 변수 (모든 treatment, outcome, 병합 키)
+    all_treatments = set()
+    all_outcomes = set()
+    for graph_file in graph_files:
+        if graph_file in graph_treatments_map:
+            all_treatments.update(graph_treatments_map[graph_file])
+        if graph_file in graph_outcomes_map:
+            all_outcomes.add(graph_outcomes_map[graph_file])
+    if not auto_extract_treatments:
+        all_treatments.update(treatments)
+    if not graph_outcomes_map:
+        all_outcomes.update(outcomes)
+    
+    essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+    required_vars = list(all_graph_variables | essential_vars)
+    
+    # 데이터 정리
+    merged_df_clean = clean_dataframe_for_causal_model(
+        merged_df, 
+        required_vars=required_vars, 
+        logger=None
+    )
+    
+    # 그래프에 정의되지 않은 변수 제거
+    data_variables = set(merged_df_clean.columns)
+    vars_to_keep = (all_graph_variables | essential_vars) & data_variables
+    vars_to_remove = data_variables - vars_to_keep
+    
+    if vars_to_remove:
+        print(f"🗑️ 그래프에 정의되지 않은 변수 제거 중 ({len(vars_to_remove)}개)...")
+        merged_df_clean = merged_df_clean[list(vars_to_keep)]
+    
+    preprocessing_elapsed = time.time() - preprocessing_start
+    print(f"⏱️ 전처리 완료! 소요 시간: {preprocessing_elapsed:.2f}초")
+    print(f"✅ 정리된 데이터: {len(merged_df_clean)}건, {len(merged_df_clean.columns)}개 변수")
+    print("="*80 + "\n")
+    
+    # 결과 저장
+    results = []
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # log_dir 처리
+    if isinstance(log_dir, str):
+        if os.path.isabs(log_dir):
+            log_dir_path = Path(log_dir)
+        else:
+            log_dir_path = base_dir / log_dir
+    else:
+        log_dir_path = log_dir
+    
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+    results_file = log_dir_path / f"batch_experiments_{timestamp}.json"
+    
+    # 로거 설정 (선택적)
+    logger = None
+    if not config.get("no_logs", False):
+        log_filename = f"batch_experiments_{timestamp}.log"
+        log_filepath = log_dir_path / log_filename
+        
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_filepath, encoding='utf-8'),
+                logging.StreamHandler()
+            ]
+        )
+        logger = logging.getLogger(__name__)
+        logger.info(f"배치 실험 시작 - {timestamp}")
+        logger.info(f"총 실험 수: {total_experiments}")
+    
+    # 실험 실행
+    for idx, (graph_file, treatment, outcome, estimator) in enumerate(experiment_combinations, 1):
+        experiment_id = f"exp_{idx:04d}_{Path(graph_file).stem}_{treatment}_{outcome}_{estimator}"
+        
+        print(f"\n[{idx}/{total_experiments}] 실험 실행 중...")
+        
+        try:
+            result = run_analysis_without_preprocessing(
+                merged_df_clean=merged_df_clean,
+                graph_file=graph_file,
+                treatment=treatment,
+                outcome=outcome,
+                estimator=estimator,
+                logger=logger,
+                experiment_id=experiment_id
+            )
+            
+            results.append({
+                "experiment_id": experiment_id,
+                "status": "success",
+                "graph": graph_file,
+                "treatment": treatment,
+                "outcome": outcome,
+                "estimator": estimator,
+                "accuracy": result.get("accuracy"),
+                "excel_path": result.get("excel_path"),
+            })
+        except Exception as e:
+            results.append({
+                "experiment_id": experiment_id,
+                "status": "failed",
+                "graph": graph_file,
+                "treatment": treatment,
+                "outcome": outcome,
+                "estimator": estimator,
+                "error": str(e),
+            })
+            print(f"❌ 실패: {experiment_id}")
+            print(f"   에러: {str(e)}")
+        
+        # 중간 결과 저장
+        with open(results_file, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        
+        # 진행 상황 출력
+        success_count = sum(1 for r in results if r["status"] == "success")
+        failed_count = sum(1 for r in results if r["status"] == "failed")
+        print(f"\n✅ 성공: {success_count}, ❌ 실패: {failed_count}")
+    
+    # 최종 요약
+    print(f"\n{'='*80}")
+    print("📋 배치 실험 완료")
+    print(f"{'='*80}")
+    print(f"총 실험 수: {total_experiments}")
+    print(f"성공: {success_count}")
+    print(f"실패: {failed_count}")
+    print(f"결과 파일: {results_file}")
+    print(f"{'='*80}\n")
+    
+    # 실패한 실험 목록 출력
+    if failed_count > 0:
+        print("\n❌ 실패한 실험 목록:")
+        for result in results:
+            if result["status"] == "failed":
+                print(f"\n  - {result['experiment_id']}")
+                if result.get("error"):
+                    print(f"    에러: {result['error']}")
+
+
+def main():
+    """메인 실행 함수"""
+    args = parse_arguments()
+    
+    # 설정 파일 경로 결정
+    script_dir = Path(__file__).parent.parent
+    if os.path.isabs(args.config):
+        config_path = Path(args.config)
+    else:
+        config_path = script_dir / args.config
+    
+    # 설정 파일 로드
+    config = {}
+    if config_path.exists():
+        print(f"📄 설정 파일 로드: {config_path}")
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+    else:
+        print(f"⚠️ 설정 파일을 찾을 수 없습니다: {config_path}")
+        print("   명령행 인자로 직접 설정하거나 설정 파일을 생성하세요.")
+    
+    # config에서 설정 읽기 (명령행 인자가 있으면 우선)
+    data_dir = args.data_dir or config.get("data_dir", "data")
+    api_key = args.api_key or config.get("api_key") or os.environ.get("LLM_API_KEY")
+    no_logs = args.no_logs or config.get("no_logs", False)
+    verbose = args.verbose or config.get("verbose", False)
+    log_dir = config.get("log_dir", script_dir / "log")
+    
+    # 배치 모드인지 확인 (auto_extract_treatments가 true이거나 estimators가 여러 개)
+    auto_extract = config.get("auto_extract_treatments", False)
+    estimators = config.get("estimators", [])
+    
+    if auto_extract or len(estimators) > 1 or config.get("graphs", []):
+        # 배치 실험 모드
+        run_batch_experiments(config, script_dir)
+        return
+    
+    # 단일 실험 모드
+    # 필수 인자 확인
+    treatment = args.treatment or (config.get("treatments", [None])[0] if config.get("treatments") else None)
+    outcome = args.outcome or (config.get("outcomes", [None])[0] if config.get("outcomes") else None)
+    estimator = args.estimator or (config.get("estimators", ["linear_regression"])[0] if config.get("estimators") else "linear_regression")
+    
+    if not treatment or not outcome:
+        print("❌ 단일 실험 모드에서는 --treatment, --outcome이 필수입니다.")
+        print("   또는 experiment_config.json에 treatments와 outcomes를 설정하세요.")
+        return
+    
+    # args 객체 업데이트 (하위 호환성)
+    args.data_dir = data_dir
+    args.treatment = treatment
+    args.outcome = outcome
+    args.estimator = estimator
+    args.api_key = api_key
+    args.no_logs = no_logs
+    args.verbose = verbose
+    
+    logger = setup_logging(args)
+    
+    try:
+        # 전체 시작 시간
+        total_start_time = time.time()
+        step_times = {}
+        
+        print(f"\n🚀 DoWhy 인과추론 분석 시작")
+        print(f"📊 데이터 디렉토리: {args.data_dir}")
+        graph_display = args.graph if args.graph else f"{args.data_dir}/main_graph"
+        print(f"🕸️ 그래프: {graph_display}")
+        print(f"🎯 처치: {args.treatment}, 📈 결과: {args.outcome}")
+        print(f"🔧 추정방법: {args.estimator}")
+        print(f"📦 DoWhy 버전: {dowhy.__version__}")
+        print("="*60)
+        
+        # 1. 데이터 로드
+        print("1️⃣ 데이터 로드 중...")
+        step_start = time.time()
+        # graph 인자가 없으면 data_dir/main_graph를 기본값으로 사용
+        graph_path = args.graph if args.graph else None
+        file_list, causal_graph = load_all_data(
+            args.data_dir,
+            graph_path
+        )
+        step_times['데이터 로드'] = time.time() - step_start
+        print(f"⏱️ 데이터 로드 소요 시간: {step_times['데이터 로드']:.2f}초")
+        
+        # 2. 데이터 전처리 및 병합 (Preprocessor 사용)
+        print("2️⃣ 데이터 전처리 및 병합 중...")
+        print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
+        step_start = time.time()
+        # API 키는 config 파일에서 설정 (run_batch_experiments.py를 통해 전달됨)
+        api_key = args.api_key
+        if api_key:
+            print(f"🔑 API 키: config 파일에서 사용")
+        else:
+            print(f"⚠️ API 키가 설정되지 않았습니다. LLM 기능을 사용할 수 없습니다.")
+        
+        merged_df = preprocess_and_merge_data(file_list, args.data_dir, api_key=api_key)
+        step_times['데이터 전처리 및 병합'] = time.time() - step_start
+        print(f"⏱️ 데이터 전처리 및 병합 소요 시간: {step_times['데이터 전처리 및 병합']:.2f}초")
+        print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
+        
+        # merged_df의 head() 로깅
+        print("\n" + "="*60)
+        print("📊 병합된 데이터프레임 미리보기 (head):")
+        print("="*60)
+        print(merged_df.head())
+        print("="*60 + "\n")
+        
+        if logger:
+            logger.info("="*60)
+            logger.info("데이터 로드 및 병합 완료")
+            logger.info("="*60)
+            logger.info(f"최종 데이터 크기: {merged_df.shape}")
+            logger.info(f"컬럼 목록: {list(merged_df.columns)}")
+            logger.info(f"노드 수: {causal_graph.number_of_nodes()}")
+            logger.info(f"엣지 수: {causal_graph.number_of_edges()}")
+            logger.info("\n병합된 데이터프레임 head():")
+            logger.info("\n" + str(merged_df.head()))
+        
+        # 3. 데이터 정리 (Logger 객체 등 제거)
+        print("3️⃣ 데이터 정리 중...")
+        step_start = time.time()
+        
+        # 그래프에 정의된 모든 변수 추출
+        graph_variables = set(causal_graph.nodes())
+        print(f"📋 그래프에 정의된 변수 수: {len(graph_variables)}개")
+        
+        # treatment와 outcome 변수는 반드시 유지해야 함
+        required_vars = [args.treatment, args.outcome]
+        # 그래프에 정의된 모든 변수도 필수 변수로 추가
+        required_vars.extend(list(graph_variables))
+        required_vars = list(set(required_vars))  # 중복 제거
+        
+        # Logger 객체가 데이터프레임에 포함되어 있는지 사전 검사
+        logger_columns = []
+        for col in merged_df.columns:
+            if merged_df[col].dtype == 'object' and len(merged_df) > 0:
+                non_null_values = merged_df[col].dropna()
+                if len(non_null_values) > 0:
+                    first_val = non_null_values.iloc[0]
+                    # Logger 객체인지 확인
+                    if isinstance(first_val, logging.Logger) or 'Logger' in str(type(first_val)):
+                        logger_columns.append((col, type(first_val).__name__))
+                        if logger:
+                            logger.error(f"⚠️ 경고: 컬럼 '{col}'에 Logger 객체가 포함되어 있습니다! (타입: {type(first_val).__name__})")
+                        else:
+                            print(f"⚠️ 경고: 컬럼 '{col}'에 Logger 객체가 포함되어 있습니다! (타입: {type(first_val).__name__})")
+        
+        if logger_columns:
+            print(f"\n❌ 오류: 다음 컬럼에 Logger 객체가 발견되었습니다:")
+            for col, col_type in logger_columns:
+                print(f"   - {col} (타입: {col_type})")
+            print(f"\n이 문제를 해결하기 위해 데이터 정리 과정에서 Logger 객체를 제거합니다.")
+        
+        merged_df_clean = clean_dataframe_for_causal_model(merged_df, required_vars=required_vars, logger=logger)
+        
+        # 그래프 변수와 데이터 변수 일치 여부 검증
+        data_variables = set(merged_df_clean.columns)
+        missing_graph_vars = graph_variables - data_variables
+        extra_data_vars = data_variables - graph_variables
+        
+        if missing_graph_vars:
+            print(f"\n⚠️ 경고: 그래프에 정의된 변수 중 데이터에 없는 변수:")
+            for var in sorted(missing_graph_vars):
+                print(f"   - {var}")
+            if logger:
+                logger.warning(f"그래프에 정의된 변수 중 데이터에 없는 변수: {sorted(missing_graph_vars)}")
+        
+        # 그래프에 정의되지 않은 변수 제거 (필수 변수 제외)
+        essential_vars = {args.treatment, args.outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        vars_to_keep = set()
+        
+        # 1. 그래프에 정의된 모든 변수 추가
+        vars_to_keep.update(graph_variables)
+        
+        # 2. 필수 변수 추가 (treatment, outcome, 병합 키)
+        vars_to_keep.update(essential_vars)
+        
+        # 3. 실제 데이터에 존재하는 변수만 필터링
+        vars_to_keep = vars_to_keep & data_variables
+        
+        # 4. 그래프에 정의되지 않은 변수 제거
+        vars_to_remove = data_variables - vars_to_keep
+        
+        if vars_to_remove:
+            print(f"\n🗑️ 그래프에 정의되지 않은 변수 제거 중 ({len(vars_to_remove)}개):")
+            for var in sorted(list(vars_to_remove)[:20]):  # 처음 20개만 출력
+                print(f"   - {var}")
+            if len(vars_to_remove) > 20:
+                print(f"   ... 외 {len(vars_to_remove) - 20}개")
+            if logger:
+                logger.info(f"그래프에 정의되지 않은 변수 제거: {sorted(list(vars_to_remove))}")
+            
+            # 변수 제거
+            merged_df_clean = merged_df_clean[list(vars_to_keep)]
+            print(f"✅ 변수 제거 완료: {len(merged_df_clean.columns)}개 변수 유지")
+        
+        step_times['데이터 정리'] = time.time() - step_start
+        print(f"⏱️ 데이터 정리 소요 시간: {step_times['데이터 정리']:.2f}초")
+        print(f"✅ 정리된 데이터: {len(merged_df_clean)}건, {len(merged_df_clean.columns)}개 변수")
+        
+        # 최종 검증: 그래프 변수와 데이터 변수 일치 여부
+        final_data_variables = set(merged_df_clean.columns)
+        final_missing_graph_vars = graph_variables - final_data_variables
+        final_extra_data_vars = final_data_variables - graph_variables - essential_vars
+        
+        if final_missing_graph_vars:
+            print(f"\n⚠️ 경고: 그래프에 정의된 변수 중 최종 데이터에 없는 변수:")
+            for var in sorted(final_missing_graph_vars):
+                print(f"   - {var}")
+            if logger:
+                logger.warning(f"그래프에 정의된 변수 중 최종 데이터에 없는 변수: {sorted(final_missing_graph_vars)}")
+        
+        if final_extra_data_vars:
+            print(f"\n⚠️ 경고: 최종 데이터에 있지만 그래프에 정의되지 않은 변수 ({len(final_extra_data_vars)}개):")
+            for var in sorted(list(final_extra_data_vars)[:10]):
+                print(f"   - {var}")
+            if len(final_extra_data_vars) > 10:
+                print(f"   ... 외 {len(final_extra_data_vars) - 10}개")
+            if logger:
+                logger.warning(f"최종 데이터에 있지만 그래프에 정의되지 않은 변수: {sorted(list(final_extra_data_vars))}")
+        
+        # treatment와 outcome 변수가 있는지 확인
+        missing_vars = [var for var in [args.treatment, args.outcome] if var not in merged_df_clean.columns]
+        if missing_vars:
+            raise ValueError(f"필수 변수가 데이터에 없습니다: {missing_vars}")
+        
+        # 그래프의 핵심 변수들이 모두 있는지 확인
+        critical_missing = missing_graph_vars - {args.treatment, args.outcome}  # treatment/outcome은 이미 체크됨
+        if critical_missing:
+            print(f"\n❌ 오류: 그래프의 핵심 변수들이 데이터에 없습니다:")
+            for var in sorted(critical_missing):
+                print(f"   - {var}")
+            if logger:
+                logger.error(f"그래프의 핵심 변수들이 데이터에 없습니다: {sorted(critical_missing)}")
+            # 경고만 출력하고 계속 진행 (일부 변수가 없어도 분석 가능할 수 있음)
+            # raise ValueError(f"그래프의 핵심 변수들이 데이터에 없습니다: {sorted(critical_missing)}")
+        
+        # 4. 인과모델 생성 및 분석
+        print("4️⃣ 인과모델 생성 중...")
+        step_start = time.time()
+        model = CausalModel(
+            data=merged_df_clean,
+            treatment=args.treatment,
+            outcome=args.outcome,
+            graph=causal_graph
+        )
+        step_times['인과모델 생성'] = time.time() - step_start
+        print(f"⏱️ 인과모델 생성 소요 시간: {step_times['인과모델 생성']:.2f}초")
+        
+        print("5️⃣ 인과효과 식별 중...")
+        step_start = time.time()
+        identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
+        step_times['인과효과 식별'] = time.time() - step_start
+        print(f"⏱️ 인과효과 식별 소요 시간: {step_times['인과효과 식별']:.2f}초")
+        
+        print("6️⃣ 인과효과 추정 중...")
+        step_start = time.time()
+        estimate = estimation.estimate_causal_effect(
+            model,
+            identified_estimand,
+            args.estimator,
+            logger
+        )
+        step_times['인과효과 추정'] = time.time() - step_start
+        print(f"⏱️ 인과효과 추정 소요 시간: {step_times['인과효과 추정']:.2f}초")
+        
+        step_start = time.time()
+        # 예측 전에 한 번 더 Logger 객체 제거 (안전장치)
+        # treatment와 outcome 변수는 필수이므로 유지
+        essential_vars_for_pred = {args.treatment, args.outcome}
+        merged_df_clean_final = clean_dataframe_for_causal_model(
+            merged_df_clean, 
+            required_vars=list(essential_vars_for_pred), 
+            logger=logger
+        )
+        # treatment 값 a를 전달하면 do(A=a)를 예측합니다.
+        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df_clean_final, logger=logger)
+        step_times['예측'] = time.time() - step_start
+        print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
+        print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
+        
+        step_start = time.time()
+        excel_path = save_predictions_to_excel(df_with_predictions, logger=logger)
+        step_times['예측 결과 저장'] = time.time() - step_start
+        print(f"⏱️ 예측 결과 저장 소요 시간: {step_times['예측 결과 저장']:.2f}초")
+        print(f"✅ 예측 결과 저장 완료: {excel_path}")
+
+        print("7️⃣ 검증 테스트 실행 중...")
+        step_start = time.time()
+        validation_results = estimation.run_validation_tests(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['검증 테스트'] = time.time() - step_start
+        print(f"⏱️ 검증 테스트 소요 시간: {step_times['검증 테스트']:.2f}초")
+        
+        print("8️⃣ 민감도 분석 실행 중...")
+        step_start = time.time()
+        sensitivity_df = estimation.run_sensitivity_analysis(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['민감도 분석'] = time.time() - step_start
+        print(f"⏱️ 민감도 분석 소요 시간: {step_times['민감도 분석']:.2f}초")
+        
+        print("9️⃣ 시각화 생성 중...")
+        step_start = time.time()
+        heatmap_path = estimation.create_sensitivity_heatmap(
+            sensitivity_df,
+            logger
+        ) if not sensitivity_df.empty else None
+        step_times['시각화 생성'] = time.time() - step_start
+        print(f"⏱️ 시각화 생성 소요 시간: {step_times['시각화 생성']:.2f}초")
+        
+        print("🔟 최종 요약 보고서 출력 중...")
+        step_start = time.time()
+        estimation.print_summary_report(estimate, validation_results, sensitivity_df)
+        step_times['요약 보고서'] = time.time() - step_start
+        print(f"⏱️ 요약 보고서 출력 소요 시간: {step_times['요약 보고서']:.2f}초")
+        
+        # 전체 소요 시간 계산
+        total_time = time.time() - total_start_time
+        step_times['전체'] = total_time
+        
+        # 시간 요약 출력
+        print("\n" + "="*60)
+        print("⏱️ 단계별 소요 시간 요약")
+        print("="*60)
+        for step_name, elapsed_time in step_times.items():
+            percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+            print(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+        print("="*60)
+        
+        if logger:
+            logger.info("분석 완료")
+            logger.info("="*60)
+            logger.info("단계별 소요 시간 요약")
+            logger.info("="*60)
+            for step_name, elapsed_time in step_times.items():
+                percentage = (elapsed_time / total_time * 100) if step_name != '전체' else 100
+                logger.info(f"  {step_name:20s}: {elapsed_time:7.2f}초 ({percentage:5.1f}%)")
+            logger.info("="*60)
+        
+        print(f"\n✅ 전체 분석 완료! (총 소요 시간: {total_time:.2f}초)")
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"분석 중 오류 발생: {e}")
+        print(f"❌ 분석 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+if __name__ == "__main__":
+    main()

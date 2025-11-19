@@ -1,0 +1,51 @@
+version: '3.8'
+
+# experiment_config.json의 device_mode에 따라 자동으로 설정됩니다.
+# 데이터는 외부에서 볼륨으로 마운트하세요 (예: /path/to/data:/data)
+
+services:
+  causal-analysis:
+    build:
+      context: ..  # 프로젝트 루트를 빌드 컨텍스트로
+      dockerfile: laborlab_v2/Dockerfile
+      target: final-${DOCKER_DEVICE_MODE:-cpu}
+      args:
+        DEVICE_MODE: ${DEVICE_MODE:-cpu}
+    container_name: dowhy-causal-analysis
+    volumes:
+      # 데이터 디렉토리 마운트 (외부 경로를 /data로 마운트)
+      # 예: /path/to/your/data:/data
+      - ${DATA_VOLUME:-./data}:/data:ro
+      # 로그 디렉토리 마운트 (외부 경로를 /app/laborlab_v2/log로 마운트)
+      # 예: /path/to/logs:/app/laborlab_v2/log
+      - ${LOG_VOLUME:-./log}:/app/laborlab_v2/log
+      # 설정 파일 마운트
+      - ./experiment_config.json:/app/laborlab_v2/experiment_config.json:ro
+      # 소스 코드 마운트 (코드 수정 시 재빌드 불필요)
+      - ./src:/app/laborlab_v2/src
+      # Python 캐시 제외를 위한 볼륨
+      - python-cache:/root/.cache/pip
+    environment:
+      - PYTHONPATH=/app
+      - TERMINAL_OUTPUT_DIR=/app/laborlab_v2/log
+      - EXPERIMENT_CONFIG=/app/laborlab_v2/experiment_config.json
+      - DEVICE_MODE=${DEVICE_MODE:-cpu}
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+      # LLM API 키는 experiment_config.json 또는 환경변수로 설정
+      - LLM_API_KEY=${LLM_API_KEY:-}
+    working_dir: /app/laborlab_v2
+    # experiment_config.json을 읽어서 자동으로 main.py 실행
+    command: python -m src.main
+    # GPU 지원은 device_mode=gpu일 때만 필요합니다.
+    # GPU 모드가 아닐 때는 이 섹션을 주석 처리하거나 제거하세요.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  python-cache:

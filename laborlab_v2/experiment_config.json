@@ -1,0 +1,28 @@
+{
+  "device_mode": "cpu",
+  "data_dir": "/data",
+  "graph_data_dir": "graph_data",
+  "log_dir": "/app/laborlab_v2/log",
+  "api_key": null,
+  "auto_extract_treatments": true,
+  "graphs": [
+    "main_graph",
+    "dummy_graph"
+  ],
+  "treatments": [
+    "ACCR_CD",
+    "CARR_MYCT1",
+    "NTR_BPLC_PSNT_WAGE_AMT"
+  ],
+  "outcomes": [
+    "ACQ_180_YN"
+  ],
+  "estimators": [
+    "linear_regression",
+    "tabpfn"
+  ],
+  "no_logs": false,
+  "verbose": false,
+  "comment": "auto_extract_treatments가 true이면 graphs와 treatments는 무시되고, 각 graph 파일에서 자동으로 추출됩니다. api_key는 GPT API 키를 설정하세요 (예: \"sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"). null이면 환경변수 LLM_API_KEY를 사용합니다. device_mode는 'gpu', 'mac', 'cpu' 중 하나를 선택할 수 있습니다. data_dir는 Docker 컨테이너 내부 경로입니다. 외부 데이터는 docker-compose.yml에서 볼륨으로 마운트하세요."
+}
+
