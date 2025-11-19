@@ -22,6 +22,7 @@ import sys
 import json
 import re
 import time
+from sklearn.model_selection import train_test_split
 
 # DoWhy 라이브러리 임포트
 import dowhy
@@ -480,11 +481,44 @@ def run_analysis_without_preprocessing(
         print(f"⏱️ 데이터 필터링 소요 시간: {step_times['데이터 필터링']:.2f}초")
         print(f"✅ 필터링된 데이터: {len(df_for_analysis)}건, {len(df_for_analysis.columns)}개 변수")
         
-        # 3. 인과모델 생성
-        print("3️⃣ 인과모델 생성 중...")
+        # 3. Train/Test Split (80/20)
+        print("3️⃣ Train/Test Split 중 (80/20)...")
+        step_start = time.time()
+        
+        # outcome 변수를 target으로 사용
+        if outcome not in df_for_analysis.columns:
+            raise ValueError(f"Outcome 변수 '{outcome}'가 데이터에 없습니다.")
+        
+        # train/test split (stratify는 outcome이 이진 변수인 경우에만 사용)
+        outcome_data = df_for_analysis[outcome]
+        is_binary = outcome_data.nunique() <= 2 and outcome_data.dtype in ['int64', 'int32', 'bool']
+        
+        if is_binary:
+            # 이진 변수인 경우 stratify 사용
+            df_train, df_test = train_test_split(
+                df_for_analysis,
+                test_size=0.2,
+                random_state=42,
+                stratify=outcome_data
+            )
+        else:
+            # 연속형 변수인 경우 stratify 없이 split
+            df_train, df_test = train_test_split(
+                df_for_analysis,
+                test_size=0.2,
+                random_state=42
+            )
+        
+        step_times['Train/Test Split'] = time.time() - step_start
+        print(f"⏱️ Train/Test Split 소요 시간: {step_times['Train/Test Split']:.2f}초")
+        print(f"✅ Train set: {len(df_train)}건 ({len(df_train)/len(df_for_analysis)*100:.1f}%)")
+        print(f"✅ Test set: {len(df_test)}건 ({len(df_test)/len(df_for_analysis)*100:.1f}%)")
+        
+        # 4. 인과모델 생성 (Train set 사용)
+        print("4️⃣ 인과모델 생성 중 (Train set 사용)...")
         step_start = time.time()
         model = CausalModel(
-            data=df_for_analysis,
+            data=df_train,
             treatment=treatment,
             outcome=outcome,
             graph=causal_graph
@@ -492,15 +526,15 @@ def run_analysis_without_preprocessing(
         step_times['인과모델 생성'] = time.time() - step_start
         print(f"⏱️ 인과모델 생성 소요 시간: {step_times['인과모델 생성']:.2f}초")
         
-        # 4. 인과효과 식별
-        print("4️⃣ 인과효과 식별 중...")
+        # 5. 인과효과 식별
+        print("5️⃣ 인과효과 식별 중...")
         step_start = time.time()
         identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
         step_times['인과효과 식별'] = time.time() - step_start
         print(f"⏱️ 인과효과 식별 소요 시간: {step_times['인과효과 식별']:.2f}초")
         
-        # 5. 인과효과 추정
-        print("5️⃣ 인과효과 추정 중...")
+        # 6. 인과효과 추정 (Train set 사용)
+        print("6️⃣ 인과효과 추정 중 (Train set 사용)...")
         step_start = time.time()
         estimate = estimation.estimate_causal_effect(
             model,
@@ -511,21 +545,35 @@ def run_analysis_without_preprocessing(
         step_times['인과효과 추정'] = time.time() - step_start
         print(f"⏱️ 인과효과 추정 소요 시간: {step_times['인과효과 추정']:.2f}초")
         
-        # 6. 예측
-        print("6️⃣ 예측 중...")
+        # 7. 예측 (Test set으로 validation)
+        print("7️⃣ 예측 중 (Test set으로 validation)...")
         step_start = time.time()
         essential_vars_for_pred = {treatment, outcome}
-        df_for_pred = clean_dataframe_for_causal_model(
-            df_for_analysis,
+        df_test_clean = clean_dataframe_for_causal_model(
+            df_test,
             required_vars=list(essential_vars_for_pred),
             logger=logger
         )
-        accuracy, df_with_predictions = estimation.predict_conditional_expectation(
-            estimate, df_for_pred, logger=logger
+        metrics, df_with_predictions = estimation.predict_conditional_expectation(
+            estimate, df_test_clean, logger=logger
         )
         step_times['예측'] = time.time() - step_start
         print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
-        print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
+        
+        # 메트릭 출력
+        if metrics:
+            if metrics.get('accuracy') is not None:
+                print(f"✅ Test Set 예측 결과:")
+                print(f"   - Accuracy: {metrics['accuracy']:.4f} ({metrics['accuracy']*100:.2f}%)")
+                print(f"   - F1 Score: {metrics['f1_score']:.4f}")
+                if metrics.get('auc') is not None:
+                    print(f"   - AUC: {metrics['auc']:.4f}")
+                else:
+                    print(f"   - AUC: 계산 불가")
+            else:
+                print(f"✅ 예측 완료: 평균={df_with_predictions[outcome].mean():.6f} (연속형 변수)")
+        else:
+            print(f"⚠️ 메트릭 계산 실패")
         
         # 예측 결과 저장
         if experiment_id:
@@ -541,8 +589,8 @@ def run_analysis_without_preprocessing(
         print(f"⏱️ 예측 결과 저장 소요 시간: {step_times['예측 결과 저장']:.2f}초")
         print(f"✅ 예측 결과 저장 완료: {excel_path}")
         
-        # 7. 검증 테스트 (refutation)
-        print("7️⃣ 검증 테스트 실행 중...")
+        # 8. 검증 테스트 (refutation)
+        print("8️⃣ 검증 테스트 실행 중...")
         step_start = time.time()
         validation_results = estimation.run_validation_tests(
             model,
@@ -553,8 +601,8 @@ def run_analysis_without_preprocessing(
         step_times['검증 테스트'] = time.time() - step_start
         print(f"⏱️ 검증 테스트 소요 시간: {step_times['검증 테스트']:.2f}초")
         
-        # 8. 민감도 분석
-        print("8️⃣ 민감도 분석 실행 중...")
+        # 9. 민감도 분석
+        print("9️⃣ 민감도 분석 실행 중...")
         step_start = time.time()
         sensitivity_df = estimation.run_sensitivity_analysis(
             model,
@@ -565,8 +613,8 @@ def run_analysis_without_preprocessing(
         step_times['민감도 분석'] = time.time() - step_start
         print(f"⏱️ 민감도 분석 소요 시간: {step_times['민감도 분석']:.2f}초")
         
-        # 9. 시각화
-        print("9️⃣ 시각화 생성 중...")
+        # 10. 시각화
+        print("🔟 시각화 생성 중...")
         step_start = time.time()
         heatmap_path = estimation.create_sensitivity_heatmap(
             sensitivity_df,
@@ -575,8 +623,8 @@ def run_analysis_without_preprocessing(
         step_times['시각화 생성'] = time.time() - step_start
         print(f"⏱️ 시각화 생성 소요 시간: {step_times['시각화 생성']:.2f}초")
         
-        # 10. 요약 보고서
-        print("🔟 최종 요약 보고서 출력 중...")
+        # 11. 요약 보고서
+        print("1️⃣1️⃣ 최종 요약 보고서 출력 중...")
         step_start = time.time()
         estimation.print_summary_report(estimate, validation_results, sensitivity_df)
         step_times['요약 보고서'] = time.time() - step_start
@@ -612,9 +660,11 @@ def run_analysis_without_preprocessing(
             "estimate": estimate,
             "validation_results": validation_results,
             "sensitivity_df": sensitivity_df,
-            "accuracy": accuracy,
+            "metrics": metrics,
             "excel_path": excel_path,
-            "step_times": step_times
+            "step_times": step_times,
+            "train_size": len(df_train),
+            "test_size": len(df_test)
         }
         
     except Exception as e:
@@ -930,10 +980,24 @@ def main():
             logger=logger
         )
         # treatment 값 a를 전달하면 do(A=a)를 예측합니다.
-        accuracy, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df_clean_final, logger=logger)
+        metrics, df_with_predictions = estimation.predict_conditional_expectation(estimate, merged_df_clean_final, logger=logger)
         step_times['예측'] = time.time() - step_start
         print(f"⏱️ 예측 소요 시간: {step_times['예측']:.2f}초")
-        print(f"✅ 취업 확률 예측 정확도: {accuracy:.4f} ({accuracy*100:.2f}%)")
+        
+        # 메트릭 출력
+        if metrics:
+            if metrics.get('accuracy') is not None:
+                print(f"✅ 예측 결과:")
+                print(f"   - Accuracy: {metrics['accuracy']:.4f} ({metrics['accuracy']*100:.2f}%)")
+                print(f"   - F1 Score: {metrics['f1_score']:.4f}")
+                if metrics.get('auc') is not None:
+                    print(f"   - AUC: {metrics['auc']:.4f}")
+                else:
+                    print(f"   - AUC: 계산 불가")
+            else:
+                print(f"✅ 예측 완료: 평균={df_with_predictions[args.outcome].mean():.6f} (연속형 변수)")
+        else:
+            print(f"⚠️ 메트릭 계산 실패")
         
         step_start = time.time()
         excel_path = save_predictions_to_excel(df_with_predictions, logger=logger)

@@ -71,6 +71,7 @@ def run_single_experiment(
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
         
+        metrics = result.get("metrics", {})
         return {
             "experiment_id": experiment_id,
             "status": "success",
@@ -79,8 +80,13 @@ def run_single_experiment(
             "treatment": treatment,
             "outcome": outcome,
             "estimator": estimator,
-            "accuracy": result.get("accuracy"),
+            "metrics": metrics,
+            "accuracy": metrics.get("accuracy") if metrics else None,
+            "f1_score": metrics.get("f1_score") if metrics else None,
+            "auc": metrics.get("auc") if metrics else None,
             "excel_path": result.get("excel_path"),
+            "train_size": result.get("train_size"),
+            "test_size": result.get("test_size"),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
         }

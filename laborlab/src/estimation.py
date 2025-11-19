@@ -13,6 +13,8 @@ from datetime import datetime
 import os
 import sys
 from scipy import stats
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
 
@@ -58,9 +60,9 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         logger: 로거 객체
     
     Returns:
-        tuple: (data_df_with_predictions, accuracy)
-            - data_df_with_predictions: ACQ_180_YN 열에 예측값이 채워진 데이터프레임
-            - accuracy: 정확도 (이진 분류) 또는 None (연속형)
+        tuple: (metrics_dict, data_df_with_predictions)
+            - metrics_dict: {'accuracy': float, 'f1_score': float, 'auc': float} 또는 None
+            - data_df_with_predictions: outcome 열에 예측값이 채워진 데이터프레임
     """
     if not hasattr(estimate, 'estimator'):
         raise ValueError("estimate.estimator가 없습니다. estimate_causal_effect를 먼저 실행하세요.")
@@ -87,6 +89,7 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         if treatment_var not in data_df_clean.columns:
             raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
         
+        # predict_fn을 사용하는 방식으로 예측 (RegressionEstimator의 표준 인터페이스)
         if treatment_value is not None:
             predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
         else:
@@ -100,24 +103,62 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         outcome_name = estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name
         result_df[outcome_name] = predictions_series
         
-        # 실제 Y 값과 비교하여 정확도 계산
-        # outcome_name은 위에서 이미 정의됨
-        accuracy = 0
+        # 실제 Y 값과 비교하여 메트릭 계산
+        metrics = {}
         if outcome_name in data_df_clean.columns:
             actual_y = data_df_clean[outcome_name]
             # actual_y가 숫자 타입인지 확인
             if not pd.api.types.is_numeric_dtype(actual_y):
                 actual_y = pd.to_numeric(actual_y, errors='coerce')
-            predicted_classes = (predictions_series > 0.5).astype(int)
-            accuracy = (predicted_classes == actual_y).mean()
-            if logger:
-                logger.info(f"예측 완료: 정확도={accuracy:.4f} ({accuracy*100:.2f}%)")
+            
+            # NaN 제거
+            valid_mask = ~(pd.isna(actual_y) | pd.isna(predictions_series))
+            if valid_mask.sum() > 0:
+                actual_y_clean = actual_y[valid_mask]
+                predictions_clean = predictions_series[valid_mask]
+                
+                # 이진 분류인지 확인 (0과 1만 있는지)
+                unique_values = set(actual_y_clean.dropna().unique())
+                is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
+                
+                if is_binary:
+                    # 이진 분류 메트릭 계산
+                    predicted_classes = (predictions_clean > 0.5).astype(int)
+                    metrics['accuracy'] = accuracy_score(actual_y_clean, predicted_classes)
+                    metrics['f1_score'] = f1_score(actual_y_clean, predicted_classes, zero_division=0)
+                    
+                    # AUC 계산 (예측 확률 사용)
+                    try:
+                        # predictions가 확률인지 확인 (0~1 범위)
+                        if predictions_clean.min() >= 0 and predictions_clean.max() <= 1:
+                            metrics['auc'] = roc_auc_score(actual_y_clean, predictions_clean)
+                        else:
+                            # 확률이 아니면 sigmoid 변환 시도
+                            from scipy.special import expit
+                            prob_predictions = expit(predictions_clean)
+                            metrics['auc'] = roc_auc_score(actual_y_clean, prob_predictions)
+                    except Exception as e:
+                        if logger:
+                            logger.warning(f"AUC 계산 실패: {e}")
+                        metrics['auc'] = None
+                    
+                    if logger:
+                        logger.info(f"예측 완료: Accuracy={metrics['accuracy']:.4f}, F1={metrics['f1_score']:.4f}, AUC={metrics.get('auc', 'N/A')}")
+                else:
+                    # 연속형 변수인 경우
+                    metrics['accuracy'] = None
+                    metrics['f1_score'] = None
+                    metrics['auc'] = None
+                    if logger:
+                        logger.info(f"예측 완료: 평균={predictions_clean.mean():.6f} (연속형 변수)")
+            else:
+                if logger:
+                    logger.warning(f"유효한 데이터가 없어 메트릭을 계산할 수 없습니다.")
         else:
             if logger:
-                logger.info(f"예측 완료: 평균={predictions_series.mean():.6f}")
-                logger.warning(f"실제 Y 값({outcome_name})을 찾을 수 없어 정확도를 계산할 수 없습니다.")
+                logger.warning(f"실제 Y 값({outcome_name})을 찾을 수 없어 메트릭을 계산할 수 없습니다.")
         
-        return accuracy, result_df
+        return metrics, result_df
         
     except Exception as e:
         if logger:
@@ -145,31 +186,16 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
         logger.info(f"요청된 추정기: {estimator}")
     
     try:
-        # TabPFN의 경우 특별한 파라미터 설정 (legacy 버전 사용)
+        # TabPFN의 경우 새 버전 사용 (표준 인터페이스)
         if estimator == 'tabpfn':
-            from dowhy.causal_estimators.tabpfn_estimator_legacy import TabpfnEstimator
-            # tabpfn_estimator_legacy는 DoWhy의 표준 naming convention과 다르므로
-            # 직접 estimator 인스턴스를 생성하여 DoWhy의 estimate_effect 함수에 전달
-            tabpfn_estimator = TabpfnEstimator(
+            estimate = model.estimate_effect(
                 identified_estimand,
+                method_name=method,
                 test_significance=True,
                 method_params={
-                    "N_ensemble_configurations": 8
+                    "n_estimators": 8,
+                    "model_type": "auto"
                 }
-            )
-            # DoWhy의 estimate_effect 함수를 직접 호출
-            estimate = dowhy_estimate_effect(
-                data=model._data,
-                treatment=model._treatment,
-                outcome=model._outcome,
-                identifier_name="backdoor",
-                estimator=tabpfn_estimator,
-                control_value=0,
-                treatment_value=1,
-                target_units="ate",
-                effect_modifiers=model._graph.get_effect_modifiers(model._treatment, model._outcome),
-                fit_estimator=True,
-                method_params={}
             )
         else:
             estimate = model.estimate_effect(
