@@ -1,17 +1,16 @@
 """
 LLM 기반 점수 계산 모듈
 """
-import os
 import json
 from typing import List, Tuple, Optional
 
-# openai는 optional dependency - 없어도 작동하도록 처리
+# ollama는 optional dependency - 없어도 작동하도록 처리
 try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
+    import ollama
+    OLLAMA_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
-    OpenAI = None
+    OLLAMA_AVAILABLE = False
+    ollama = None
 
 from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, SCORING_KEYWORDS, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
 
@@ -20,7 +19,8 @@ class LLMScorer:
     """LLM을 사용한 점수 계산 클래스"""
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key
+        # api_key는 더 이상 사용하지 않지만 하위 호환성을 위해 유지
+        pass
     
         
     def count_typos(self, text: str) -> int:
@@ -28,25 +28,21 @@ class LLMScorer:
         if not text or text.strip() == "":
             return 0
 
-        if not OPENAI_AVAILABLE or OpenAI is None:
-            # openai가 설치되지 않은 경우 기본값 반환
+        if not OLLAMA_AVAILABLE or ollama is None:
+            # ollama가 설치되지 않은 경우 기본값 반환
             return 0
 
         try:
-            os.environ["OPENAI_API_KEY"] = self.api_key
-            client = OpenAI()
-            
             sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
             
-            resp = client.chat.completions.create(
-                model="gpt-4o-mini",
+            resp = ollama.chat(
+                model="llama3.2:1b",
                 messages=[sys_msg, user_msg],
-                temperature=0.1,
-                response_format={"type": "json_object"},
+                options={"temperature": 0.1}
             )
             
-            content = resp.choices[0].message.content
+            content = resp["message"]["content"]
             data = json.loads(content)
             typo_count = int(max(0, int(data.get("typo_count", 0))))
             return typo_count
@@ -78,25 +74,21 @@ class LLMScorer:
     
     def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
         """LLM을 사용한 점수 계산"""
-        if not OPENAI_AVAILABLE or OpenAI is None:
-            # openai가 설치되지 않은 경우 기본값 반환
-            return 50, "LLM API 사용 불가 (openai 패키지 미설치)"
+        if not OLLAMA_AVAILABLE or ollama is None:
+            # ollama가 설치되지 않은 경우 기본값 반환
+            return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
             
         try:
-            os.environ["OPENAI_API_KEY"] = self.api_key
-            client = OpenAI()
-            
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
             
-            resp = client.chat.completions.create(
-                model="gpt-4o-mini",
+            resp = ollama.chat(
+                model="llama3.2:1b",
                 messages=[sys_msg, user_msg],
-                temperature=0.2,
-                response_format={"type": "json_object"},
+                options={"temperature": 0.2}
             )
             
-            content = resp.choices[0].message.content
+            content = resp["message"]["content"]
             data = json.loads(content)
             score = int(max(0, min(100, int(data.get("score", 0)))))
             why = str(data.get("rationale", ""))[:240]
