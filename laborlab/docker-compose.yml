@@ -23,8 +23,10 @@ services:
       - TERMINAL_OUTPUT_DIR=/app/laborlab/log
       # 실험 설정 파일 경로 (환경변수로 오버라이드 가능)
       - EXPERIMENT_CONFIG=/app/laborlab/experiment_config.json
+      - OLLAMA_HOST=http://ollama:11434
       # LLM API 키 (선택적, LLM 기능을 사용하려면 설정)
       # - LLM_API_KEY=your-api-key-here
+    depends_on: [ollama]
     working_dir: /app/laborlab
     # 컨테이너를 계속 실행 상태로 유지 (코드 수정 후 재빌드 없이 실행 가능)
     # 직접 실행 방법:
@@ -42,7 +44,13 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
-
+  ollama:
+    container_name: ollama
+    image: ollama/ollama
+    volumes:
+      - ./ollama_models:/root/.ollama/models   
+    ports:
+      - "11434:11434"   # 내부만 쓰면 생략 가능
 volumes:
   python-cache:
 
