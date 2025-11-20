@@ -166,6 +166,6 @@ dowhy_env/
 # ignore logs and data output
 /do_whynot/logs/
 /do_whynot/data/output/
-/do_whynot/data_check.py/
-/do_whynot/json_check.py/
-/do_whynot/main_base_df.py/
+/do_whynot/data_check.py
+/do_whynot/json_check.py
+/do_whynot/main_base_df.py
