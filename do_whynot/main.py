@@ -11,7 +11,7 @@ import pytz
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
-from do_whynot.src.preprocessor import build_pipeline_wide, postprocess
+from do_whynot.src.preprocessor_3 import build_pipeline_wide, postprocess
 from do_whynot.src.dag_parser import extract_roles_general
 from do_whynot.src.inference_top1 import llm_inference
 from do_whynot.src.interpretator import load_and_consolidate_batch_results, analyze_results

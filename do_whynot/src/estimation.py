@@ -16,8 +16,8 @@ def get_treatment_type(df: pd.DataFrame, treatment_col: str) -> str:
         return "unknown"
 
     s = df[treatment_col].dropna()
-    s_list = [v for v in s if v != -1 and v != '-1']
-    unique_count = s_list.nunique()
+    # s_list = [v for v in s if v != -1 and v != '-1']
+    unique_count = s.nunique()
 
     if unique_count <= 1:
         return "unknown"
