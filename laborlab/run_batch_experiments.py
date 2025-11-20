@@ -15,6 +15,7 @@ import itertools
 from typing import List, Dict, Any, Optional
 import time
 import logging
+import pandas as pd
 
 # graph_parser 모듈 임포트 (src/__init__.py를 거치지 않고 직접 임포트)
 # __init__.py가 preprocess를 임포트하면서 의존성 문제가 발생할 수 있으므로
@@ -37,6 +38,7 @@ get_treatments_from_all_graphs = graph_parser.get_treatments_from_all_graphs
 # main 모듈 임포트 (전처리 및 분석 함수 사용)
 sys.path.insert(0, str(Path(__file__).parent))
 from src import main as main_module
+from src import estimation as estimation_module
 
 
 def load_experiment_config(config_file: str) -> Dict[str, Any]:
@@ -72,14 +74,51 @@ def run_single_experiment(
         duration = (end_time - start_time).total_seconds()
         
         metrics = result.get("metrics", {})
+        estimate = result.get("estimate")
+        validation_results = result.get("validation_results", {})
+        
+        # ATE 값 추출
+        ate_value = None
+        if estimate and hasattr(estimate, 'value'):
+            ate_value = estimate.value
+        
+        # Refutation 결과 추출
+        refutation_data = {}
+        refutation_types = ['placebo', 'unobserved', 'subset', 'dummy']
+        for ref_type in refutation_types:
+            ref_result = validation_results.get(ref_type)
+            if ref_result is not None:
+                # 성공 여부 판단
+                if ref_type == 'placebo':
+                    effect_change = abs(ref_result.new_effect - ref_result.estimated_effect)
+                    refutation_data[f'{ref_type}_passed'] = effect_change < 0.01
+                elif ref_type == 'unobserved':
+                    change_rate = abs(ref_result.new_effect - ref_result.estimated_effect) / abs(ref_result.estimated_effect) if abs(ref_result.estimated_effect) > 0 else float('inf')
+                    refutation_data[f'{ref_type}_passed'] = change_rate < 0.2
+                elif ref_type == 'subset':
+                    effect_change = abs(ref_result.new_effect - ref_result.estimated_effect)
+                    change_rate = abs(ref_result.estimated_effect) > 0 and abs(effect_change / ref_result.estimated_effect) or float('inf')
+                    refutation_data[f'{ref_type}_passed'] = change_rate < 0.1
+                elif ref_type == 'dummy':
+                    refutation_data[f'{ref_type}_passed'] = abs(ref_result.new_effect) < 0.01
+                
+                # p-value 추출 (estimation 모듈의 함수 사용)
+                p_value = estimation_module.calculate_refutation_pvalue(ref_result, ref_type)
+                refutation_data[f'{ref_type}_pvalue'] = p_value
+            else:
+                refutation_data[f'{ref_type}_passed'] = None
+                refutation_data[f'{ref_type}_pvalue'] = None
+        
         return {
             "experiment_id": experiment_id,
             "status": "success",
             "duration_seconds": duration,
             "graph": graph_file,
+            "graph_name": Path(graph_file).stem,
             "treatment": treatment,
             "outcome": outcome,
             "estimator": estimator,
+            "ate_value": ate_value,
             "metrics": metrics,
             "accuracy": metrics.get("accuracy") if metrics else None,
             "f1_score": metrics.get("f1_score") if metrics else None,
@@ -89,6 +128,7 @@ def run_single_experiment(
             "test_size": result.get("test_size"),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
+            **refutation_data
         }
     except Exception as e:
         end_time = datetime.now()
@@ -195,6 +235,18 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     # 실험 조합 생성
     # linear_regression을 먼저 실행하고, 그 다음 tabpfn을 실행하도록 순서 변경
     # 빠른 결과 확인을 위해 빠른 추정기(linear_regression)를 먼저 실행
+    
+    # estimators 리스트를 명시적으로 정렬: linear_regression 먼저, 그 다음 tabpfn, 나머지
+    sorted_estimators = []
+    if "linear_regression" in estimators:
+        sorted_estimators.append("linear_regression")
+    if "tabpfn" in estimators:
+        sorted_estimators.append("tabpfn")
+    # 나머지 estimator 추가 (원래 순서 유지)
+    for est in estimators:
+        if est not in sorted_estimators:
+            sorted_estimators.append(est)
+    
     if auto_extract_treatments and graph_treatments_map:
         # 각 그래프별로 해당 그래프의 treatment만 사용
         experiment_combinations = []
@@ -203,31 +255,12 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
             graph_outcome = graph_outcomes_map.get(graph_file, outcomes[0] if outcomes else "ACQ_180_YN")
             
             # 해당 그래프의 treatment와 outcome 조합 생성
-            # linear_regression 먼저, 그 다음 tabpfn 순서로 실행
+            # sorted_estimators 순서대로 실행 (linear_regression 먼저, 그 다음 tabpfn)
             for treatment in graph_treatments:
-                # linear_regression 먼저 실행 (빠른 결과 확인)
-                if "linear_regression" in estimators:
-                    experiment_combinations.append((graph_file, treatment, graph_outcome, "linear_regression"))
-                # 그 다음 tabpfn 실행
-                if "tabpfn" in estimators:
-                    experiment_combinations.append((graph_file, treatment, graph_outcome, "tabpfn"))
-                # 다른 estimator들도 순서대로 추가
-                for estimator in estimators:
-                    if estimator not in ["linear_regression", "tabpfn"]:
-                        experiment_combinations.append((graph_file, treatment, graph_outcome, estimator))
+                for estimator in sorted_estimators:
+                    experiment_combinations.append((graph_file, treatment, graph_outcome, estimator))
     else:
         # 기존 방식: 모든 조합 생성하되, estimator 순서를 linear_regression 먼저로 변경
-        # estimators 리스트를 재정렬: linear_regression 먼저, 그 다음 나머지
-        sorted_estimators = []
-        if "linear_regression" in estimators:
-            sorted_estimators.append("linear_regression")
-        if "tabpfn" in estimators:
-            sorted_estimators.append("tabpfn")
-        # 나머지 estimator 추가
-        for est in estimators:
-            if est not in sorted_estimators:
-                sorted_estimators.append(est)
-        
         experiment_combinations = list(itertools.product(
             graph_files,
             treatments,
@@ -330,6 +363,22 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     results_file = base_dir / "log" / f"batch_experiments_{timestamp}.json"
     results_file.parent.mkdir(exist_ok=True)
     
+    # CSV 결과 파일 경로
+    csv_results_file = base_dir / "log" / f"experiment_results_{timestamp}.csv"
+    
+    # CSV 컬럼 정의
+    csv_columns = [
+        'graph_name', 'treatment', 'estimator', 'ate_value',
+        'placebo_passed', 'placebo_pvalue',
+        'unobserved_passed', 'unobserved_pvalue',
+        'subset_passed', 'subset_pvalue',
+        'dummy_passed', 'dummy_pvalue',
+        'f1_score', 'auc', 'duration_seconds'
+    ]
+    
+    # CSV 파일 초기화 (헤더만 작성)
+    pd.DataFrame(columns=csv_columns).to_csv(csv_results_file, index=False, encoding='utf-8-sig')
+    
     # 로거 설정 (선택적)
     logger = None
     if not config.get("no_logs", False):
@@ -379,7 +428,41 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
             elif result.get("error"):
                 print(f"   에러: {result['error']}")
         
-        # 중간 결과 저장
+        # CSV에 결과 추가 (성공한 경우만)
+        if result["status"] == "success":
+            csv_row = {
+                'graph_name': result.get('graph_name', ''),
+                'treatment': result.get('treatment', ''),
+                'estimator': result.get('estimator', ''),
+                'ate_value': result.get('ate_value'),
+                'placebo_passed': result.get('placebo_passed'),
+                'placebo_pvalue': result.get('placebo_pvalue'),
+                'unobserved_passed': result.get('unobserved_passed'),
+                'unobserved_pvalue': result.get('unobserved_pvalue'),
+                'subset_passed': result.get('subset_passed'),
+                'subset_pvalue': result.get('subset_pvalue'),
+                'dummy_passed': result.get('dummy_passed'),
+                'dummy_pvalue': result.get('dummy_pvalue'),
+                'f1_score': result.get('f1_score'),
+                'auc': result.get('auc'),
+                'duration_seconds': result.get('duration_seconds')
+            }
+            
+            # 기존 CSV 읽기
+            try:
+                existing_df = pd.read_csv(csv_results_file, encoding='utf-8-sig')
+            except (FileNotFoundError, pd.errors.EmptyDataError):
+                existing_df = pd.DataFrame(columns=csv_columns)
+            
+            # 새 행 추가
+            new_row_df = pd.DataFrame([csv_row])
+            updated_df = pd.concat([existing_df, new_row_df], ignore_index=True)
+            
+            # CSV 파일 덮어쓰기
+            updated_df.to_csv(csv_results_file, index=False, encoding='utf-8-sig')
+            print(f"📊 CSV 결과 저장: {csv_results_file}")
+        
+        # 중간 결과 저장 (JSON)
         with open(results_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         
@@ -395,7 +478,8 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     print(f"총 실험 수: {total_experiments}")
     print(f"성공: {success_count}")
     print(f"실패: {failed_count}")
-    print(f"결과 파일: {results_file}")
+    print(f"JSON 결과 파일: {results_file}")
+    print(f"CSV 결과 파일: {csv_results_file}")
     print(f"{'='*80}\n")
     
     # 실패한 실험 목록 출력

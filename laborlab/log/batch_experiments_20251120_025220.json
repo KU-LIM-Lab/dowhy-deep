@@ -1,0 +1,24 @@
+[
+  {
+    "experiment_id": "exp_0001_graph_1_BFR_OCTR_CT_ACQ_180_YN_linear_regression",
+    "status": "success",
+    "duration_seconds": 17.622301,
+    "graph": "/app/laborlab/data/graph_data/graph_1.dot",
+    "treatment": "BFR_OCTR_CT",
+    "outcome": "ACQ_180_YN",
+    "estimator": "linear_regression",
+    "metrics": {
+      "accuracy": 0.7,
+      "f1_score": 0.7692307692307693,
+      "auc": 0.7083333333333334
+    },
+    "accuracy": 0.7,
+    "f1_score": 0.7692307692307693,
+    "auc": 0.7083333333333334,
+    "excel_path": "/app/laborlab/log/predictions_exp_0001_graph_1_BFR_OCTR_CT_ACQ_180_YN_linear_regression_20251120_025220.xlsx",
+    "train_size": 40,
+    "test_size": 10,
+    "start_time": "2025-11-20T02:52:20.153352",
+    "end_time": "2025-11-20T02:52:37.775653"
+  }
+]

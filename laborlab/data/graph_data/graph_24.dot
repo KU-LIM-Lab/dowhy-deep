@@ -73,8 +73,8 @@ digraph {
     JBHT_NMPR [label="구직자인원수"];
     RCIT_NMPR [label="모집인원수"];
     JO_DRNG_RATE [label="구인배수비율"];
-    AVG_OTIO_MYAV_RMNT_AMT [label="평균입직월평균보수금액"];
-    AVG_HOPE_WAGE_SM_AMT [label="평균희망임금합계금액"];
+    NTR_OTIO_MYAV_RMNT_AMT [label="중앙입직월평균보수금액"];
+    NTR_HOPE_WAGE_SM_AMT [label="중앙평균희망임금합계금액"];
     CRQF_CT [label="자격증건수"];
     ETL_DT [label="ETL일시"];
     MAKE_DT [label="생성일시"];
@@ -133,8 +133,8 @@ digraph {
     AGE -> MAJR_CD1;
     AGE -> SHSY_YN;
     AREA_CD -> ACQ_180_YN;
-    AREA_CD -> AVG_HOPE_WAGE_SM_AMT;
-    AREA_CD -> AVG_OTIO_MYAV_RMNT_AMT;
+    AREA_CD -> NTR_HOPE_WAGE_SM_AMT;
+    AREA_CD -> NTR_OTIO_MYAV_RMNT_AMT;
     AREA_CD -> HPAR_CD1;
     AREA_CD -> HPAR_CD2;
     AREA_CD -> HPAR_CD3;
@@ -143,22 +143,22 @@ digraph {
     AREA_CD -> JBHT_NMPR;
     AREA_CD -> JO_DRNG_RATE;
     AREA_CD -> RCIT_NMPR;
-    AVG_HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-    AVG_HOPE_WAGE_SM_AMT -> HOPE_JSCD1;
-    AVG_HOPE_WAGE_SM_AMT -> HOPE_JSCD2;
-    AVG_HOPE_WAGE_SM_AMT -> HOPE_JSCD3;
-    AVG_HOPE_WAGE_SM_AMT -> HOPE_WAGE_SM_AMT;
-    AVG_HOPE_WAGE_SM_AMT -> MATCH_L_YN;
-    AVG_HOPE_WAGE_SM_AMT -> MATCH_M_YN;
-    AVG_HOPE_WAGE_SM_AMT -> MATCH_S_YN;
-    AVG_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
-    AVG_OTIO_MYAV_RMNT_AMT -> HOPE_JSCD1;
-    AVG_OTIO_MYAV_RMNT_AMT -> HOPE_JSCD2;
-    AVG_OTIO_MYAV_RMNT_AMT -> HOPE_JSCD3;
-    AVG_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
-    AVG_OTIO_MYAV_RMNT_AMT -> MATCH_L_YN;
-    AVG_OTIO_MYAV_RMNT_AMT -> MATCH_M_YN;
-    AVG_OTIO_MYAV_RMNT_AMT -> MATCH_S_YN;
+    NTR_HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    NTR_HOPE_WAGE_SM_AMT -> HOPE_JSCD1;
+    NTR_HOPE_WAGE_SM_AMT -> HOPE_JSCD2;
+    NTR_HOPE_WAGE_SM_AMT -> HOPE_JSCD3;
+    NTR_HOPE_WAGE_SM_AMT -> HOPE_WAGE_SM_AMT;
+    NTR_HOPE_WAGE_SM_AMT -> MATCH_L_YN;
+    NTR_HOPE_WAGE_SM_AMT -> MATCH_M_YN;
+    NTR_HOPE_WAGE_SM_AMT -> MATCH_S_YN;
+    NTR_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
+    NTR_OTIO_MYAV_RMNT_AMT -> HOPE_JSCD1;
+    NTR_OTIO_MYAV_RMNT_AMT -> HOPE_JSCD2;
+    NTR_OTIO_MYAV_RMNT_AMT -> HOPE_JSCD3;
+    NTR_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
+    NTR_OTIO_MYAV_RMNT_AMT -> MATCH_L_YN;
+    NTR_OTIO_MYAV_RMNT_AMT -> MATCH_M_YN;
+    NTR_OTIO_MYAV_RMNT_AMT -> MATCH_S_YN;
     BFR_ARTY_SNSC -> ACQ_180_YN;
     BFR_ARTY_SNSC -> BFR_OCTR_CT;
     BFR_ARTY_SNSC -> HOPE_JSCD1;
@@ -248,8 +248,8 @@ digraph {
     CARR_MYCT3 -> MATCH_M_YN;
     CARR_MYCT3 -> MATCH_S_YN;
     CLOS_YM -> ACQ_180_YN;
-    CLOS_YM -> AVG_HOPE_WAGE_SM_AMT;
-    CLOS_YM -> AVG_OTIO_MYAV_RMNT_AMT;
+    CLOS_YM -> NTR_HOPE_WAGE_SM_AMT;
+    CLOS_YM -> NTR_OTIO_MYAV_RMNT_AMT;
     CLOS_YM -> IPS_IRDS_NMPR;
     CLOS_YM -> JBHT_NMPR;
     CLOS_YM -> JO_DRNG_RATE;
@@ -476,20 +476,20 @@ digraph {
             treatment_question="상용임금유형코드(COMM_WAGE_TYCD) 값이 다른 구직자들 사이에서 6개월 내 취업 확률은 얼마나 다른가?"
         ];
         T3 [
-            label="T3: AVG_OTIO_MYAV_RMNT_AMT",
+            label="T3: NTR_OTIO_MYAV_RMNT_AMT",
             role="treatment_meta",
-            treatment_var="AVG_OTIO_MYAV_RMNT_AMT",
-            treatment_name="AVG_OTIO_MYAV_RMNT_AMT",
-            treatment_def="평균입직월평균보수금액(AVG_OTIO_MYAV_RMNT_AMT) 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
-            treatment_question="평균입직월평균보수금액(AVG_OTIO_MYAV_RMNT_AMT) 값이 다른 구직자들 사이에서 6개월 내 취업 확률은 얼마나 다른가?"
+            treatment_var="NTR_OTIO_MYAV_RMNT_AMT",
+            treatment_name="NTR_OTIO_MYAV_RMNT_AMT",
+            treatment_def="중앙입직월평균보수금액(NTR_OTIO_MYAV_RMNT_AMT) 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
+            treatment_question="중앙입직월평균보수금액(NTR_OTIO_MYAV_RMNT_AMT) 값이 다른 구직자들 사이에서 6개월 내 취업 확률은 얼마나 다른가?"
         ];
         T4 [
-            label="T4: AVG_HOPE_WAGE_SM_AMT",
+            label="T4: NTR_HOPE_WAGE_SM_AMT",
             role="treatment_meta",
-            treatment_var="AVG_HOPE_WAGE_SM_AMT",
-            treatment_name="AVG_HOPE_WAGE_SM_AMT",
-            treatment_def="평균희망임금합계금액(AVG_HOPE_WAGE_SM_AMT) 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
-            treatment_question="평균희망임금합계금액(AVG_HOPE_WAGE_SM_AMT) 값이 다른 구직자들 사이에서 6개월 내 취업 확률은 얼마나 다른가?"
+            treatment_var="NTR_HOPE_WAGE_SM_AMT",
+            treatment_name="NTR_HOPE_WAGE_SM_AMT",
+            treatment_def="중앙평균희망임금합계금액(NTR_HOPE_WAGE_SM_AMT) 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
+            treatment_question="중앙평균희망임금합계금액(NTR_HOPE_WAGE_SM_AMT) 값이 다른 구직자들 사이에서 6개월 내 취업 확률은 얼마나 다른가?"
         ];
         T5 [
             label="T5: AFIV_RDJT_PSBL_YN",

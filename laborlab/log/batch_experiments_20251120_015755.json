@@ -1,0 +1,14 @@
+[
+  {
+    "experiment_id": "exp_0001_graph_1_BFR_OCTR_CT_ACQ_180_YN_linear_regression",
+    "status": "failed",
+    "duration_seconds": 0.143568,
+    "graph": "/app/laborlab/data/graph_data/graph_1.dot",
+    "treatment": "BFR_OCTR_CT",
+    "outcome": "ACQ_180_YN",
+    "estimator": "linear_regression",
+    "error": "No module named 'openpyxl'",
+    "start_time": "2025-11-20T01:57:55.430498",
+    "end_time": "2025-11-20T01:57:55.574066"
+  }
+]
