@@ -170,6 +170,16 @@ class Preprocessor:
         Returns:
             pd.DataFrame: NLP 전처리된 데이터프레임
         """
+        # JSON 전처리 시간 단축을 위해 앞에서 5개로 제한
+        # JSON 파일은 배열 형태로 저장되어 있으므로 리스트로 로드됨
+        if isinstance(data, list):
+            if len(data) > 10000:
+                original_count = len(data)
+                data = data[:10000]
+                print(f"📊 {json_name} 데이터 제한: {len(data)}개 레코드 사용 (전체 {original_count}개 중 앞 10000개)")
+        else:
+            # 리스트가 아닌 경우 (단일 객체)는 그대로 사용 (나중에 _preprocess_* 함수에서 리스트로 변환됨)
+            print(f"⚠️ {json_name} 데이터가 리스트 형태가 아닙니다. 단일 객체로 처리됩니다.")
         
         # JSON 데이터 타입에 따른 특화된 전처리
         if json_name == '이력서':
@@ -626,6 +636,13 @@ class Preprocessor:
             csv_start_time = time.time()
             print(f"[DEBUG] 첫 번째 파일 처리 시작: {file_list[0]}, 타입: 정형 데이터 (CSV)")
             df = self.load_and_preprocess_data(file_list[0], json_name=None)
+            
+            # 테이블 파일 앞에서 5개로 제한
+            original_csv_count = len(df)
+            if len(df) > 10000:
+                df = df.head(10000)
+                print(f"📊 테이블 데이터 제한: {len(df)}개 행 사용 (전체 {original_csv_count}개 중 앞 10000개)")
+            
             csv_elapsed = time.time() - csv_start_time
             print(f"⏱️ 정형 데이터(CSV) 처리 소요 시간: {csv_elapsed:.2f}초")
             self.df_list.append(df)
@@ -735,7 +752,8 @@ class Preprocessor:
                             # Logger 객체를 NaN으로 대체
                             df[col] = df[col].apply(lambda x: np.nan if (isinstance(x, logging.Logger) or 'Logger' in str(type(x))) else x)
             
-            result = result.merge(df, on=merge_key, how="outer", suffixes=('', f'_df{idx+1}'))
+            # 테이블을 기준으로 inner join
+            result = result.merge(df, on=merge_key, how="inner", suffixes=('', f'_df{idx+1}'))
             print(f"[DEBUG] 병합 후 result 크기: {result.shape}")
             
             # 병합 후에 Logger 객체가 있는지 확인
@@ -749,6 +767,18 @@ class Preprocessor:
         
         merge_elapsed = time.time() - merge_start_time
         print(f"⏱️ 데이터 병합 소요 시간: {merge_elapsed:.2f}초")
+        
+        # 결측치가 존재하는 행 제거 (제거 전후 행 개수 로깅)
+        before_dropna_count = len(result)
+        print(f"\n📊 결측치 행 제거 전: {before_dropna_count}개 행")
+        
+        # 결측치가 하나라도 있는 행 제거
+        result = result.dropna()
+        
+        after_dropna_count = len(result)
+        removed_count = before_dropna_count - after_dropna_count
+        print(f"📊 결측치 행 제거 후: {after_dropna_count}개 행")
+        print(f"📊 제거된 행 수: {removed_count}개 행 ({removed_count/before_dropna_count*100:.2f}%)")
         
         # Logger 객체가 데이터프레임에 포함되어 있는지 검사
         import logging
