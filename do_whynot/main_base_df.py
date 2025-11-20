@@ -7,11 +7,13 @@ import warnings
 import uuid
 from datetime import datetime
 import pytz
+import csv
+import json
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
-from do_whynot.src.preprocessor import build_pipeline_wide, postprocess
+from do_whynot.src.preprocessor_3 import build_pipeline_wide, postprocess
 from do_whynot.src.dag_parser import extract_roles_general
 from do_whynot.src.inference_top1 import llm_inference
 from do_whynot.src.interpretator import load_and_consolidate_batch_results, analyze_results
@@ -19,7 +21,7 @@ from do_whynot.src.eda import perform_eda
 from do_whynot.src.estimation import get_treatment_type, validate_tabpfn_estimator, run_tabpfn_estimation
 from do_whynot.src.prediction import run_prediction_pipeline
 
-from do_whynot.config import IS_TEST_MODE, TEST_SAMPLE_SIZE, BATCH_SIZE, DATA_OUTPUT_DIR, DAG_INDICES_TEST, DAG_INDICES, DAG_DIR
+from do_whynot.config import IS_TEST_MODE, TEST_SAMPLE_SIZE, BATCH_SIZE, DATA_OUTPUT_DIR, DAG_INDICES_TEST, DAG_INDICES, DAG_DIR, RAW_CSV, EXCLUDE_COLS
 
 RESULTS_DIR = None
 DATA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -96,6 +98,100 @@ def setup_logger():
     logger.info("Logging initialized. File: %s", str(log_path))
     return logger
 
+# =========================
+# 6) 후처리 (옵션)
+# =========================
+def postprocess_base(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir) -> pd.DataFrame:
+    logger.info("Starting postprocessing: Binary mapping and date calculation.")
+    
+    # ---- (1) 바이너리 매핑 ----
+    bin_map = {"예":1, "아니오":0, "아니요":0, "필요":1, "불필요":0, "Y": 1, "Yes": 1, "y":1, "yes":1,  "N": 0, "No": 0, "n":0}
+    mapped_cols = [] 
+    
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].replace(bin_map)
+            if df[col].dtype != object:
+                mapped_cols.append(col)
+                
+    if mapped_cols:
+        logger.info(f"Successfully applied Binary Mapping to {len(mapped_cols)} columns: {', '.join(mapped_cols)}") 
+    else:
+        logger.info("No object columns were successfully converted by binary mapping.")
+
+    # ---- (2) 날짜 차이 계산  ----
+    date_diff_cols = [] 
+    if "JHCR_DE" in df.columns:
+        anchor = pd.to_datetime(df["JHCR_DE"], errors="coerce")
+        date_cols = [c for c in df.columns if any(x in c.upper() for x in ["DE","DT","DATE","BGDE","ENDE","STDT","ENDT"]) and "MDTN" not in c.upper()]
+        
+        for col in date_cols:
+            if col == "JHCR_DE":
+                continue
+            
+            vals = pd.to_datetime(df[col], errors="coerce")
+            
+            if not anchor.isna().all() and not vals.isna().all():
+                diff = (vals - anchor).dt.days
+                df[col] = diff.abs()
+                date_diff_cols.append(col)
+            else:
+                 logger.warning(f"Skipped date diff for column '{col}' due to all-NaN anchor or all-NaN target date values.")
+
+        if date_diff_cols:
+            logger.info(f"Calculated Date Difference (days from JHCR_DE) for {len(date_diff_cols)} columns: {', '.join(date_diff_cols)}")
+        else:
+            logger.info("No date columns were processed for date difference calculation.")
+    else:
+        logger.warning("Anchor column 'JHCR_DE' not found. Skipping date difference calculation.")
+
+    # ---- (3) 모든 값이 결측인 컬럼 제거 ----
+    original_cols = df.shape[1]
+    cols_to_drop = df.columns[df.isnull().all()].tolist()
+    
+    df = df.dropna(axis=1, how="all")
+    dropped_cols_count = original_cols - df.shape[1]
+    
+    if dropped_cols_count > 0:
+        logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
+    
+    # ---- (4) label encoding ----
+    clos_ym_prefix_cols = [c for c in df.columns if c.startswith('CLOS_YM')]
+    jhcr_de_prefix_cols = [c for c in df.columns if c.startswith('JHCR_DE')]
+    excluded_cols = list(set(EXCLUDE_COLS + clos_ym_prefix_cols + jhcr_de_prefix_cols))
+
+    cat_cols = [c for c in df.select_dtypes(include=['object','category']).columns if c not in excluded_cols]
+
+    encoding_map = {}
+    for c in cat_cols:
+        cat_dtype = pd.Categorical(df[c], categories=sorted(df[c].dropna().unique()))
+        
+        mapping = {label: code for code, label in enumerate(cat_dtype.categories)}
+        encoding_map[c] = mapping
+        
+        df[c] = cat_dtype.codes
+
+    df = df.assign(**{c: df[c].astype('int64') for c in df.select_dtypes(include=['bool']).columns})
+    df[cat_cols] = df[cat_cols].astype('str')
+
+    # 로깅 추가
+    if cat_cols:
+        logger.info(f"Applied Label Encoding to {len(cat_cols)} columns:")
+        logger.info(f"    Encoded Columns: {cat_cols}") 
+        logger.info(f"    Excluded Columns: {', '.join(excluded_cols)}")
+
+        map_path = data_output_dir / "label_encoding_map.json"
+        try:
+            with map_path.open("w", encoding="utf-8") as f:
+                json.dump(encoding_map, f, indent=4, ensure_ascii=False, default=str)
+            logger.info(f"Label Encoding Map saved to: {map_path.name}")
+        except Exception as e:
+            logger.error(f"Failed to save Label Encoding Map to {map_path.name}: {e}")
+    else:
+        logger.info(f"No categorical columns (excluding {', '.join(excluded_cols)}) found for Label Encoding.")
+    
+    logger.info("Postprocessing complete.")
+    return df
 
 def main():
 
@@ -105,29 +201,20 @@ def main():
 
     # --- 1. 전처리 실행 (데이터 전체에 대해 단 1회 실행) ---
     try:
-        # 1) 와이드 포맷 조립 (JSON 파싱 및 CSV 병합)
-        intermediate_df = build_pipeline_wide(main_logger)
-        main_logger.info(f"Wide pipeline complete. Intermediate shape: {intermediate_df.shape}")
-        
-        intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
-        intermediate_df.to_csv(intermediate_path, index=False, encoding="utf-8")
-        main_logger.info(f"[OK] Intermediate preprocessed data saved to: {intermediate_path.name}")
-        
-        # 2) 후처리 (이진 매핑, 날짜 차이, 결측 컬럼 제거)
-        intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
-        intermediate_df = pd.read_csv(intermediate_path)
-        main_logger.info(f"Intermediate data loaded. DataFrame shape: {intermediate_df.shape}")
-        main_logger.info(f"Intermediate_df")
+        dtype_map = {}
+        for k in ["JHNT_MBN", "JHNT_CTN"]:
+            dtype_map[k] = str
 
-        final_df = postprocess(intermediate_df, main_logger, DATA_OUTPUT_DIR) 
+        base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
+        final_df = postprocess_base(base, main_logger, DATA_OUTPUT_DIR) 
         main_logger.info(f"Preprocessing complete. Final DataFrame shape: {final_df.shape}")
         
     except Exception as e:
         main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
         sys.exit(1)
 
-    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
-    final_df.to_csv(preprocessed_path, index=False, encoding="utf-8")
+    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df_base.csv"
+    final_df.to_csv(preprocessed_path, index=False, encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar='\\')
     main_logger.info(f"[OK] Preprocessed data saved to: {preprocessed_path.name}")
 
     try:
@@ -135,9 +222,6 @@ def main():
     except Exception as e:
         main_logger.error(f"[skip] Skip EDA due to the error: {e}")
 
-    # preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
-    # final_df = pd.read_csv(preprocessed_path, encoding="utf-8")
-    
     # --- 2. 배치 분할 및 반복 실행 ---
     if IS_TEST_MODE:
         main_logger.info("Test mode enabled: sampling %d rows for quick validation.", TEST_SAMPLE_SIZE)
@@ -159,10 +243,7 @@ def main():
     main_logger.info("Starting batch validation runs.")
     main_logger.info(f"Total rows: {total_rows}. Batch size: {BATCH_SIZE}. Total batches: {num_batches}.")
 
-    all_results_df = pd.DataFrame()
     multi_class_fixed_params = {}
-
-    all_llm_preds = pd.DataFrame()
 
     for i in range(num_batches):
         start_idx = i * BATCH_SIZE
@@ -173,24 +254,7 @@ def main():
         main_logger.info("=" * 70)
         main_logger.info(f"BATCH {i+1}/{num_batches}: Processing rows {start_idx} to {end_idx-1} (Size: {len(batch_df)})")
         main_logger.info("=" * 70)
-                
-        main_logger.info(f"Starting LLM Inference for BATCH {i+1}...")
-        llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR) 
-        main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions saved.")
         
-        batch_df['JHNT_MBN'] = batch_df['JHNT_MBN'].astype(str)
-        llm_preds_df['JHNT_MBN'] = llm_preds_df['JHNT_MBN'].astype(str)
-
-        batch_df = pd.merge(
-            batch_df, 
-            llm_preds_df[['JHNT_MBN', 'SELF_INTRO_CONT_LABEL']], 
-            on='JHNT_MBN', 
-            how='left'
-        )
-        main_logger.info(f"Merged LLM predictions into batch dataframe. New shape: {batch_df.shape}")
-
-        all_llm_preds = pd.concat([all_llm_preds, llm_preds_df[['JHNT_MBN', 'SELF_INTRO_CONT_LABEL']]], ignore_index=True)
-
         batch_results = []
 
         batch_result_folder = RESULTS_DIR / "validations"
@@ -278,15 +342,6 @@ def main():
     all_results_df.to_csv(final_result_file, index=False, encoding="utf-8")
     main_logger.info("All validation results saved to: %s", final_result_file.name)
 
-    final_llm_merged_df = final_df.copy()
-
-    final_llm_merged_df['JHNT_MBN'] = final_llm_merged_df['JHNT_MBN'].astype(str)
-    all_llm_preds['JHNT_MBN'] = all_llm_preds['JHNT_MBN'].astype(str)
-
-    final_llm_merged_df = pd.merge(final_llm_merged_df, all_llm_preds, on='JHNT_MBN', how='left')
-    final_llm_merged_file = DATA_OUTPUT_DIR / "final_df_with_llm_predictions.csv"
-    main_logger.info("Final DataFrame with all LLM predictions saved to: %s", final_llm_merged_file.name)
-
     main_logger.info("-" * 50)
     main_logger.info("Validation runs complete.")
     
@@ -305,7 +360,7 @@ def main():
         start_idx = i * BATCH_SIZE
         end_idx = min((i + 1) * BATCH_SIZE, total_rows)
         
-        batch_final_df = final_llm_merged_df.iloc[start_idx:end_idx].copy()
+        batch_final_df = final_df.iloc[start_idx:end_idx].copy()
 
         pred_result = run_prediction_pipeline(
             final_merged_df=batch_final_df,
@@ -321,10 +376,10 @@ def main():
     
     main_logger.info("Merging all predictions with the final preprocessed DataFrame...")
     
-    final_llm_merged_df['JHNT_MBN'] = final_llm_merged_df['JHNT_MBN'].astype(str)
+    final_df['JHNT_MBN'] = final_df['JHNT_MBN'].astype(str)
     all_final_preds['JHNT_MBN'] = all_final_preds['JHNT_MBN'].astype(str)
     
-    final_merged_with_all_preds = pd.merge(final_llm_merged_df, all_final_preds, on='JHNT_MBN', how='left')
+    final_merged_with_all_preds = pd.merge(final_df, all_final_preds, on='JHNT_MBN', how='left')
     
     all_final_preds_file = RESULTS_DIR / "final_df_all_predictions.csv"
     final_merged_with_all_preds.to_csv(all_final_preds_file, index=False, encoding="utf-8")

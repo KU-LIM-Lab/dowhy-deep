@@ -13,6 +13,8 @@ from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 from do_whynot.src.dag_parser import extract_roles_general 
 from do_whynot.config import DAG_DIR, EXCLUDE_COLS, PREFIX_COLS
 
+from tqdm.auto import tqdm
+
 def _build_dowhy_model(
     data_df: pd.DataFrame,
     treatment: str,
@@ -119,7 +121,7 @@ def run_prediction_pipeline(
     pred_result_df = df_copy[['JHNT_MBN']].copy()
 
     # 2) 각 DAG별 roles 추출 및 예측 수행
-    for info in top_5_dags_info:
+    for info in tqdm(top_5_dags_info, desc=f"Batch {batch_id+1} Prediction on Top DAGs", leave=False):
         roles = {}
 
         dag_idx = int(info.get("dag_idx", -1))

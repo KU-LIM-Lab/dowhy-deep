@@ -8,6 +8,7 @@ from dowhy.causal_estimators.tabpfn_estimator import TabpfnEstimator
 from do_whynot.src.dag_parser import extract_roles_general, dot_to_nx
 from do_whynot.config import DAG_DIR, EXCLUDE_COLS, PREFIX_COLS, MULTICLASS_THRESHOLD, MULTICLASS_PASS
 
+from tqdm.auto import tqdm
 
 def get_treatment_type(df: pd.DataFrame, treatment_col: str) -> str:
     """treatment 컬럼의 타입을 binary, multi-class, continuous 중 하나로 결정합니다."""
@@ -15,7 +16,8 @@ def get_treatment_type(df: pd.DataFrame, treatment_col: str) -> str:
         return "unknown"
 
     s = df[treatment_col].dropna()
-    unique_count = s.nunique()
+    s_list = [v for v in s if v != -1 and v != '-1']
+    unique_count = s_list.nunique()
 
     if unique_count <= 1:
         return "unknown"
@@ -226,7 +228,7 @@ def run_tabpfn_estimation(model: CausalModel, identified, df_copy: pd.DataFrame,
     est_tabpfn = None
     best_ate = None
 
-    if treatment_type in ["binary", "continuous"]:
+    if treatment_type == "binary":
         # Binary/Continuous
         best_ate, est_tabpfn = estimate_tabpfn_ate_binary_continuous(
             model=model, identified=identified, dag_treatment=dag_treatment, logger=logger
@@ -269,45 +271,46 @@ def run_tabpfn_estimation(model: CausalModel, identified, df_copy: pd.DataFrame,
         return results
 
     # --- 반박 (Refutation) ---
-    refuters = {
-        "placebo_treatment_refuter": "placebo_p_value",
-        "random_common_cause": "random_cc_p_value"
-    }
+    # refuters = {
+    #     "placebo_treatment_refuter": "placebo_p_value",
+    #     "random_common_cause": "random_cc_p_value"
+    # }
     
-    for ref_name, result_key in refuters.items():
-        try:
-            # est_tabpfn이 유효한 경우에만 Refutation 수행
-            if est_tabpfn is None:
-                 logger.error("[%s] Skipping Refutation: est_tabpfn is None.", dag_file_name)
-                 results[result_key] = "EST_NONE"
-                 continue
+    # for ref_name, result_key in tqdm(refuters.items(), desc=f"Refutation ({dag_file_name})", leave=False):
+    #     try:
+    #         # est_tabpfn이 유효한 경우에만 Refutation 수행
+    #         if est_tabpfn is None:
+    #              logger.error("[%s] Skipping Refutation: est_tabpfn is None.", dag_file_name)
+    #              results[result_key] = "EST_NONE"
+    #              continue
                  
-            refutation = model.refute_estimate(identified, est_tabpfn, method_name=ref_name)
-            logger.info("[%s] Refutation (%s): %s", dag_file_name, ref_name, refutation)
+    #         refutation = model.refute_estimate(identified, est_tabpfn, method_name=ref_name, 
+    #                                            n_jobs=-1, num_simulations=50)
+    #         logger.info("[%s] Refutation (%s): %s", dag_file_name, ref_name, refutation)
 
-            if refutation is None:
-                logger.error("[%s] Refutation failed for %s", dag_file_name, ref_name)
-            else:
-                # --- 문자열 파싱을 통한 p-value 추출 로직 ---
-                p_value_float = None
-                refutation_str = str(refutation)
+    #         if refutation is None:
+    #             logger.error("[%s] Refutation failed for %s", dag_file_name, ref_name)
+    #         else:
+    #             # --- 문자열 파싱을 통한 p-value 추출 로직 ---
+    #             p_value_float = None
+    #             refutation_str = str(refutation)
                 
-                if 'p value:' in refutation_str:
-                    p_str = refutation_str.split('p value:')[-1].strip()
-                    if p_str:
-                        p_str = p_str.split()[0]
+    #             if 'p value:' in refutation_str:
+    #                 p_str = refutation_str.split('p value:')[-1].strip()
+    #                 if p_str:
+    #                     p_str = p_str.split()[0]
                     
-                    try:
-                        p_value_float = float(p_str)
-                    except (ValueError, TypeError):
-                        pass
+    #                 try:
+    #                     p_value_float = float(p_str)
+    #                 except (ValueError, TypeError):
+    #                     pass
                 
-                if p_value_float is not None and np.isfinite(p_value_float):
-                    results[result_key] = p_value_float
+    #             if p_value_float is not None and np.isfinite(p_value_float):
+    #                 results[result_key] = p_value_float
                 
-        except Exception as e:
-            logger.error("[%s] Refutation (%s) failed with exception: %s", dag_file_name, ref_name, e)
-            results[result_key] = "ERROR"
+    #     except Exception as e:
+    #         logger.error("[%s] Refutation (%s) failed with exception: %s", dag_file_name, ref_name, e)
+    #         results[result_key] = "ERROR"
             
     results["is_successful"] = (best_ate is not None)
     return results
@@ -360,6 +363,12 @@ def validate_tabpfn_estimator(dag_idx: int, logger: logging.LoggerAdapter,
         msg = f"[skip] Unknown treatment type for '{dag_treatment}'. Skipping."
         logger.info("[%s] %s", dag_file_name, msg)
         results["skip_reason"] = "Unknown treatment type"
+        return results
+    
+    if treatment_type == "continuous":
+        msg = f"[skip] Continuous type for '{dag_treatment}'. Skipping."
+        logger.info("[%s] %s", dag_file_name, msg)
+        results["skip_reason"] = "Continuous treatment type"
         return results
 
     logger.info(

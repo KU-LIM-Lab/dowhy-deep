@@ -1,0 +1,2558 @@
+[
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "1069057458414",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-03-11 08:44:01"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2023-03-11 08:44:01"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-03-11 08:44:01"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-03-11 08:44:01"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-08",
+        "JHNT_CTN": "1143317880346",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-09-20 05:24:22"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-09-20 05:24:22"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2022-09-20 05:24:22"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-09-20 05:24:22"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-09-20 05:24:22"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-09",
+        "JHNT_CTN": "1284495910235",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-11-10 02:50:42"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-11-10 02:50:42"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2022-11-10 02:50:42"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-11-10 02:50:42"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-11-10 02:50:42"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-04",
+        "JHNT_CTN": "1297097998010",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-03-13 07:47:33"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2024-03-13 07:47:33"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2024-03-13 07:47:33"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-08",
+        "JHNT_CTN": "1381989324206",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-02-21 03:34:13"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-02-21 03:34:13"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-08",
+        "JHNT_CTN": "1403192517039",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-11-14 13:58:46"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-11-14 13:58:46"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-11-14 13:58:46"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-11-14 13:58:46"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2022-11-14 13:58:46"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-04",
+        "JHNT_CTN": "1493062147669",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-11-30 04:45:26"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-11-30 04:45:26"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-10",
+        "JHNT_CTN": "1519624275879",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-04-24 17:59:56"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-04-24 17:59:56"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-04-24 17:59:56"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2022-04-24 17:59:56"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-04-24 17:59:56"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-09",
+        "JHNT_CTN": "1586299445801",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-01-26 08:24:29"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-01-26 08:24:29"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-01-26 08:24:29"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-05",
+        "JHNT_CTN": "1610124015054",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-01-15 07:40:32"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-01-15 07:40:32"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-01-15 07:40:32"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-04",
+        "JHNT_CTN": "1613623720855",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2025-02-06 06:57:04"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2025-02-06 06:57:04"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2025-02-06 06:57:04"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-10",
+        "JHNT_CTN": "1804229466714",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-03-23 18:18:05"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2024-03-23 18:18:05"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2024-03-23 18:18:05"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-06",
+        "JHNT_CTN": "1901091971474",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-12-05 20:55:27"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-12-05 20:55:27"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-12-05 20:55:27"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-02",
+        "JHNT_CTN": "1985447520022",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-11-09 06:57:38"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-11-09 06:57:38"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-11-09 06:57:38"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-11-09 06:57:38"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-03",
+        "JHNT_CTN": "2036631540441",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-05-14 00:06:57"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2024-05-14 00:06:57"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2024-05-14 00:06:57"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2024-05-14 00:06:57"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2024-05-14 00:06:57"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-12",
+        "JHNT_CTN": "2131315124222",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-11-14 18:37:13"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-11-14 18:37:13"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "2170798994730",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2024-04-06 02:08:38"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2024-04-06 02:08:38"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2024-04-06 02:08:38"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "2212897418641",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2021-09-12 15:06:55"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-09-12 15:06:55"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-09-12 15:06:55"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-09-12 15:06:55"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-05",
+        "JHNT_CTN": "2226178919998",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-12-13 07:37:14"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-12-13 07:37:14"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2020-12-13 07:37:14"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-04",
+        "JHNT_CTN": "2292590570921",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-08-20 22:47:27"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-08-20 22:47:27"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-08-20 22:47:27"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-08-20 22:47:27"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-08",
+        "JHNT_CTN": "2484760023918",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-10-04 22:35:33"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-10-04 22:35:33"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-10-04 22:35:33"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-12",
+        "JHNT_CTN": "2609775123244",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-03-11 01:42:42"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-03-11 01:42:42"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-08",
+        "JHNT_CTN": "2649697356088",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-01-11 20:32:30"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-01-11 20:32:30"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2020-01-11 20:32:30"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-01-11 20:32:30"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-01-11 20:32:30"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-08",
+        "JHNT_CTN": "2673545598890",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2025-02-15 11:57:59"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2025-02-15 11:57:59"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2025-02-15 11:57:59"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-08",
+        "JHNT_CTN": "2705902686452",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-04-01 12:03:34"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-04-01 12:03:34"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "2933594053778",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-02-27 05:19:32"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-02-27 05:19:32"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2021-02-27 05:19:32"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-02-27 05:19:32"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-08",
+        "JHNT_CTN": "2959381354615",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-03-27 17:49:33"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-03-27 17:49:33"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-03-27 17:49:33"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-03-27 17:49:33"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-03-27 17:49:33"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-02",
+        "JHNT_CTN": "2973524363932",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2023-10-10 02:35:27"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-10-10 02:35:27"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-05",
+        "JHNT_CTN": "3372010033519",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-11-17 09:09:21"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-11-17 09:09:21"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2020-11-17 09:09:21"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2020-11-17 09:09:21"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-08",
+        "JHNT_CTN": "3395209173595",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-09-16 01:42:46"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-09-16 01:42:46"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-09-16 01:42:46"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2020-09-16 01:42:46"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-10",
+        "JHNT_CTN": "3423399219393",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2025-02-05 14:00:52"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2025-02-05 14:00:52"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-08",
+        "JHNT_CTN": "3468939975253",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-03-08 02:45:56"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2021-03-08 02:45:56"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-03-08 02:45:56"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-08",
+        "JHNT_CTN": "3474000636355",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2020-03-04 05:14:50"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-03-04 05:14:50"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-03-04 05:14:50"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-05",
+        "JHNT_CTN": "3550493079571",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2024-03-18 09:18:53"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2024-03-18 09:18:53"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2024-03-18 09:18:53"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-03",
+        "JHNT_CTN": "3670209562584",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-03-22 08:21:52"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-03-22 08:21:52"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-10",
+        "JHNT_CTN": "3734886509281",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2024-04-15 19:28:18"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2024-04-15 19:28:18"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-03",
+        "JHNT_CTN": "3828916232444",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-03-21 23:26:30"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-03-21 23:26:30"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-11",
+        "JHNT_CTN": "3872925911240",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-10-10 20:00:50"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2021-10-10 20:00:50"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-10-10 20:00:50"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-10-10 20:00:50"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "3970933942058",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2021-03-20 11:04:06"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-03-20 11:04:06"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-08",
+        "JHNT_CTN": "4012501560519",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2025-07-24 04:22:58"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2025-07-24 04:22:58"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2025-07-24 04:22:58"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-08",
+        "JHNT_CTN": "4146557845070",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-08-08 06:53:35"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2020-08-08 06:53:35"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-08-08 06:53:35"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-10",
+        "JHNT_CTN": "4266268569371",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-09-08 17:18:50"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2022-09-08 17:18:50"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-09-08 17:18:50"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-09-08 17:18:50"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-08",
+        "JHNT_CTN": "4305296306850",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-04-09 12:17:55"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-04-09 12:17:55"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-12",
+        "JHNT_CTN": "4440847857143",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-09-26 07:46:00"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-09-26 07:46:00"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2022-09-26 07:46:00"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-12",
+        "JHNT_CTN": "4684945187071",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-09-13 13:47:25"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-09-13 13:47:25"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-09-13 13:47:25"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-09-13 13:47:25"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-11",
+        "JHNT_CTN": "4709674473695",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-11-02 18:33:27"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-11-02 18:33:27"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2022-11-02 18:33:27"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-11-02 18:33:27"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-11",
+        "JHNT_CTN": "4822763214010",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-03-06 11:31:01"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-03-06 11:31:01"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-08",
+        "JHNT_CTN": "5021591824830",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-11-14 11:05:12"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2023-11-14 11:05:12"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-11-14 11:05:12"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-12",
+        "JHNT_CTN": "5048724048367",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2025-04-04 23:08:19"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2025-04-04 23:08:19"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2025-04-04 23:08:19"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2025-04-04 23:08:19"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2025-04-04 23:08:19"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-08",
+        "JHNT_CTN": "5077080223606",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-09-18 20:55:58"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2023-09-18 20:55:58"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-09-18 20:55:58"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2023-09-18 20:55:58"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-09-18 20:55:58"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-08",
+        "JHNT_CTN": "5222393383021",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2025-09-04 20:04:02"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2025-09-04 20:04:02"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2025-09-04 20:04:02"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-03",
+        "JHNT_CTN": "5248458968218",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-03-28 07:28:37"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2021-03-28 07:28:37"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-03-28 07:28:37"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-03-28 07:28:37"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-10",
+        "JHNT_CTN": "5261657241320",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-03-24 08:43:07"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-03-24 08:43:07"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-06",
+        "JHNT_CTN": "5279298236876",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2022-10-15 06:13:58"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-10-15 06:13:58"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2022-10-15 06:13:58"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-02",
+        "JHNT_CTN": "5712468007561",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-11-30 23:46:45"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-11-30 23:46:45"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2022-11-30 23:46:45"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-11-30 23:46:45"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-11-30 23:46:45"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-04",
+        "JHNT_CTN": "5816581245882",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2021-11-24 01:49:39"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-11-24 01:49:39"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2021-11-24 01:49:39"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-11-24 01:49:39"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-11-24 01:49:39"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-09",
+        "JHNT_CTN": "5835541269706",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2023-01-06 08:20:10"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-01-06 08:20:10"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2023-01-06 08:20:10"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-05",
+        "JHNT_CTN": "5847574868830",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-07-05 21:17:15"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2023-07-05 21:17:15"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-07",
+        "JHNT_CTN": "6077390690611",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-02-10 06:23:06"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-02-10 06:23:06"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2020-02-10 06:23:06"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-02-10 06:23:06"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-06",
+        "JHNT_CTN": "6144877042603",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-02-05 16:12:26"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-02-05 16:12:26"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-06",
+        "JHNT_CTN": "6249264389063",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2020-02-01 23:19:50"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-02-01 23:19:50"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-02-01 23:19:50"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-02-01 23:19:50"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-05",
+        "JHNT_CTN": "6429150253387",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2023-08-30 02:20:36"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-08-30 02:20:36"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-08-30 02:20:36"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-08-30 02:20:36"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-03",
+        "JHNT_CTN": "6436562258795",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-08-18 19:08:39"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2021-08-18 19:08:39"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-08-18 19:08:39"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2021-08-18 19:08:39"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-08-18 19:08:39"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-04",
+        "JHNT_CTN": "6465029932442",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-09-14 05:25:18"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2021-09-14 05:25:18"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-09-14 05:25:18"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-09-14 05:25:18"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-04",
+        "JHNT_CTN": "6566813726420",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2024-07-24 03:55:36"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2024-07-24 03:55:36"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-10",
+        "JHNT_CTN": "6812237016581",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2023-10-17 05:07:59"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-10-17 05:07:59"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-06",
+        "JHNT_CTN": "6902840898576",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2024-12-17 17:43:34"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2024-12-17 17:43:34"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-12-17 17:43:34"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2024-12-17 17:43:34"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-12",
+        "JHNT_CTN": "6959880850589",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2023-10-03 07:12:05"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-10-03 07:12:05"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-07",
+        "JHNT_CTN": "7067002474198",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2025-02-20 03:50:05"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2025-02-20 03:50:05"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "7087025879100",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-07-28 20:07:46"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-07-28 20:07:46"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-07-28 20:07:46"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-07-28 20:07:46"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-03",
+        "JHNT_CTN": "7171580824320",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2023-03-14 09:04:07"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2023-03-14 09:04:07"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-08",
+        "JHNT_CTN": "7224360478069",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-06-06 11:00:35"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-06-06 11:00:35"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-09",
+        "JHNT_CTN": "7227521460324",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-08-22 08:07:04"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-08-22 08:07:04"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-10",
+        "JHNT_CTN": "7298175464413",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-01-13 08:57:00"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-01-13 08:57:00"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-07",
+        "JHNT_CTN": "7306107088544",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-03-28 09:46:32"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-03-28 09:46:32"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-05",
+        "JHNT_CTN": "7358900728146",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-05-29 04:37:30"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2023-05-29 04:37:30"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2023-05-29 04:37:30"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2023-05-29 04:37:30"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-05-29 04:37:30"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-09",
+        "JHNT_CTN": "7417118513613",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-09-16 14:29:17"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2021-09-16 14:29:17"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2021-09-16 14:29:17"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-09-16 14:29:17"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2021-09-16 14:29:17"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-11",
+        "JHNT_CTN": "7536038601165",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2024-09-25 02:24:28"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2024-09-25 02:24:28"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-09-25 02:24:28"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-08",
+        "JHNT_CTN": "7674242455103",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-09-11 05:03:02"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2020-09-11 05:03:02"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-11",
+        "JHNT_CTN": "7755383595394",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2020-04-23 20:59:49"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-04-23 20:59:49"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-04-23 20:59:49"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-01",
+        "JHNT_CTN": "7834675824535",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2023-10-01 20:26:37"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-10-01 20:26:37"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-10-01 20:26:37"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2023-10-01 20:26:37"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-03",
+        "JHNT_CTN": "7901557868193",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-04-02 02:46:33"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2023-04-02 02:46:33"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-06",
+        "JHNT_CTN": "8044121519377",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2023-07-20 22:02:12"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-07-20 22:02:12"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-11",
+        "JHNT_CTN": "8107155036682",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2023-12-22 15:38:20"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2023-12-22 15:38:20"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2023-12-22 15:38:20"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2023-12-22 15:38:20"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-09",
+        "JHNT_CTN": "8286707432733",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2024-04-19 18:39:54"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2024-04-19 18:39:54"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-06",
+        "JHNT_CTN": "8405483002305",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-06-15 21:00:12"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2020-06-15 21:00:12"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-06-15 21:00:12"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-06-15 21:00:12"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2020-08",
+        "JHNT_CTN": "8466508216658",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2025-09-16 23:51:38"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2025-09-16 23:51:38"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2025-09-16 23:51:38"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-04",
+        "JHNT_CTN": "8595543845021",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2025-08-12 08:15:23"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2025-08-12 08:15:23"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2025-08-12 08:15:23"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2025-08-12 08:15:23"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-07",
+        "JHNT_CTN": "8999157186741",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2020-03-01 01:39:44"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-03-01 01:39:44"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2020-03-01 01:39:44"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-02",
+        "JHNT_CTN": "9126112232766",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2020-10-28 13:32:19"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-10-28 13:32:19"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-10-28 13:32:19"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-11",
+        "JHNT_CTN": "9253624228803",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-09-18 08:08:58"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-09-18 08:08:58"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2020-09-18 08:08:58"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-09-18 08:08:58"
+            },
+            {
+                "CRQF_CD": "7665556",
+                "QULF_ITNM": "컴퓨터활용능력 1급",
+                "QULF_LCNS_LCFN": "사무자동화",
+                "ETL_DT": "2020-09-18 08:08:58"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2024-05",
+        "JHNT_CTN": "9272865511432",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-03-18 04:41:40"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-03-18 04:41:40"
+            },
+            {
+                "CRQF_CD": "9655488",
+                "QULF_ITNM": "전산회계 1급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2022-03-18 04:41:40"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-03-18 04:41:40"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2023-11",
+        "JHNT_CTN": "9391087740170",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-04-05 06:41:58"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2024-04-05 06:41:58"
+            },
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2024-04-05 06:41:58"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-03",
+        "JHNT_CTN": "9608440197432",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-09-23 14:24:54"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-09-23 14:24:54"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2021-09-23 14:24:54"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2021-09-23 14:24:54"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-06",
+        "JHNT_CTN": "9623623570546",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2022-12-21 20:53:15"
+            },
+            {
+                "CRQF_CD": "5531896",
+                "QULF_ITNM": "산업안전기사",
+                "QULF_LCNS_LCFN": "안전관리",
+                "ETL_DT": "2022-12-21 20:53:15"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-12-21 20:53:15"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2025-04",
+        "JHNT_CTN": "9707717771818",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2021-07-26 09:44:34"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2021-07-26 09:44:34"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2021-07-26 09:44:34"
+            },
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2021-07-26 09:44:34"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-12",
+        "JHNT_CTN": "9802295186219",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3091557",
+                "QULF_ITNM": "전기기사",
+                "QULF_LCNS_LCFN": "전기/전자",
+                "ETL_DT": "2022-01-27 06:35:42"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2022-01-27 06:35:42"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2022-01-27 06:35:42"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-08",
+        "JHNT_CTN": "9965171912725",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2020-03-30 17:14:36"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2020-03-30 17:14:36"
+            },
+            {
+                "CRQF_CD": "0009119",
+                "QULF_ITNM": "바리스타 2급",
+                "QULF_LCNS_LCFN": "외식/식음료",
+                "ETL_DT": "2020-03-30 17:14:36"
+            },
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2020-03-30 17:14:36"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2022-10",
+        "JHNT_CTN": "9970264671605",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "9548594",
+                "QULF_ITNM": "기계설계산업기사",
+                "QULF_LCNS_LCFN": "기계",
+                "ETL_DT": "2024-08-28 12:57:48"
+            },
+            {
+                "CRQF_CD": "4253756",
+                "QULF_ITNM": "정보처리기사",
+                "QULF_LCNS_LCFN": "정보처리/소프트웨어",
+                "ETL_DT": "2024-08-28 12:57:48"
+            },
+            {
+                "CRQF_CD": "5208322",
+                "QULF_ITNM": "전산세무 2급",
+                "QULF_LCNS_LCFN": "회계/세무",
+                "ETL_DT": "2024-08-28 12:57:48"
+            }
+        ]
+    },
+    {
+        "CLOS_YM": "2021-09",
+        "JHNT_CTN": "9979542979276",
+        "LICENSES_JSON": [
+            {
+                "CRQF_CD": "3034865",
+                "QULF_ITNM": "지게차운전기능사",
+                "QULF_LCNS_LCFN": "물류/운전",
+                "ETL_DT": "2025-07-16 12:57:22"
+            },
+            {
+                "CRQF_CD": "5543977",
+                "QULF_ITNM": "건축기사",
+                "QULF_LCNS_LCFN": "건설/건축",
+                "ETL_DT": "2025-07-16 12:57:22"
+            }
+        ]
+    }
+]

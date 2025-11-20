@@ -7,7 +7,7 @@ import numpy as np
 import logging
 import json
 
-from do_whynot.config import RAW_CSV, RESUME_DIR, COVER_DIR, TRAINING_DIR, LICENSE_DIR, EXCLUDE_COLS
+from do_whynot.config import RAW_CSV, TOTAL_RESUME_JSON, TOTAL_COVER_JSON, TOTAL_TRAINING_JSON, TOTAL_LICENSE_JSON, EXCLUDE_COLS
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +16,9 @@ def _read_json_safe(p: Path) -> Dict[str, Any]:
     with p.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-def _collect_json(d: Path) -> List[Path]:
-    """주어진 디렉토리와 그 하위 디렉토리에서 모든 JSON 파일을 재귀적으로 수집 (rglob 사용)"""
-    return sorted([p for p in d.rglob("*.json") if p.is_file()]) if d.exists() else []
+# def _collect_json(d: Path) -> List[Path]:
+#     """주어진 디렉토리와 그 하위 디렉토리에서 모든 JSON 파일을 재귀적으로 수집 (rglob 사용)"""
+#     return sorted([p for p in d.rglob("*.json") if p.is_file()]) if d.exists() else []
 
 def _none(x):
     # 결측은 None으로 통일
@@ -62,7 +62,7 @@ def _expand_list_columns(df_lists: pd.DataFrame, key_col: str, value_cols: List[
 # 1) 이력서 파서 (버전별)
 # =========================
 RESUME_COLS = [
-    "SEEK_CUST_NO","TMPL_SEQNO","RESUME_TITLE","BASIC_RESUME_YN",
+    "SEEK_CUST_NO","TEMPL_SEQNO","RESUME_TITLE","BASIC_RESUME_YN",
     "RESUME_ITEM_CLCD","DS_RESUME_ITEM_CLCD","SEQNO",
     "RESUME_ITEM_1_CD","DS_RESUME_ITEM_1_CD",
     "RESUME_ITEM_2_CD","DS_RESUME_ITEM_2_CD",
@@ -91,19 +91,19 @@ def _process_resume_rows(rows: List[Dict[str, Any]]) -> pd.DataFrame:
     return _expand_list_columns(df_lists, "SEEK_CUST_NO", value_cols)
 
 
-def parse_resume_to_lists_ver1(paths: List[Path]) -> pd.DataFrame:
+def parse_resume_to_lists_ver1(all_resume_data: List[Dict[str, Any]]) -> pd.DataFrame:
     """RESUME_JSON/ver1, ver3 파서: CONTENTS/t/RESUME_CONTENTS/it 구조"""
     rows = []
-    for p in paths:
+    # Note: preprocessor.py에서는 paths를 받지만, 여기서는 이미 로드된 all_resume_data를 받음
+    for data in all_resume_data: 
         try:
-            data = _read_json_safe(p)
             seek = str(data.get("SEEK_CUST_NO", ""))
 
             for t in data.get("CONTENTS", []):
                 if str(t.get("BASIC_RESUME_YN", "")) != "Y": continue
 
                 base = {
-                    "SEEK_CUST_NO": seek, "TMPL_SEQNO": _none(t.get("TMPL_SEQNO", None)),
+                    "SEEK_CUST_NO": seek, "TEMPL_SEQNO": _none(t.get("TEMPL_SEQNO", None)),
                     "RESUME_TITLE": _none(t.get("RESUME_TITLE", None)),
                     "BASIC_RESUME_YN": _none(t.get("BASIC_RESUME_YN", None)),
                 }
@@ -125,18 +125,19 @@ def parse_resume_to_lists_ver1(paths: List[Path]) -> pd.DataFrame:
                         row[k] = None
                     rows.append(row)
         except Exception as e:
-            logger.debug(f"Error parsing resume (ver1/3) file {p}: {e}")
+            # 통합 JSON이므로 p 대신 seek_cust_no를 사용
+            logger.debug(f"Error parsing resume (ver1/3) for SEEK_CUST_NO {seek}: {e}")
             continue
     
     return _process_resume_rows(rows)
 
 
-def parse_resume_to_lists_ver2(paths: List[Path]) -> pd.DataFrame:
+def parse_resume_to_lists_ver2(all_resume_data: List[Dict[str, Any]]) -> pd.DataFrame:
     """RESUME_JSON/ver2 파서: CONTENTS/t에 항목 키들이 평탄하게 존재"""
     rows = []
-    for p in paths:
+    # Note: preprocessor.py에서는 paths를 받지만, 여기서는 이미 로드된 all_resume_data를 받음
+    for data in all_resume_data:
         try:
-            data = _read_json_safe(p)
             seek = str(data.get("SEEK_CUST_NO", ""))
 
             for t in data.get("CONTENTS", []):
@@ -144,7 +145,7 @@ def parse_resume_to_lists_ver2(paths: List[Path]) -> pd.DataFrame:
                 if str(t.get("BASIC_RESUME_YN", "")) != "Y": continue
 
                 base = {
-                    "SEEK_CUST_NO": seek, "TMPL_SEQNO": _none(t.get("TMPL_SEQNO", None)),
+                    "SEEK_CUST_NO": seek, "TEMPL_SEQNO": _none(t.get("TEMPL_SEQNO", None)),
                     "RESUME_TITLE": _none(t.get("RESUME_TITLE", None)),
                     "BASIC_RESUME_YN": _none(t.get("BASIC_RESUME_YN", None)),
                 }
@@ -156,53 +157,56 @@ def parse_resume_to_lists_ver2(paths: List[Path]) -> pd.DataFrame:
                     row[k] = _none(t.get(k, None))
                 rows.append(row)
         except Exception as e:
-            logger.debug(f"Error parsing resume (ver2) file {p}: {e}")
+            # 통합 JSON이므로 p 대신 seek_cust_no를 사용
+            logger.debug(f"Error parsing resume (ver2) for SEEK_CUST_NO {seek}: {e}")
             continue
 
     return _process_resume_rows(rows)
 
 
-def get_resume_parser(all_paths: List[Path]) -> Callable[[List[Path]], pd.DataFrame]:
+def get_resume_parser(total_json_path: Path) -> tuple[Callable[[List[Dict[str, Any]]], pd.DataFrame], List[Dict[str, Any]]]:
     """
-    이력서 JSON 경로를 스캔하여 유효한 파서 함수를 반환합니다.
-    (RESUME_CONTENTS 키의 존재 여부로 ver1/ver3 vs ver2를 판별)
+    이력서 통합 JSON 파일을 로드하여 유효한 파서 함수와 로드된 데이터를 반환합니다.
+    (반환 타입 수정: (파서 함수, 로드된 전체 데이터) 튜플)
     """
-    if not all_paths:
-        logger.warning("No resume JSON files found. Returning empty parser.")
-        return lambda paths: pd.DataFrame(columns=RESUME_COLS)
+    if not total_json_path.exists():
+        logger.warning(f"Resume JSON file not found at {total_json_path}. Returning empty parser and data.")
+        return lambda data: pd.DataFrame(columns=RESUME_COLS), []
 
-    # 샘플 파일 로드
-    sample_path = all_paths[0]
     try:
-        data = _read_json_safe(sample_path)
-        contents = data.get("CONTENTS", [])
-        
-        # 대표 템플릿 항목(contents의 첫 번째 항목)의 구조를 확인
-        if contents and isinstance(contents, list) and len(contents) > 0:
-            first_content = contents[0]
-            
-            # Ver1/Ver3 구조 판별: RESUME_CONTENTS 키의 존재 여부
-            if "RESUME_CONTENTS" in first_content:
-                logger.info(f"Resume JSON structure detected as: ver1/ver3 (based on 'RESUME_CONTENTS' key).")
-                # ver1과 ver3는 로직이 동일하므로 ver1 파서 사용
-                return lambda paths: parse_resume_to_lists_ver1(all_paths)
-            else:
-                # RESUME_CONTENTS가 없으면 Ver2 구조로 간주
-                # Ver2 JSON 파일이 Ver1 JSON처럼 보이도록 (RESUME_CONTENTS를 None으로) 만들 수도 있으나,
-                # JSON 구조에 따라 Ver1이 Ver2 데이터를 읽어도 에러가 발생하지 않아 Ver1이 먼저 선택되는 문제를
-                # 회피하기 위해, RESUME_CONTENTS가 없으면 Ver2로 명확히 분리합니다.
-                logger.info(f"Resume JSON structure detected as: ver2 (based on absence of 'RESUME_CONTENTS' key).")
-                return lambda paths: parse_resume_to_lists_ver2(all_paths)
-
-        else:
-            logger.warning("Sample resume file is valid but 'CONTENTS' field is empty or invalid list.")
-            return lambda paths: pd.DataFrame(columns=RESUME_COLS)
-
+        # 통합 JSON 파일 전체를 로드 (List[Dict] 형태)
+        all_resume_data = _read_json_safe(total_json_path)
     except Exception as e:
-        logger.error(f"Error during resume parser auto-detection for file {sample_path}: {e}")
-        # 예외 발생 시, Ver1을 먼저 시도하여 fallback
-        logger.warning("Fallback: Attempting to use Ver1 parser due to detection error.")
-        return lambda paths: parse_resume_to_lists_ver1(all_paths)
+        logger.error(f"Error loading total resume JSON file {total_json_path}: {e}")
+        logger.warning("Fallback: Attempting to use Ver1 parser due to loading error.")
+        # 로드 실패 시 빈 리스트와 Ver1 파서 함수를 반환
+        return parse_resume_to_lists_ver1, []
+
+
+    if not all_resume_data or not isinstance(all_resume_data, list):
+        logger.warning("Total resume file is valid but data is empty or invalid list.")
+        return lambda data: pd.DataFrame(columns=RESUME_COLS), []
+
+    # 대표 템플릿 항목(contents의 첫 번째 항목)의 구조를 확인
+    first_data = all_resume_data[0]
+    contents = first_data.get("CONTENTS", [])
+
+    parser_func = parse_resume_to_lists_ver1 # 기본값
+
+    if contents and isinstance(contents, list) and len(contents) > 0:
+        first_content = contents[0]
+        
+        if "RESUME_CONTENTS" in first_content:
+            logger.info(f"Resume JSON structure detected as: ver1/ver3 (based on 'RESUME_CONTENTS' key).")
+            parser_func = parse_resume_to_lists_ver1
+        else:
+            logger.info(f"Resume JSON structure detected as: ver2 (based on absence of 'RESUME_CONTENTS' key).")
+            parser_func = parse_resume_to_lists_ver2
+    else:
+        logger.warning("Sample resume data is valid but 'CONTENTS' field is empty or invalid list. Using Ver1 parser as fallback.")
+    
+    # 파서 함수와 로드된 전체 데이터를 반환
+    return parser_func, all_resume_data
 
 
 # =========================
@@ -228,12 +232,12 @@ def _process_cover_rows(rows: List[Dict[str, Any]]) -> pd.DataFrame:
     return _expand_list_columns(df_lists, "SEEK_CUST_NO", value_cols)
 
 
-def parse_cover_to_lists_ver1(paths: List[Path]) -> pd.DataFrame:
+def parse_cover_to_lists_ver1(all_cover_data: List[Dict[str, Any]]) -> pd.DataFrame:
     """COVERLETTERS_JSON/ver1 파서: CONTENTS/s/COVERLETTER_CONTENTS/it 구조 (오타 포함)"""
     rows = []
-    for p in paths:
+    # Note: preprocessor.py에서는 paths를 받지만, 여기서는 이미 로드된 all_cover_data를 받음
+    for data in all_cover_data:
         try:
-            data = _read_json_safe(p)
             seek = str(data.get("SEEK_CUST_NO", ""))
             for s in data.get("CONTENTS", []):
                 sfid_no = _none(s.get("SFID_NO", None))
@@ -250,17 +254,18 @@ def parse_cover_to_lists_ver1(paths: List[Path]) -> pd.DataFrame:
                         "SELF_INTRO_CONT": _none(it.get("SELF_INTRO_CONT", None)),
                     })
         except Exception as e:
-            logger.debug(f"Error parsing cover (ver1) file {p}: {e}")
+            # 통합 JSON이므로 p 대신 seek_cust_no를 사용
+            logger.debug(f"Error parsing cover (ver1) for SEEK_CUST_NO {seek}: {e}")
             continue
     return _process_cover_rows(rows)
 
 
-def parse_cover_to_lists_ver2(paths: List[Path]) -> pd.DataFrame:
+def parse_cover_to_lists_ver2(all_cover_data: List[Dict[str, Any]]) -> pd.DataFrame:
     """COVERLETTERS_JSON/ver2 파서: CONTENTS/s에 항목 키들이 평탄하게 존재"""
     rows = []
-    for p in paths:
+    # Note: preprocessor.py에서는 paths를 받지만, 여기서는 이미 로드된 all_cover_data를 받음
+    for data in all_cover_data:
         try:
-            data = _read_json_safe(p)
             seek = str(data.get("SEEK_CUST_NO", ""))
             for s in data.get("CONTENTS", []):
                 # ver2의 핵심 특징: 항목 키들이 s 레벨에 평탄하게 존재함
@@ -276,45 +281,54 @@ def parse_cover_to_lists_ver2(paths: List[Path]) -> pd.DataFrame:
                     "SELF_INTRO_CONT": _none(s.get("SELF_INTRO_CONT", None)),
                 })
         except Exception as e:
-            logger.debug(f"Error parsing cover (ver2) file {p}: {e}")
+            # 통합 JSON이므로 p 대신 seek_cust_no를 사용
+            logger.debug(f"Error parsing cover (ver2) for SEEK_CUST_NO {seek}: {e}")
             continue
     return _process_cover_rows(rows)
 
 
-def get_cover_parser(all_paths: List[Path]) -> Callable[[List[Path]], pd.DataFrame]:
+def get_cover_parser(total_json_path: Path) -> tuple[Callable[[List[Dict[str, Any]]], pd.DataFrame], List[Dict[str, Any]]]:
     """
-    자기소개서 JSON 경로를 스캔하여 유효한 파서 함수를 반환합니다.
-    (COVERLETTER_CONTENTS 키의 존재 여부로 ver1 vs ver2를 판별)
+    자기소개서 통합 JSON 파일을 로드하여 유효한 파서 함수와 로드된 데이터를 반환합니다.
+    (반환 타입 수정: (파서 함수, 로드된 전체 데이터) 튜플)
     """
-    if not all_paths:
-        logger.warning("No cover letter JSON files found. Returning empty parser.")
-        return lambda paths: pd.DataFrame(columns=COVER_COLS)
+    if not total_json_path.exists():
+        logger.warning(f"Cover letter JSON file not found at {total_json_path}. Returning empty parser and data.")
+        return lambda data: pd.DataFrame(columns=COVER_COLS), []
 
-    sample_path = all_paths[0]
     try:
-        data = _read_json_safe(sample_path)
-        contents = data.get("CONTENTS", [])
-        
-        if contents and isinstance(contents, list) and len(contents) > 0:
-            first_content = contents[0]
-            
-            # Ver1 구조 판별: COVERLETTER_CONTENTS 키의 존재 여부
-            if "COVERLETTER_CONTENTS" in first_content:
-                logger.info(f"Cover letter JSON structure detected as: ver1 (based on 'COVERLETTER_CONTENTS' key).")
-                return lambda paths: parse_cover_to_lists_ver1(all_paths)
-            else:
-                # COVERLETTER_CONTENTS가 없으면 Ver2 구조로 간주
-                logger.info(f"Cover letter JSON structure detected as: ver2 (based on absence of 'COVERLETTER_CONTENTS' key).")
-                return lambda paths: parse_cover_to_lists_ver2(all_paths)
-        else:
-            logger.warning("Sample cover letter file is valid but 'CONTENTS' field is empty or invalid list.")
-            return lambda paths: pd.DataFrame(columns=COVER_COLS)
-
+        # 통합 JSON 파일 전체를 로드 (List[Dict] 형태)
+        all_cover_data = _read_json_safe(total_json_path)
     except Exception as e:
-        logger.error(f"Error during cover parser auto-detection for file {sample_path}: {e}")
-        # 예외 발생 시, Ver1을 먼저 시도하여 fallback
-        logger.warning("Fallback: Attempting to use Ver1 parser due to detection error.")
-        return lambda paths: parse_cover_to_lists_ver1(all_paths)
+        logger.error(f"Error loading total cover JSON file {total_json_path}: {e}")
+        logger.warning("Fallback: Attempting to use Ver1 parser due to loading error.")
+        return parse_cover_to_lists_ver1, []
+
+
+    if not all_cover_data or not isinstance(all_cover_data, list):
+        logger.warning("Total cover file is valid but data is empty or invalid list.")
+        return lambda data: pd.DataFrame(columns=COVER_COLS), []
+
+    # 대표 템플릿 항목(contents의 첫 번째 항목)의 구조를 확인
+    first_data = all_cover_data[0]
+    contents = first_data.get("CONTENTS", [])
+    
+    parser_func = parse_cover_to_lists_ver1 # 기본값
+
+    if contents and isinstance(contents, list) and len(contents) > 0:
+        first_content = contents[0]
+        
+        if "COVERLETTER_CONTENTS" in first_content:
+            logger.info(f"Cover letter JSON structure detected as: ver1 (based on 'COVERLETTER_CONTENTS' key).")
+            parser_func = parse_cover_to_lists_ver1
+        else:
+            logger.info(f"Cover letter JSON structure detected as: ver2 (based on absence of 'COVERLETTER_CONTENTS' key).")
+            parser_func = parse_cover_to_lists_ver2
+    else:
+        logger.warning("Sample cover letter data is valid but 'CONTENTS' field is empty or invalid list. Using Ver1 parser as fallback.")
+        
+    # 파서 함수와 로드된 전체 데이터를 반환
+    return parser_func, all_cover_data
 
 
 # =========================
@@ -325,39 +339,41 @@ TRAINING_BASE_COLS = [
     "TRNG_CRSN","TRNG_BGDE","TRNG_ENDE","TRNG_JSCD","KECO_CD","SORT_SN","ETL_DT",
 ]
 
-def parse_train_to_lists(paths: List[Path]) -> pd.DataFrame:
+def parse_train_to_lists(all_train_data: List[Dict[str, Any]]) -> pd.DataFrame:
     rows = []
-    for p in paths:
+    # Note: preprocessor.py에서는 paths를 받지만, 여기서는 이미 로드된 all_train_data를 받음
+    for data in all_train_data:
+        jhnt = None # 오류 로깅을 위해 try 바깥에서 정의
         try:
-            data = _read_json_safe(p)
-        except Exception as e:
-            logger.debug(f"Error parsing training file {p}: {e}")
-            continue
-        clos = _none(data.get("CLOS_YM", None))
-        jhnt = _none(data.get("JHNT_CTN", None))
-        jhcr_de = _none(data.get("JHCR_DE", None))
-        contents = data.get("TRAININGS_JSON", [])
-        if contents:
-            for it in contents:
-                sort_sn = it.get("SORT_SN", it.get("SORTN_SN", None))
+            clos = _none(data.get("CLOS_YM", None))
+            jhnt = _none(data.get("JHNT_CTN", None))
+            jhcr_de = _none(data.get("JHCR_DE", None))
+            contents = data.get("TRAININGS_JSON", [])
+            if contents:
+                for it in contents:
+                    sort_sn = it.get("SORT_SN", it.get("SORTN_SN", None))
+                    rows.append({
+                        "CLOS_YM": clos, "JHNT_CTN": jhnt, "JHCR_DE": jhcr_de,
+                        "CRSE_ID": _none(it.get("CRSE_ID", None)),
+                        "TGCR_TME": _none(it.get("TGCR_TME", None)),
+                        "TRNG_CRSN": _none(it.get("TRNG_CRSN", None)),
+                        "TRNG_BGDE": _none(it.get("TRNG_BGDE", None)),
+                        "TRNG_ENDE": _none(it.get("TRNG_ENDE", None)),
+                        "TRNG_JSCD": _none(it.get("TRNG_JSCD", None)),
+                        "KECO_CD": _none(it.get("KECO_CD", None)),
+                        "SORT_SN": _none(sort_sn),
+                        "ETL_DT": _none(it.get("ETL_DT", None)),
+                    })
+            else:
                 rows.append({
                     "CLOS_YM": clos, "JHNT_CTN": jhnt, "JHCR_DE": jhcr_de,
-                    "CRSE_ID": _none(it.get("CRSE_ID", None)),
-                    "TGCR_TME": _none(it.get("TGCR_TME", None)),
-                    "TRNG_CRSN": _none(it.get("TRNG_CRSN", None)),
-                    "TRNG_BGDE": _none(it.get("TRNG_BGDE", None)),
-                    "TRNG_ENDE": _none(it.get("TRNG_ENDE", None)),
-                    "TRNG_JSCD": _none(it.get("TRNG_JSCD", None)),
-                    "KECO_CD": _none(it.get("KECO_CD", None)),
-                    "SORT_SN": _none(sort_sn),
-                    "ETL_DT": _none(it.get("ETL_DT", None)),
+                    "CRSE_ID": None,"TGCR_TME": None,"TRNG_CRSN": None,"TRNG_BGDE": None,
+                    "TRNG_ENDE": None,"TRNG_JSCD": None,"KECO_CD": None,"SORT_SN": None,"ETL_DT": None,
                 })
-        else:
-            rows.append({
-                "CLOS_YM": clos, "JHNT_CTN": jhnt, "JHCR_DE": jhcr_de,
-                "CRSE_ID": None,"TGCR_TME": None,"TRNG_CRSN": None,"TRNG_BGDE": None,
-                "TRNG_ENDE": None,"TRNG_JSCD": None,"KECO_CD": None,"SORT_SN": None,"ETL_DT": None,
-            })
+        except Exception as e:
+            # 통합 JSON이므로 p 대신 JHNT_CTN을 사용
+            logger.debug(f"Error parsing training data for JHNT_CTN {jhnt}: {e}")
+            continue
 
     if not rows:
         return pd.DataFrame(columns=TRAINING_BASE_COLS)
@@ -377,31 +393,33 @@ def parse_train_to_lists(paths: List[Path]) -> pd.DataFrame:
 # =========================
 LICENSE_BASE_COLS = ["CLOS_YM","JHNT_CTN","CRQF_CD","QULF_ITNM","QULF_LCNS_LCFN","ETL_DT"]
 
-def parse_license_to_lists(paths: List[Path]) -> pd.DataFrame:
+def parse_license_to_lists(all_license_data: List[Dict[str, Any]]) -> pd.DataFrame:
     rows = []
-    for p in paths:
+    # Note: preprocessor.py에서는 paths를 받지만, 여기서는 이미 로드된 all_license_data를 받음
+    for data in all_license_data:
+        jhnt = None # 오류 로깅을 위해 try 바깥에서 정의
         try:
-            data = _read_json_safe(p)
-        except Exception as e:
-            logger.debug(f"Error parsing license file {p}: {e}")
-            continue
-        clos = _none(data.get("CLOS_YM", None))
-        jhnt = _none(data.get("JHNT_CTN", None))
-        contents = data.get("LICENSES_JSON", [])
-        if contents:
-            for it in contents:
+            clos = _none(data.get("CLOS_YM", None))
+            jhnt = _none(data.get("JHNT_CTN", None))
+            contents = data.get("LICENSES_JSON", [])
+            if contents:
+                for it in contents:
+                    rows.append({
+                        "CLOS_YM": clos, "JHNT_CTN": jhnt,
+                        "CRQF_CD": _none(it.get("CRQF_CD", None)),
+                        "QULF_ITNM": _none(it.get("QULF_ITNM", None)),
+                        "QULF_LCNS_LCFN": _none(it.get("QULF_LCNS_LCFN", None)),
+                        "ETL_DT": _none(it.get("ETL_DT", None)),
+                    })
+            else:
                 rows.append({
                     "CLOS_YM": clos, "JHNT_CTN": jhnt,
-                    "CRQF_CD": _none(it.get("CRQF_CD", None)),
-                    "QULF_ITNM": _none(it.get("QULF_ITNM", None)),
-                    "QULF_LCNS_LCFN": _none(it.get("QULF_LCNS_LCFN", None)),
-                    "ETL_DT": _none(it.get("ETL_DT", None)),
+                    "CRQF_CD": None,"QULF_ITNM": None,"QULF_LCNS_LCFN": None,"ETL_DT": None,
                 })
-        else:
-            rows.append({
-                "CLOS_YM": clos, "JHNT_CTN": jhnt,
-                "CRQF_CD": None,"QULF_ITNM": None,"QULF_LCNS_LCFN": None,"ETL_DT": None,
-            })
+        except Exception as e:
+            # 통합 JSON이므로 p 대신 JHNT_CTN을 사용
+            logger.debug(f"Error parsing license for JHNT_CTN {jhnt}: {e}")
+            continue
 
     if not rows:
         return pd.DataFrame(columns=LICENSE_BASE_COLS)
@@ -429,31 +447,45 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
 
     # 1. 이력서 데이터 처리
-    logger.info(f"Collecting resume JSON files from {RESUME_DIR}.")
-    all_resume_paths = _collect_json(RESUME_DIR)
-    resume_parser_func = get_resume_parser(all_resume_paths)
+    logger.info(f"Detecting resume JSON structure based on {TOTAL_RESUME_JSON}.")
+    # 파서 함수와 로드된 전체 데이터를 함께 받음
+    resume_parser_func, all_resume_data = get_resume_parser(TOTAL_RESUME_JSON)
     logger.info("Starting resume data parsing.")
-    resume_df = resume_parser_func(all_resume_paths) 
+    # 로드된 전체 데이터를 파서 함수에 전달
+    resume_df = resume_parser_func(all_resume_data) 
 
     # 2. 자기소개서 데이터 처리
-    logger.info(f"Collecting cover letter JSON files from {COVER_DIR}.")
-    all_cover_paths = _collect_json(COVER_DIR)
-    cover_parser_func = get_cover_parser(all_cover_paths)
+    logger.info(f"Detecting cover letter JSON structure based on {TOTAL_COVER_JSON}.")
+    # 파서 함수와 로드된 전체 데이터를 함께 받음
+    cover_parser_func, all_cover_data = get_cover_parser(TOTAL_COVER_JSON)
     logger.info("Starting cover letter data parsing.")
-    cover_df = cover_parser_func(all_cover_paths)
+    # 로드된 전체 데이터를 파서 함수에 전달
+    cover_df = cover_parser_func(all_cover_data)
 
     # 3. 직업훈련 데이터 처리
-    logger.info(f"Collecting and parsing training data from {TRAINING_DIR}.")
-    training_df = parse_train_to_lists(_collect_json(TRAINING_DIR))
+    logger.info(f"Reading total training data from {TOTAL_TRAINING_JSON}.")
+    try:
+        all_train_data = _read_json_safe(TOTAL_TRAINING_JSON)
+        # 로드된 전체 데이터를 파서 함수에 전달
+        training_df = parse_train_to_lists(all_train_data)
+    except Exception as e:
+        logger.error(f"Failed to load or parse total training data: {e}")
+        training_df = pd.DataFrame(columns=TRAINING_BASE_COLS)
 
     # 4. 자격증 데이터 처리
-    logger.info(f"Collecting and parsing license data from {LICENSE_DIR}.")
-    license_df  = parse_license_to_lists(_collect_json(LICENSE_DIR))
+    logger.info(f"Reading total license data from {TOTAL_LICENSE_JSON}.")
+    try:
+        all_license_data = _read_json_safe(TOTAL_LICENSE_JSON)
+        # 로드된 전체 데이터를 파서 함수에 전달
+        license_df  = parse_license_to_lists(all_license_data)
+    except Exception as e:
+        logger.error(f"Failed to load or parse total license data: {e}")
+        license_df = pd.DataFrame(columns=LICENSE_BASE_COLS)
 
     out = base.copy()
     logger.info(f"Base DataFrame shape: {out.shape}")
 
-    # 데이터 병합
+    # 데이터 병합 (이하 기존 로직과 동일)
     if not resume_df.empty and "JHNT_MBN" in out.columns:
         out = out.merge(resume_df, left_on="JHNT_MBN", right_on="SEEK_CUST_NO", how="left", suffixes=("", "_resume"))
         out = out.drop(columns=["SEEK_CUST_NO"], errors="ignore")
