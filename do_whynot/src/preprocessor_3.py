@@ -450,6 +450,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info(f"Detecting resume JSON structure based on {TOTAL_RESUME_JSON}.")
     # 파서 함수와 로드된 전체 데이터를 함께 받음
     resume_parser_func, all_resume_data = get_resume_parser(TOTAL_RESUME_JSON)
+    logger.info(f"[SHAPE] RESUME json raw length: {len(all_resume_data)}")
     logger.info("Starting resume data parsing.")
     # 로드된 전체 데이터를 파서 함수에 전달
     resume_df = resume_parser_func(all_resume_data) 
@@ -458,6 +459,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info(f"Detecting cover letter JSON structure based on {TOTAL_COVER_JSON}.")
     # 파서 함수와 로드된 전체 데이터를 함께 받음
     cover_parser_func, all_cover_data = get_cover_parser(TOTAL_COVER_JSON)
+    logger.info(f"[SHAPE] COVERLETTER json raw length: {len(all_cover_data)}")
     logger.info("Starting cover letter data parsing.")
     # 로드된 전체 데이터를 파서 함수에 전달
     cover_df = cover_parser_func(all_cover_data)
@@ -466,6 +468,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info(f"Reading total training data from {TOTAL_TRAINING_JSON}.")
     try:
         all_train_data = _read_json_safe(TOTAL_TRAINING_JSON)
+        logger.info(f"[SHAPE] TRAINING json raw length: {len(all_train_data)}")
         # 로드된 전체 데이터를 파서 함수에 전달
         training_df = parse_train_to_lists(all_train_data)
     except Exception as e:
@@ -476,6 +479,8 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info(f"Reading total license data from {TOTAL_LICENSE_JSON}.")
     try:
         all_license_data = _read_json_safe(TOTAL_LICENSE_JSON)
+        logger.info(f"[SHAPE] LICENSE json raw length: {len(all_license_data)}")
+
         # 로드된 전체 데이터를 파서 함수에 전달
         license_df  = parse_license_to_lists(all_license_data)
     except Exception as e:

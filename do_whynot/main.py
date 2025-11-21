@@ -7,6 +7,8 @@ import warnings
 import uuid
 from datetime import datetime
 import pytz
+import re
+import io
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
@@ -96,6 +98,61 @@ def setup_logger():
     logger.info("Logging initialized. File: %s", str(log_path))
     return logger
 
+def fast_find_problematic_rows(df, logger, sample_limit=1000):
+    logger.info("Scannign for suspicious CSV rows")
+    sampled_df = df[:sample_limit]
+    logger.info(f"Sampling done: {sample_limit} rows sampled")
+
+    obj_df = sampled_df.select_dtypes(include=['object'])
+    if obj_df.empty:
+        logger.info("No string columns - CSV will be safe")
+        return pd.DataFrame(), pd.DataFrame()
+    
+    pat_double_comma_newline = obj_df.apply(lambda col: col.str.contains(r'["].*,.*["]|\n|\r', regex=True, na=False))
+    pat_many_quotes = obj_df.apply(lambda col: col.str.contains(f'"{3,}', regex=True, na=False))
+
+    def has_ctrl(s):
+        return bool(re.search(f'[\x00-\x08\x0B-\x0C\x0E-\x1F]', s)) if isinstance(s, str) else False
+    
+    pat_ctrl = obj_df.apply(lambda col: col.map(has_ctrl))
+    suspicious_idx = (pat_double_comma_newline|pat_many_quotes|pat_ctrl).any(axis=1)
+    suspicious_rows = df[suspicious_idx]
+    logger.info(f"Suspicious candidate rows: {len(suspicious_rows)}")
+
+    bad_rows = []
+    bad_cells = []
+
+    for idx, row in suspicious_rows.iterrows():
+        try:
+            buf = io.StringIO()
+            row.to_frame().T.to_csv(buf, index=False)
+        except Exception as e:
+            logger.error(f"[CSV ERROR] At row {idx}: {e}")
+
+            for col, val in row.items():
+                if isinstance(val, str):
+                    try: 
+                        buf = io.StringIO()
+                        pd.Series({col: val}).to_frame().T.to_csv(buf, index=False)
+                    except Exception as col_err:
+                        bad_cells.append({"index": idx, "column": col, "value": val, "error": str(col_err)})
+            bad_rows.append({"index": idx, "error": str(e), "row_values": row.to_dict()})
+
+    logger.info(f"Final problematic rows: {len(bad_rows)}")
+
+    bad_rows_df = pd.DataFrame(bad_rows)
+    bad_cells_df = pd.DataFrame(bad_cells)
+
+    for i, r in bad_rows_df.head(50).iterrows():
+        logger.warning(f"ROW {r['index']} | error: {r['error']}")
+        logger.warning(f"VALUES: {r['row_values']}")
+    for i, r in bad_cells_df.head(50).iterrows():
+        logger.warning(f"ROW {r['index']} | col: {r['column']}")
+        logger.warning(f"VALUES: {repr(r['value'])}")
+    
+    return bad_rows_df, bad_cells_df
+
+
 
 def main():
 
@@ -109,6 +166,8 @@ def main():
         intermediate_df = build_pipeline_wide(main_logger)
         main_logger.info(f"Wide pipeline complete. Intermediate shape: {intermediate_df.shape}")
         
+        bad_rows, bad_cells = fast_find_problematic_rows(intermediate_df, main_logger)
+
         intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
         intermediate_df.to_csv(intermediate_path, index=False, encoding="utf-8")
         main_logger.info(f"[OK] Intermediate preprocessed data saved to: {intermediate_path.name}")
