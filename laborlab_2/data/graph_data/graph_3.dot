@@ -1,0 +1,111 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACQ_180_YN      [label="180일이내취업여부"];
+    AREA_CD         [label="지역코드(거주지)"];
+    HPAR_CD1        [label="희망지역코드1"];
+    HPAR_CSCY_SCOR  [label="희망지역일치도점수"];
+    HOPE_JSCD1      [label="희망직종코드1"];
+    LAST_JSCD       [label="고용보험취득직종"];
+
+    IPS_IRDS_NMPR   [label="피보험자증감인원수"];
+    JBHT_NMPR       [label="구직자인원수"];
+    RCIT_NMPR       [label="모집인원수"];
+    JO_DRNG_RATE    [label="구인배수비율"];
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
+
+    AGE             [label="연령"];
+    ACCR_CD         [label="학력코드"];
+
+    // 인과관계
+    AGE     -> ACCR_CD;
+    AGE     -> AREA_CD;
+
+    ACCR_CD -> HOPE_JSCD1;
+
+    LAST_JSCD -> HOPE_JSCD1;
+    LAST_JSCD -> ACQ_180_YN;
+
+    AREA_CD    -> HPAR_CD1;
+    AREA_CD    -> HPAR_CSCY_SCOR;
+
+    HPAR_CD1   -> HPAR_CSCY_SCOR;
+
+    AREA_CD    -> IPS_IRDS_NMPR;
+    AREA_CD    -> JBHT_NMPR;
+    AREA_CD    -> RCIT_NMPR;
+    AREA_CD    -> JO_DRNG_RATE;
+
+    HOPE_JSCD1 -> IPS_IRDS_NMPR;
+    HOPE_JSCD1 -> JBHT_NMPR;
+    HOPE_JSCD1 -> RCIT_NMPR;
+    HOPE_JSCD1 -> JO_DRNG_RATE;
+
+    IPS_IRDS_NMPR   -> HOPE_WAGE_SM_AMT;
+    RCIT_NMPR       -> HOPE_WAGE_SM_AMT;
+    JO_DRNG_RATE    -> HOPE_WAGE_SM_AMT;
+
+    HPAR_CSCY_SCOR  -> ACQ_180_YN;
+    IPS_IRDS_NMPR   -> ACQ_180_YN;
+    JBHT_NMPR       -> ACQ_180_YN;
+    RCIT_NMPR       -> ACQ_180_YN;
+    JO_DRNG_RATE    -> ACQ_180_YN;
+
+    AREA_CD         -> ACQ_180_YN;
+    HOPE_JSCD1      -> ACQ_180_YN;
+    HOPE_WAGE_SM_AMT-> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: AREA_CD",
+            role="treatment_meta",
+            treatment_var="AREA_CD",
+            treatment_name="AREA_CD",
+            treatment_def="거주지역코드 차이의 효과",
+            treatment_question="거주지역이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T2 [
+            label="T2: HPAR_CD1",
+            role="treatment_meta",
+            treatment_var="HPAR_CD1",
+            treatment_name="HPAR_CD1",
+            treatment_def="희망지역 선택 차이의 효과",
+            treatment_question="희망지역이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T3 [
+            label="T3: HPAR_CSCY_SCOR",
+            role="treatment_meta",
+            treatment_var="HPAR_CSCY_SCOR",
+            treatment_name="HPAR_CSCY_SCOR",
+            treatment_def="희망지역일치도점수 수준 차이의 효과",
+            treatment_question="거주지-희망지역 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T4 [
+            label="T4: HOPE_JSCD1",
+            role="treatment_meta",
+            treatment_var="HOPE_JSCD1",
+            treatment_name="HOPE_JSCD1",
+            treatment_def="희망직종코드 선택 차이의 효과",
+            treatment_question="희망직종이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+
+        T5 [
+            label="T5: LAST_JSCD",
+            role="treatment_meta",
+            treatment_var="LAST_JSCD",
+            treatment_name="LAST_JSCD",
+            treatment_def="과거 취득직종 차이의 효과",
+            treatment_question="이전 취득 직종이 다른 구직자 간 6개월 내 취업 확률 차이?"
+        ];
+    }
+}

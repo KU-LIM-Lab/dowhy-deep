@@ -1,0 +1,2002 @@
+[
+  {
+    "SEEK_CUST_NO": "W10001",
+    "JHNT_CTN": "C10001",
+    "JHCR_DE": "2025-12-01",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "26015183162641702",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-01-16",
+        "TRNG_ENDE": "2022-03-19",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "60234637655956577",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-10-16",
+        "TRNG_ENDE": "2023-03-16",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "40664566016048418",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-03-14",
+        "TRNG_ENDE": "2023-09-11",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10002",
+    "JHNT_CTN": "C10002",
+    "JHCR_DE": "2025-12-01",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "36947355390444960",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-07-20",
+        "TRNG_ENDE": "2022-09-22",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "82148724922056126",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-06-13",
+        "TRNG_ENDE": "2022-09-23",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "40509399699106151",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-06-11",
+        "TRNG_ENDE": "2023-07-21",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10003",
+    "JHNT_CTN": "C10003",
+    "JHCR_DE": "2025-12-01",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "95605153379722036",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-07-04",
+        "TRNG_ENDE": "2022-09-18",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "32117092930613146",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-07-02",
+        "TRNG_ENDE": "2022-10-25",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "86679669910127277",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-10-16",
+        "TRNG_ENDE": "2023-02-02",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10004",
+    "JHNT_CTN": "C10004",
+    "JHCR_DE": "2025-11-26",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "80761611849491791",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-12-30",
+        "TRNG_ENDE": "2022-02-16",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "64195281720068055",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2023-02-07",
+        "TRNG_ENDE": "2023-01-19",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "26412965686323352",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-02-05",
+        "TRNG_ENDE": "2023-10-02",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10005",
+    "JHNT_CTN": "C10005",
+    "JHCR_DE": "2025-12-30",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "35930244622801182",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-11-05",
+        "TRNG_ENDE": "2022-07-06",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "76526774500698042",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-11-29",
+        "TRNG_ENDE": "2023-01-02",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "51985254364618319",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-03-30",
+        "TRNG_ENDE": "2023-09-03",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10006",
+    "JHNT_CTN": "C10006",
+    "JHCR_DE": "2025-12-24",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "30057825834325486",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-12-25",
+        "TRNG_ENDE": "2022-04-26",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "46415267805665639",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-11-23",
+        "TRNG_ENDE": "2022-09-30",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "70979167056477032",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2023-03-22",
+        "TRNG_ENDE": "2022-10-23",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10007",
+    "JHNT_CTN": "C10007",
+    "JHCR_DE": "2025-12-21",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "79065000833134954",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-01-29",
+        "TRNG_ENDE": "2021-10-27",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "83010576561556809",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2023-02-11",
+        "TRNG_ENDE": "2023-04-10",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "15298420020172042",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-09-04",
+        "TRNG_ENDE": "2023-10-15",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10008",
+    "JHNT_CTN": "C10008",
+    "JHCR_DE": "2025-12-21",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "95578471219309501",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-07-24",
+        "TRNG_ENDE": "2023-03-20",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "61162164385898749",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-11-06",
+        "TRNG_ENDE": "2022-05-09",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "16383827271841163",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-03-08",
+        "TRNG_ENDE": "2023-12-19",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10009",
+    "JHNT_CTN": "C10009",
+    "JHCR_DE": "2025-12-07",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "67590987321572668",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-12-01",
+        "TRNG_ENDE": "2023-03-03",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "11520092460297905",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-06-21",
+        "TRNG_ENDE": "2022-12-04",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "83596202600697887",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-06-08",
+        "TRNG_ENDE": "2022-12-16",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10010",
+    "JHNT_CTN": "C10010",
+    "JHCR_DE": "2025-12-18",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "41854031148327071",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-04-11",
+        "TRNG_ENDE": "2022-07-02",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "76734439020977766",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-12-03",
+        "TRNG_ENDE": "2023-03-27",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "82124723047202764",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-08-28",
+        "TRNG_ENDE": "2024-01-10",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10011",
+    "JHNT_CTN": "C10011",
+    "JHCR_DE": "2025-11-10",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "25067151074779857",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-07-16",
+        "TRNG_ENDE": "2022-04-07",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "26727351798436995",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-05-15",
+        "TRNG_ENDE": "2022-10-25",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "59441117935504315",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-02-23",
+        "TRNG_ENDE": "2023-07-19",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10012",
+    "JHNT_CTN": "C10012",
+    "JHCR_DE": "2025-11-30",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "60195362171914704",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-04-20",
+        "TRNG_ENDE": "2022-12-13",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "75204512853267423",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-09-03",
+        "TRNG_ENDE": "2022-06-16",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "16439505886059371",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-09-29",
+        "TRNG_ENDE": "2022-09-09",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10013",
+    "JHNT_CTN": "C10013",
+    "JHCR_DE": "2025-12-22",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "59442743740783730",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-09-16",
+        "TRNG_ENDE": "2021-10-01",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "84362558004401203",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2023-03-16",
+        "TRNG_ENDE": "2022-11-11",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "57700633326626657",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2022-12-13",
+        "TRNG_ENDE": "2023-12-22",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10014",
+    "JHNT_CTN": "C10014",
+    "JHCR_DE": "2025-12-06",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "36861185822899011",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-08-27",
+        "TRNG_ENDE": "2022-11-17",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "67009430648085779",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-11-07",
+        "TRNG_ENDE": "2023-02-26",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "38437450411125628",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-12-27",
+        "TRNG_ENDE": "2023-12-02",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10015",
+    "JHNT_CTN": "C10015",
+    "JHCR_DE": "2025-11-29",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "10641317596741110",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-11-04",
+        "TRNG_ENDE": "2022-10-27",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "50113715528223421",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-12-29",
+        "TRNG_ENDE": "2022-08-15",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "24664017260647057",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2023-04-14",
+        "TRNG_ENDE": "2022-09-07",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10016",
+    "JHNT_CTN": "C10016",
+    "JHCR_DE": "2025-12-22",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "56979376056933561",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-04-20",
+        "TRNG_ENDE": "2021-12-24",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "47809108697229089",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-07-28",
+        "TRNG_ENDE": "2023-05-09",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "55166291146546886",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-08-24",
+        "TRNG_ENDE": "2023-11-20",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10017",
+    "JHNT_CTN": "C10017",
+    "JHCR_DE": "2025-12-09",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "94596293183062930",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-08-07",
+        "TRNG_ENDE": "2023-02-01",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "98971340424829423",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-02-11",
+        "TRNG_ENDE": "2022-09-21",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "95052226389597041",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-03-11",
+        "TRNG_ENDE": "2024-01-01",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10018",
+    "JHNT_CTN": "C10018",
+    "JHCR_DE": "2025-11-06",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "26985652107997422",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-12-15",
+        "TRNG_ENDE": "2022-05-29",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "36379492065828120",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-05-05",
+        "TRNG_ENDE": "2022-10-01",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "83617621256245978",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-10-27",
+        "TRNG_ENDE": "2023-07-27",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10019",
+    "JHNT_CTN": "C10019",
+    "JHCR_DE": "2025-11-25",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "92838280370603362",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-02-19",
+        "TRNG_ENDE": "2022-07-22",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "80136567633382893",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-11-01",
+        "TRNG_ENDE": "2023-04-21",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "34965768717888207",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-08-06",
+        "TRNG_ENDE": "2023-12-15",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10020",
+    "JHNT_CTN": "C10020",
+    "JHCR_DE": "2025-12-06",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "30218860434166653",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-04-16",
+        "TRNG_ENDE": "2022-12-01",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "74996091599017939",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-03-20",
+        "TRNG_ENDE": "2022-09-04",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "61742999445691772",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-10-26",
+        "TRNG_ENDE": "2023-02-18",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10021",
+    "JHNT_CTN": "C10021",
+    "JHCR_DE": "2025-12-31",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "38120976834424936",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-01-09",
+        "TRNG_ENDE": "2022-11-25",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "68962472806537246",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-07-18",
+        "TRNG_ENDE": "2023-02-09",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "73965780475323951",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2023-04-04",
+        "TRNG_ENDE": "2023-04-14",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10022",
+    "JHNT_CTN": "C10022",
+    "JHCR_DE": "2025-12-02",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "14447496897947904",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-10-13",
+        "TRNG_ENDE": "2021-11-01",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "49610477761705097",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-08-09",
+        "TRNG_ENDE": "2023-02-13",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "34241466673351714",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-01-08",
+        "TRNG_ENDE": "2023-12-15",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10023",
+    "JHNT_CTN": "C10023",
+    "JHCR_DE": "2025-12-20",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "81382175065525698",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-09-12",
+        "TRNG_ENDE": "2023-01-09",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "92536790740395359",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-09-22",
+        "TRNG_ENDE": "2022-12-13",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "88269850948849331",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-02-09",
+        "TRNG_ENDE": "2023-06-08",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10024",
+    "JHNT_CTN": "C10024",
+    "JHCR_DE": "2025-12-23",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "73607626928166597",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-07-11",
+        "TRNG_ENDE": "2022-12-24",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "71271251781546299",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-10-09",
+        "TRNG_ENDE": "2022-08-17",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "45673069579677093",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-06-10",
+        "TRNG_ENDE": "2023-07-06",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10025",
+    "JHNT_CTN": "C10025",
+    "JHCR_DE": "2025-11-20",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "60235235702922186",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-08-05",
+        "TRNG_ENDE": "2022-05-08",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "44147527520940985",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-06-02",
+        "TRNG_ENDE": "2023-04-29",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "60531229500116748",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2022-12-31",
+        "TRNG_ENDE": "2024-01-10",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10026",
+    "JHNT_CTN": "C10026",
+    "JHCR_DE": "2025-12-26",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "33920470006717264",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-11-29",
+        "TRNG_ENDE": "2023-02-12",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "39777033108906618",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-10-26",
+        "TRNG_ENDE": "2022-06-06",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "60557840606127229",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-03-28",
+        "TRNG_ENDE": "2023-02-21",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10027",
+    "JHNT_CTN": "C10027",
+    "JHCR_DE": "2025-12-05",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "34265734312737873",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-05-28",
+        "TRNG_ENDE": "2023-01-21",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "51697313292950415",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-06-17",
+        "TRNG_ENDE": "2023-04-23",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "23723394674504245",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2023-02-06",
+        "TRNG_ENDE": "2022-12-20",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10028",
+    "JHNT_CTN": "C10028",
+    "JHCR_DE": "2025-11-09",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "49966534672815053",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-02-15",
+        "TRNG_ENDE": "2021-10-20",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "45982283093051181",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2023-03-20",
+        "TRNG_ENDE": "2022-11-20",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "45676398510629424",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2022-11-28",
+        "TRNG_ENDE": "2023-08-26",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10029",
+    "JHNT_CTN": "C10029",
+    "JHCR_DE": "2025-12-19",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "30489092048169693",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2023-01-02",
+        "TRNG_ENDE": "2022-10-13",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "64068030808434645",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-10-06",
+        "TRNG_ENDE": "2023-02-13",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "68056911585873753",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-08-01",
+        "TRNG_ENDE": "2023-03-01",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10030",
+    "JHNT_CTN": "C10030",
+    "JHCR_DE": "2025-12-03",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "75528549548454600",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-05-27",
+        "TRNG_ENDE": "2023-03-12",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "10356407475636720",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-09-09",
+        "TRNG_ENDE": "2022-10-12",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "61625338094061508",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-06-05",
+        "TRNG_ENDE": "2023-03-28",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10031",
+    "JHNT_CTN": "C10031",
+    "JHCR_DE": "2025-12-25",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "41392600574440727",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-08-21",
+        "TRNG_ENDE": "2022-06-20",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "48700238737089415",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-11-24",
+        "TRNG_ENDE": "2023-01-03",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "88875761581694774",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-02-27",
+        "TRNG_ENDE": "2023-08-07",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10032",
+    "JHNT_CTN": "C10032",
+    "JHCR_DE": "2025-12-07",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "79944563983736245",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-03-28",
+        "TRNG_ENDE": "2023-01-09",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "16976511926277222",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-06-08",
+        "TRNG_ENDE": "2023-03-11",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "76232715740060977",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-01-05",
+        "TRNG_ENDE": "2023-03-13",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10033",
+    "JHNT_CTN": "C10033",
+    "JHCR_DE": "2025-11-02",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "75791195698699706",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-03-09",
+        "TRNG_ENDE": "2022-06-10",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "53503404410353513",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-01-03",
+        "TRNG_ENDE": "2022-12-03",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "46084899429842509",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-07-09",
+        "TRNG_ENDE": "2022-12-24",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10034",
+    "JHNT_CTN": "C10034",
+    "JHCR_DE": "2025-11-06",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "17463331021445656",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-01-26",
+        "TRNG_ENDE": "2022-08-26",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "71858696983009729",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-11-07",
+        "TRNG_ENDE": "2023-08-03",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "23717415601212953",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-08-16",
+        "TRNG_ENDE": "2023-04-30",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10035",
+    "JHNT_CTN": "C10035",
+    "JHCR_DE": "2025-11-01",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "29124055184755422",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-05-10",
+        "TRNG_ENDE": "2022-11-25",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "11338391030392618",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-10-14",
+        "TRNG_ENDE": "2022-07-20",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "70861854942970592",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-12-17",
+        "TRNG_ENDE": "2024-01-13",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10036",
+    "JHNT_CTN": "C10036",
+    "JHCR_DE": "2025-12-15",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "42994720756125151",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-03-13",
+        "TRNG_ENDE": "2022-11-21",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "24872905250286294",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-07-18",
+        "TRNG_ENDE": "2022-06-12",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "53127239281770159",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-09-26",
+        "TRNG_ENDE": "2023-02-10",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10037",
+    "JHNT_CTN": "C10037",
+    "JHCR_DE": "2025-11-09",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "30587297281465115",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-01-31",
+        "TRNG_ENDE": "2021-11-27",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "11221340794444389",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-05-24",
+        "TRNG_ENDE": "2023-06-15",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "73425011125553876",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-07-24",
+        "TRNG_ENDE": "2024-02-10",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10038",
+    "JHNT_CTN": "C10038",
+    "JHCR_DE": "2025-11-23",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "31815310341278714",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-05-10",
+        "TRNG_ENDE": "2023-02-10",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "73754235497598204",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-07-13",
+        "TRNG_ENDE": "2023-02-05",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "24478549059050889",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-04-03",
+        "TRNG_ENDE": "2023-03-07",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10039",
+    "JHNT_CTN": "C10039",
+    "JHCR_DE": "2025-11-09",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "65344831452537143",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-03-09",
+        "TRNG_ENDE": "2023-01-17",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "45709780333685059",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-07-01",
+        "TRNG_ENDE": "2022-12-03",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "45764635417268978",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-09-07",
+        "TRNG_ENDE": "2023-07-02",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10040",
+    "JHNT_CTN": "C10040",
+    "JHCR_DE": "2025-12-06",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "97563395441572498",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-05-23",
+        "TRNG_ENDE": "2022-07-24",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "53472253982488060",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-09-11",
+        "TRNG_ENDE": "2023-09-05",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "83429941774946105",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2022-12-29",
+        "TRNG_ENDE": "2023-12-05",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10041",
+    "JHNT_CTN": "C10041",
+    "JHCR_DE": "2025-11-13",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "17864242513076704",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-08-09",
+        "TRNG_ENDE": "2022-08-24",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "26248073391531442",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-04-16",
+        "TRNG_ENDE": "2022-12-05",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "95594302903311647",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-04-15",
+        "TRNG_ENDE": "2023-10-04",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10042",
+    "JHNT_CTN": "C10042",
+    "JHCR_DE": "2025-11-05",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "62039739257410919",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-10-02",
+        "TRNG_ENDE": "2022-03-28",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "91912249778107484",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-06-14",
+        "TRNG_ENDE": "2022-07-04",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "12405194884159460",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-11-20",
+        "TRNG_ENDE": "2023-02-09",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10043",
+    "JHNT_CTN": "C10043",
+    "JHCR_DE": "2025-12-08",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "41091832022536975",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-08-23",
+        "TRNG_ENDE": "2021-09-27",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "83010283917979893",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-05-09",
+        "TRNG_ENDE": "2022-10-17",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "82208767062563828",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-02-08",
+        "TRNG_ENDE": "2024-01-30",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10044",
+    "JHNT_CTN": "C10044",
+    "JHCR_DE": "2025-12-20",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "67974287619447978",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-08-21",
+        "TRNG_ENDE": "2022-10-28",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "87484304700821470",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-01-26",
+        "TRNG_ENDE": "2023-02-17",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "22047607795294267",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-10-24",
+        "TRNG_ENDE": "2023-04-10",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10045",
+    "JHNT_CTN": "C10045",
+    "JHCR_DE": "2025-11-20",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "39283846893714258",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-02-14",
+        "TRNG_ENDE": "2022-12-08",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "66310342663661648",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-03-23",
+        "TRNG_ENDE": "2023-01-27",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "19528190140008246",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2023-02-13",
+        "TRNG_ENDE": "2023-06-26",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10046",
+    "JHNT_CTN": "C10046",
+    "JHCR_DE": "2025-11-20",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "44391275653440119",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2021-07-12",
+        "TRNG_ENDE": "2022-05-01",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "26715426171605269",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-05-18",
+        "TRNG_ENDE": "2023-01-20",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "17930462158483665",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-05-05",
+        "TRNG_ENDE": "2024-01-22",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10047",
+    "JHNT_CTN": "C10047",
+    "JHCR_DE": "2025-11-20",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "35313243343603272",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-12-28",
+        "TRNG_ENDE": "2023-02-25",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "29774303054133612",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-02-14",
+        "TRNG_ENDE": "2022-04-02",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "81540639592935292",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-12-07",
+        "TRNG_ENDE": "2023-01-27",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10048",
+    "JHNT_CTN": "C10048",
+    "JHCR_DE": "2025-12-31",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "34061898259300953",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-07-01",
+        "TRNG_ENDE": "2022-12-14",
+        "TRNG_JSCD": "0821124",
+        "KECO_CD": "3574",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-02-20 오후 03:53:51"
+      },
+      {
+        "CRSE_ID": "48733045323994142",
+        "TGCR_TME": 3,
+        "TRNG_CRSN": "프로젝트 관리 입문",
+        "TRNG_BGDE": "2022-07-12",
+        "TRNG_ENDE": "2022-07-01",
+        "TRNG_JSCD": "5306592",
+        "KECO_CD": "1234",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-07-20 오전 08:02:44"
+      },
+      {
+        "CRSE_ID": "49196534812194570",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "데이터베이스 기본",
+        "TRNG_BGDE": "2022-06-18",
+        "TRNG_ENDE": "2022-08-21",
+        "TRNG_JSCD": "6152050",
+        "KECO_CD": "4591",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-03-06 오후 08:35:31"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10049",
+    "JHNT_CTN": "C10049",
+    "JHCR_DE": "2025-12-04",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "81502396831489169",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "데이터 분석 실무",
+        "TRNG_BGDE": "2020-08-21",
+        "TRNG_ENDE": "2022-02-01",
+        "TRNG_JSCD": "3504652",
+        "KECO_CD": "8045",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-12-01 오전 03:58:20"
+      },
+      {
+        "CRSE_ID": "17989615674856548",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "서비스 기획과 UX",
+        "TRNG_BGDE": "2022-12-08",
+        "TRNG_ENDE": "2023-06-05",
+        "TRNG_JSCD": "2351669",
+        "KECO_CD": "9566",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-04 오후 12:47:10"
+      },
+      {
+        "CRSE_ID": "62989391659384115",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "파이썬 프로그래밍 입문",
+        "TRNG_BGDE": "2023-05-28",
+        "TRNG_ENDE": "2023-12-30",
+        "TRNG_JSCD": "7407228",
+        "KECO_CD": "5402",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10050",
+    "JHNT_CTN": "C10050",
+    "JHCR_DE": "2025-11-11",
+    "TRAININGS": [
+      {
+        "CRSE_ID": "92709481845081724",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "AI 서비스 기획",
+        "TRNG_BGDE": "2022-05-31",
+        "TRNG_ENDE": "2022-05-17",
+        "TRNG_JSCD": "9317152",
+        "KECO_CD": "2165",
+        "SORT_SN": 1,
+        "ETL_DT": "2025-10-10 오후 12:27:30"
+      },
+      {
+        "CRSE_ID": "10370159646824722",
+        "TGCR_TME": 2,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2022-11-25",
+        "TRNG_ENDE": "2022-05-25",
+        "TRNG_JSCD": "5757241",
+        "KECO_CD": "6829",
+        "SORT_SN": 2,
+        "ETL_DT": "2025-04-19 오전 07:32:48"
+      },
+      {
+        "CRSE_ID": "16626637371862150",
+        "TGCR_TME": 1,
+        "TRNG_CRSN": "클라우드 기초",
+        "TRNG_BGDE": "2023-01-04",
+        "TRNG_ENDE": "2023-01-28",
+        "TRNG_JSCD": "0472864",
+        "KECO_CD": "4914",
+        "SORT_SN": 3,
+        "ETL_DT": "2025-10-23 오전 06:30:11"
+      }
+    ]
+  }
+]

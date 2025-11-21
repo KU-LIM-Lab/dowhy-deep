@@ -1,0 +1,105 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACQ_180_YN                [label="180일이내취업여부"];
+    CARR_MYCT1                [label="경력월수1"];
+    CARR_MYCT2                [label="경력월수2"];
+    CARR_MYCT3                [label="경력월수3"];
+    BFR_OCTR_CT               [label="이전직업훈련건수"];
+    OCTR_HOPE_JSFC_CSCY_SCOR1 [label="직업훈련희망직종일치도점수1"];
+    CRQF_CT                   [label="자격증건수"];
+
+    AGE                       [label="연령"];
+    ACCR_CD                   [label="학력코드"];
+    HOPE_JSCD1                [label="희망직종코드1"];
+    HOPE_JSCD2                [label="희망직종코드2"];
+    HOPE_JSCD3                [label="희망직종코드3"];
+
+    // 인과관계
+    AGE     -> ACCR_CD;
+    AGE     -> CARR_MYCT1;
+    AGE     -> CARR_MYCT2;
+    AGE     -> CARR_MYCT3;
+
+    ACCR_CD -> CARR_MYCT1;
+    ACCR_CD -> CARR_MYCT2;
+    ACCR_CD -> CARR_MYCT3;
+    ACCR_CD -> BFR_OCTR_CT;
+    ACCR_CD -> CRQF_CT;
+
+    BFR_OCTR_CT -> CARR_MYCT1;
+    BFR_OCTR_CT -> CARR_MYCT2;
+    BFR_OCTR_CT -> CARR_MYCT3;
+    BFR_OCTR_CT -> CRQF_CT;
+    BFR_OCTR_CT -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+
+    CARR_MYCT1 -> HOPE_JSCD1;
+    CARR_MYCT2 -> HOPE_JSCD2;
+    CARR_MYCT3 -> HOPE_JSCD3;
+
+    HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+
+    // 취업
+    CARR_MYCT1                -> ACQ_180_YN;
+    CARR_MYCT2                -> ACQ_180_YN;
+    CARR_MYCT3                -> ACQ_180_YN;
+    BFR_OCTR_CT               -> ACQ_180_YN;
+    CRQF_CT                   -> ACQ_180_YN;
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+    ACCR_CD                   -> ACQ_180_YN;
+    AGE                       -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: CARR_MYCT1",
+            role="treatment_meta",
+            treatment_var="CARR_MYCT1",
+            treatment_name="CARR_MYCT1",
+            treatment_def="희망직종1 경력월수 수준 차이의 효과",
+            treatment_question="희망직종1 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T2 [
+            label="T2: CARR_MYCT2",
+            role="treatment_meta",
+            treatment_var="CARR_MYCT2",
+            treatment_name="CARR_MYCT2",
+            treatment_def="희망직종2 경력월수 수준 차이의 효과",
+            treatment_question="희망직종2 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T3 [
+            label="T3: CARR_MYCT3",
+            role="treatment_meta",
+            treatment_var="CARR_MYCT3",
+            treatment_name="CARR_MYCT3",
+            treatment_def="희망직종3 경력월수 수준 차이의 효과",
+            treatment_question="희망직종3 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T4 [
+            label="T4: BFR_OCTR_CT",
+            role="treatment_meta",
+            treatment_var="BFR_OCTR_CT",
+            treatment_name="BFR_OCTR_CT",
+            treatment_def="이전직업훈련건수 수준 차이의 효과",
+            treatment_question="이전 직업훈련을 많이 받은 사람과 적게 받은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T5 [
+            label="T5: OCTR_HOPE_JSFC_CSCY_SCOR1",
+            role="treatment_meta",
+            treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR1",
+            treatment_name="OCTR_HOPE_JSFC_CSCY_SCOR1",
+            treatment_def="훈련-희망직종 일치도 점수 수준 차이의 효과",
+            treatment_question="훈련과 희망직종의 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+    }
+}

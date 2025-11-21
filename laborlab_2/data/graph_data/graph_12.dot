@@ -1,0 +1,92 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACCR_CD [label="학력코드"];
+    ACQ_180_YN [label="180일이내취업여부"];
+    ACQ_DT [label="취업까지소요기간"];
+    AGE [label="연령"];
+    BFR_PSIS_ELPS_DYCT [label="이전심리검사경과일수"];
+    CLOS_YM [label="마감년월"];
+    EMPN_DE [label="고용보험채용일자"];
+    FRFT_AFTR_JHNT_REQR_DYCT [label="상실이후구직인증소요일수"];
+    JHCR_DE [label="구직인증일자"];
+    JHNT_CLOS_DE [label="구직마감일자"];
+    LAST_FRFT_DE [label="고용보험상실일자"];
+    SFID_WRTN_AFTR_ELPS_DYCT [label="자기소개서작성이후경과일수"];
+
+    AGE -> ACCR_CD;
+    AGE -> BFR_PSIS_ELPS_DYCT;
+    AGE -> SFID_WRTN_AFTR_ELPS_DYCT;
+    ACCR_CD -> SFID_WRTN_AFTR_ELPS_DYCT;
+    LAST_FRFT_DE -> FRFT_AFTR_JHNT_REQR_DYCT;
+    FRFT_AFTR_JHNT_REQR_DYCT -> JHCR_DE;
+    CLOS_YM -> JHCR_DE;
+    JHCR_DE -> JHNT_CLOS_DE;
+    JHCR_DE -> ACQ_DT;
+    EMPN_DE -> ACQ_DT;
+    ACQ_DT -> ACQ_180_YN;
+    BFR_PSIS_ELPS_DYCT -> SFID_WRTN_AFTR_ELPS_DYCT;
+    SFID_WRTN_AFTR_ELPS_DYCT -> ACQ_180_YN;
+    BFR_PSIS_ELPS_DYCT -> ACQ_180_YN;
+    CLOS_YM -> ACQ_180_YN;
+    FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
+    JHCR_DE -> ACQ_180_YN;
+    JHNT_CLOS_DE -> ACQ_180_YN;
+    AGE -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: CLOS_YM",
+            role="treatment_meta",
+            treatment_var="CLOS_YM",
+            treatment_name="CLOS_YM",
+            treatment_def="마감년월(CLOS_YM) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="마감년월(CLOS_YM) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T2 [
+            label="T2: JHCR_DE",
+            role="treatment_meta",
+            treatment_var="JHCR_DE",
+            treatment_name="JHCR_DE",
+            treatment_def="구직인증일자(JHCR_DE) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="구직인증일자(JHCR_DE) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T3 [
+            label="T3: JHNT_CLOS_DE",
+            role="treatment_meta",
+            treatment_var="JHNT_CLOS_DE",
+            treatment_name="JHNT_CLOS_DE",
+            treatment_def="구직마감일자(JHNT_CLOS_DE) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="구직마감일자(JHNT_CLOS_DE) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T4 [
+            label="T4: SFID_WRTN_AFTR_ELPS_DYCT",
+            role="treatment_meta",
+            treatment_var="SFID_WRTN_AFTR_ELPS_DYCT",
+            treatment_name="SFID_WRTN_AFTR_ELPS_DYCT",
+            treatment_def="자기소개서작성이후경과일수(SFID_WRTN_AFTR_ELPS_DYCT) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="자기소개서작성이후경과일수(SFID_WRTN_AFTR_ELPS_DYCT) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T5 [
+            label="T5: BFR_PSIS_ELPS_DYCT",
+            role="treatment_meta",
+            treatment_var="BFR_PSIS_ELPS_DYCT",
+            treatment_name="BFR_PSIS_ELPS_DYCT",
+            treatment_def="이전심리검사경과일수(BFR_PSIS_ELPS_DYCT) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="이전심리검사경과일수(BFR_PSIS_ELPS_DYCT) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+    }
+}

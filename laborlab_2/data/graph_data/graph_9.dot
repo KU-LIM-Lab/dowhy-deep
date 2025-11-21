@@ -1,0 +1,109 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACQ_180_YN       [label="180일이내취업여부"];
+
+    BFR_RLTY_SNSC    [label="이전현실형표준점수"];
+    BFR_IVTG_SNSC    [label="이전탐구형표준점수"];
+    BFR_ARTY_SNSC    [label="이전예술형표준점수"];
+    BFR_SCTY_SNSC    [label="이전사회형표준점수"];
+    BFR_EPTY_SNSC    [label="이전진취형표준점수"];
+    BFR_CSTP_SNSC    [label="이전안정형표준점수"];
+    BFR_PSIS_ELPS_DYCT [label="심리검사후경과일수"];
+
+    BFR_OCTR_CT      [label="이전직업훈련건수"];
+    HOPE_JSCD1       [label="희망직종코드1"];
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
+
+    AGE              [label="연령"];
+    ACCR_CD          [label="학력코드"];
+
+    // 인과관계
+    AGE     -> ACCR_CD;
+
+    ACCR_CD -> BFR_OCTR_CT;
+
+    BFR_RLTY_SNSC -> HOPE_JSCD1;
+    BFR_IVTG_SNSC -> HOPE_JSCD1;
+    BFR_ARTY_SNSC -> HOPE_JSCD1;
+    BFR_SCTY_SNSC -> HOPE_JSCD1;
+    BFR_EPTY_SNSC -> HOPE_JSCD1;
+    BFR_CSTP_SNSC -> HOPE_JSCD1;
+
+    BFR_RLTY_SNSC -> BFR_OCTR_CT;
+    BFR_EPTY_SNSC -> BFR_OCTR_CT;
+
+    BFR_RLTY_SNSC -> HOPE_WAGE_SM_AMT;
+    BFR_EPTY_SNSC -> HOPE_WAGE_SM_AMT;
+
+    BFR_PSIS_ELPS_DYCT -> BFR_OCTR_CT;
+
+    BFR_OCTR_CT      -> HOPE_JSCD1;
+
+    // 취업
+    BFR_RLTY_SNSC    -> ACQ_180_YN;
+    BFR_IVTG_SNSC    -> ACQ_180_YN;
+    BFR_ARTY_SNSC    -> ACQ_180_YN;
+    BFR_SCTY_SNSC    -> ACQ_180_YN;
+    BFR_EPTY_SNSC    -> ACQ_180_YN;
+    BFR_CSTP_SNSC    -> ACQ_180_YN;
+    BFR_OCTR_CT      -> ACQ_180_YN;
+    HOPE_JSCD1       -> ACQ_180_YN;
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    AGE              -> ACQ_180_YN;
+    ACCR_CD          -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: BFR_RLTY_SNSC",
+            role="treatment_meta",
+            treatment_var="BFR_RLTY_SNSC",
+            treatment_name="BFR_RLTY_SNSC",
+            treatment_def="현실형 성향 점수 수준 차이의 효과",
+            treatment_question="현실형 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T2 [
+            label="T2: BFR_IVTG_SNSC",
+            role="treatment_meta",
+            treatment_var="BFR_IVTG_SNSC",
+            treatment_name="BFR_IVTG_SNSC",
+            treatment_def="탐구형 성향 점수 수준 차이의 효과",
+            treatment_question="탐구형 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T3 [
+            label="T3: BFR_ARTY_SNSC",
+            role="treatment_meta",
+            treatment_var="BFR_ARTY_SNSC",
+            treatment_name="BFR_ARTY_SNSC",
+            treatment_def="예술형 성향 점수 수준 차이의 효과",
+            treatment_question="예술형 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T4 [
+            label="T4: BFR_SCTY_SNSC",
+            role="treatment_meta",
+            treatment_var="BFR_SCTY_SNSC",
+            treatment_name="BFR_SCTY_SNSC",
+            treatment_def="사회형 성향 점수 수준 차이의 효과",
+            treatment_question="사회형 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+
+        T5 [
+            label="T5: BFR_EPTY_SNSC",
+            role="treatment_meta",
+            treatment_var="BFR_EPTY_SNSC",
+            treatment_name="BFR_EPTY_SNSC",
+            treatment_def="진취형 성향 점수 수준 차이의 효과",
+            treatment_question="진취형 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
+        ];
+    }
+}

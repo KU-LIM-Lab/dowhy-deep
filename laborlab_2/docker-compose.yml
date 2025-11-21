@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  laborlab:
+    build:
+      context: ..  # 프로젝트 루트를 빌드 컨텍스트로
+      dockerfile: laborlab_2/Dockerfile
+    container_name: laborlab-2-analysis
+    volumes:
+      # 데이터 디렉토리 마운트
+      - ./data:/app/laborlab_2/data:ro
+      # 로그 디렉토리 마운트 (읽기/쓰기)
+      - ./log:/app/laborlab_2/log
+      # 설정 파일 마운트
+      - ./config.json:/app/laborlab_2/config.json:ro
+      # 소스 코드 마운트 (코드 수정 시 재빌드 불필요)
+      - ./src:/app/laborlab_2/src
+    environment:
+      - PYTHONPATH=/app
+      - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log
+      - EXPERIMENT_CONFIG=/app/laborlab_2/config.json
+      - OLLAMA_HOST=http://ollama:11434
+      # LLM API 키 (선택적)
+      # - LLM_API_KEY=your-api-key-here
+    depends_on: [ollama]
+    working_dir: /app/laborlab_2
+    # GPU 지원 (NVIDIA Docker 필요)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # 컨테이너 시작 시 자동으로 파이프라인 실행
+    # docker-compose up 시 자동 실행됨
+    # 재실행: docker-compose restart laborlab
+    restart: unless-stopped
+
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    volumes:
+      - ./ollama_models:/root/.ollama/models
+    ports:
+      - "11434:11434"
+    # GPU 지원 (NVIDIA Docker 필요)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+

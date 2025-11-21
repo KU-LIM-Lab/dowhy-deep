@@ -1,0 +1,1202 @@
+[
+  {
+    "SEEK_CUST_NO": "W10001",
+    "JHNT_CTN": "C10001",
+    "LICENSES": [
+      {
+        "CRQF_CD": "3504652",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-12-01 오전 03:58:20"
+      },
+      {
+        "CRQF_CD": "2351669",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-04-04 오후 12:47:10"
+      },
+      {
+        "CRQF_CD": "7407228",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-02-16 오전 01:10:45"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10002",
+    "JHNT_CTN": "C10002",
+    "LICENSES": [
+      {
+        "CRQF_CD": "0690840",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-10-04 오전 11:03:43"
+      },
+      {
+        "CRQF_CD": "7930234",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-04-22 오전 11:38:49"
+      },
+      {
+        "CRQF_CD": "2488113",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-12-14 오전 02:48:13"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10003",
+    "JHNT_CTN": "C10003",
+    "LICENSES": [
+      {
+        "CRQF_CD": "0127750",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-11-23 오후 12:48:44"
+      },
+      {
+        "CRQF_CD": "4555857",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-09-03 오후 04:42:54"
+      },
+      {
+        "CRQF_CD": "3567653",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-06-11 오후 01:39:18"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10004",
+    "JHNT_CTN": "C10004",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7106512",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-12-28 오전"
+      },
+      {
+        "CRQF_CD": "4002466",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-10 오후"
+      },
+      {
+        "CRQF_CD": "8035849",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-10-03 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10005",
+    "JHNT_CTN": "C10005",
+    "LICENSES": [
+      {
+        "CRQF_CD": "5165165",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-12-04 오전"
+      },
+      {
+        "CRQF_CD": "5550953",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-07-10 오전"
+      },
+      {
+        "CRQF_CD": "7254683",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-04-15 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10006",
+    "JHNT_CTN": "C10006",
+    "LICENSES": [
+      {
+        "CRQF_CD": "1883692",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-05-25 오후"
+      },
+      {
+        "CRQF_CD": "9653253",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-10-20 오후"
+      },
+      {
+        "CRQF_CD": "2156393",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-09-30 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10007",
+    "JHNT_CTN": "C10007",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6212643",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-11-01 오전"
+      },
+      {
+        "CRQF_CD": "8662929",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-04-12 오후"
+      },
+      {
+        "CRQF_CD": "4366703",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-12-11 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10008",
+    "JHNT_CTN": "C10008",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6098752",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-07-03 오전"
+      },
+      {
+        "CRQF_CD": "8783398",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-04 오전"
+      },
+      {
+        "CRQF_CD": "9277218",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-07-02 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10009",
+    "JHNT_CTN": "C10009",
+    "LICENSES": [
+      {
+        "CRQF_CD": "5112546",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-04-26 오후"
+      },
+      {
+        "CRQF_CD": "7879264",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-09-27 오후"
+      },
+      {
+        "CRQF_CD": "6812025",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-03-23 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10010",
+    "JHNT_CTN": "C10010",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6620658",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-12-02 오전"
+      },
+      {
+        "CRQF_CD": "6159172",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-07-19 오후"
+      },
+      {
+        "CRQF_CD": "9888812",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-10-17 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10011",
+    "JHNT_CTN": "C10011",
+    "LICENSES": [
+      {
+        "CRQF_CD": "9254874",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2020-12-04 오전"
+      },
+      {
+        "CRQF_CD": "5694689",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-07-26 오전"
+      },
+      {
+        "CRQF_CD": "4883465",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-05-29 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10012",
+    "JHNT_CTN": "C10012",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7249378",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-03-07 오후"
+      },
+      {
+        "CRQF_CD": "2603516",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-02-02 오후"
+      },
+      {
+        "CRQF_CD": "7616116",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-08-26 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10013",
+    "JHNT_CTN": "C10013",
+    "LICENSES": [
+      {
+        "CRQF_CD": "2044933",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-02-19 오전"
+      },
+      {
+        "CRQF_CD": "4972370",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-01-27 오후"
+      },
+      {
+        "CRQF_CD": "6284972",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-03-24 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10014",
+    "JHNT_CTN": "C10014",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6336123",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-01-10 오전"
+      },
+      {
+        "CRQF_CD": "4919346",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-07-07 오전"
+      },
+      {
+        "CRQF_CD": "3283577",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-08-03 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10015",
+    "JHNT_CTN": "C10015",
+    "LICENSES": [
+      {
+        "CRQF_CD": "3607356",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-03-11 오후"
+      },
+      {
+        "CRQF_CD": "8542478",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-12-24 오후"
+      },
+      {
+        "CRQF_CD": "7820148",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-10-12 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10016",
+    "JHNT_CTN": "C10016",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7011065",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-07-01 오전"
+      },
+      {
+        "CRQF_CD": "6172545",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-07-22 오후"
+      },
+      {
+        "CRQF_CD": "3011815",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-05-19 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10017",
+    "JHNT_CTN": "C10017",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6103880",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-09-25 오전"
+      },
+      {
+        "CRQF_CD": "1676621",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-11-28 오전"
+      },
+      {
+        "CRQF_CD": "3488460",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-03-17 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10018",
+    "JHNT_CTN": "C10018",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6968373",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-01-02 오후"
+      },
+      {
+        "CRQF_CD": "1821255",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-07-28 오후"
+      },
+      {
+        "CRQF_CD": "5364874",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-12-06 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10019",
+    "JHNT_CTN": "C10019",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7784575",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-03-09 오전"
+      },
+      {
+        "CRQF_CD": "5191831",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-07-09 오후"
+      },
+      {
+        "CRQF_CD": "2709721",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-07-09 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10020",
+    "JHNT_CTN": "C10020",
+    "LICENSES": [
+      {
+        "CRQF_CD": "1200603",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2020-12-06 오전"
+      },
+      {
+        "CRQF_CD": "3193037",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-11-10 오전"
+      },
+      {
+        "CRQF_CD": "7245146",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2024-11-15 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10021",
+    "JHNT_CTN": "C10021",
+    "LICENSES": [
+      {
+        "CRQF_CD": "5342289",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-02-07 오후"
+      },
+      {
+        "CRQF_CD": "2081661",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-03-24 오후"
+      },
+      {
+        "CRQF_CD": "3160763",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-09-13 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10022",
+    "JHNT_CTN": "C10022",
+    "LICENSES": [
+      {
+        "CRQF_CD": "3055673",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-01-13 오전"
+      },
+      {
+        "CRQF_CD": "1849559",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-09-23 오후"
+      },
+      {
+        "CRQF_CD": "8267158",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2024-03-26 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10023",
+    "JHNT_CTN": "C10023",
+    "LICENSES": [
+      {
+        "CRQF_CD": "1494630",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-10-30 오전"
+      },
+      {
+        "CRQF_CD": "3899223",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-04-19 오전"
+      },
+      {
+        "CRQF_CD": "4139874",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-09-21 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10024",
+    "JHNT_CTN": "C10024",
+    "LICENSES": [
+      {
+        "CRQF_CD": "8482830",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-04-24 오후"
+      },
+      {
+        "CRQF_CD": "5123584",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-06-27 오후"
+      },
+      {
+        "CRQF_CD": "9370012",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-08-06 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10025",
+    "JHNT_CTN": "C10025",
+    "LICENSES": [
+      {
+        "CRQF_CD": "9036805",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-02-01 오전"
+      },
+      {
+        "CRQF_CD": "5693862",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-05-01 오후"
+      },
+      {
+        "CRQF_CD": "8033593",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-09-08 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10026",
+    "JHNT_CTN": "C10026",
+    "LICENSES": [
+      {
+        "CRQF_CD": "5180005",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-07-11 오전"
+      },
+      {
+        "CRQF_CD": "1327658",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-05-18 오전"
+      },
+      {
+        "CRQF_CD": "9047769",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-06-23 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10027",
+    "JHNT_CTN": "C10027",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6771934",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-06-25 오후"
+      },
+      {
+        "CRQF_CD": "6395626",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-10-05 오후"
+      },
+      {
+        "CRQF_CD": "4016809",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-07-07 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10028",
+    "JHNT_CTN": "C10028",
+    "LICENSES": [
+      {
+        "CRQF_CD": "4674549",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-12-31 오전"
+      },
+      {
+        "CRQF_CD": "1982997",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-07-31 오후"
+      },
+      {
+        "CRQF_CD": "6996728",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2024-10-06 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10029",
+    "JHNT_CTN": "C10029",
+    "LICENSES": [
+      {
+        "CRQF_CD": "3678059",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-01-14 오전"
+      },
+      {
+        "CRQF_CD": "5045872",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-01-19 오전"
+      },
+      {
+        "CRQF_CD": "1937991",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-07-26 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10030",
+    "JHNT_CTN": "C10030",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7516648",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-11-21 오후"
+      },
+      {
+        "CRQF_CD": "3954473",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-03 오후"
+      },
+      {
+        "CRQF_CD": "6335227",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2024-05-25 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10031",
+    "JHNT_CTN": "C10031",
+    "LICENSES": [
+      {
+        "CRQF_CD": "1473227",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-11-21 오전"
+      },
+      {
+        "CRQF_CD": "3384080",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-11-01 오후"
+      },
+      {
+        "CRQF_CD": "9258194",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-08-24 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10032",
+    "JHNT_CTN": "C10032",
+    "LICENSES": [
+      {
+        "CRQF_CD": "3945353",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-02-18 오전"
+      },
+      {
+        "CRQF_CD": "2514267",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-06-18 오전"
+      },
+      {
+        "CRQF_CD": "4671004",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-01-03 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10033",
+    "JHNT_CTN": "C10033",
+    "LICENSES": [
+      {
+        "CRQF_CD": "9019324",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2020-11-23 오후"
+      },
+      {
+        "CRQF_CD": "4380011",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-01-14 오후"
+      },
+      {
+        "CRQF_CD": "3977282",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-05-08 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10034",
+    "JHNT_CTN": "C10034",
+    "LICENSES": [
+      {
+        "CRQF_CD": "1367637",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-01 오전"
+      },
+      {
+        "CRQF_CD": "3376537",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-07-26 오후"
+      },
+      {
+        "CRQF_CD": "7121835",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-05-01 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10035",
+    "JHNT_CTN": "C10035",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7636992",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-27 오전"
+      },
+      {
+        "CRQF_CD": "6646557",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-02-25 오전"
+      },
+      {
+        "CRQF_CD": "3289279",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-05-24 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10036",
+    "JHNT_CTN": "C10036",
+    "LICENSES": [
+      {
+        "CRQF_CD": "9173859",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-09-18 오후"
+      },
+      {
+        "CRQF_CD": "3922635",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-08-28 오후"
+      },
+      {
+        "CRQF_CD": "6986539",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-01-25 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10037",
+    "JHNT_CTN": "C10037",
+    "LICENSES": [
+      {
+        "CRQF_CD": "3941912",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-12-23 오전"
+      },
+      {
+        "CRQF_CD": "5941179",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-08-12 오후"
+      },
+      {
+        "CRQF_CD": "1030163",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2025-02-03 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10038",
+    "JHNT_CTN": "C10038",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7569981",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-05-08 오전"
+      },
+      {
+        "CRQF_CD": "4054824",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-12-29 오전"
+      },
+      {
+        "CRQF_CD": "4706007",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-09-28 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10039",
+    "JHNT_CTN": "C10039",
+    "LICENSES": [
+      {
+        "CRQF_CD": "2746679",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-04-15 오후"
+      },
+      {
+        "CRQF_CD": "6556084",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-11-21 오후"
+      },
+      {
+        "CRQF_CD": "6818508",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-05-04 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10040",
+    "JHNT_CTN": "C10040",
+    "LICENSES": [
+      {
+        "CRQF_CD": "2488575",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-11-26 오전"
+      },
+      {
+        "CRQF_CD": "8493206",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-04-15 오후"
+      },
+      {
+        "CRQF_CD": "4517918",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-10-29 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10041",
+    "JHNT_CTN": "C10041",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6880098",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-06-23 오전"
+      },
+      {
+        "CRQF_CD": "1021494",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-06-10 오전"
+      },
+      {
+        "CRQF_CD": "8352113",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2024-02-16 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10042",
+    "JHNT_CTN": "C10042",
+    "LICENSES": [
+      {
+        "CRQF_CD": "7946088",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-04-11 오후"
+      },
+      {
+        "CRQF_CD": "6892681",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-03-16 오후"
+      },
+      {
+        "CRQF_CD": "2701688",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-10-14 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10043",
+    "JHNT_CTN": "C10043",
+    "LICENSES": [
+      {
+        "CRQF_CD": "4784650",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-05-16 오전"
+      },
+      {
+        "CRQF_CD": "2236638",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-05-08 오후"
+      },
+      {
+        "CRQF_CD": "1336852",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-01-08 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10044",
+    "JHNT_CTN": "C10044",
+    "LICENSES": [
+      {
+        "CRQF_CD": "2756994",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2020-12-18 오전"
+      },
+      {
+        "CRQF_CD": "3853891",
+        "QULF_ITNM": "가스기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-11 오전"
+      },
+      {
+        "CRQF_CD": "2258331",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-06-26 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10045",
+    "JHNT_CTN": "C10045",
+    "LICENSES": [
+      {
+        "CRQF_CD": "6669869",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-07-24 오후"
+      },
+      {
+        "CRQF_CD": "9098979",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-08-25 오후"
+      },
+      {
+        "CRQF_CD": "8236404",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-04-10 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10046",
+    "JHNT_CTN": "C10046",
+    "LICENSES": [
+      {
+        "CRQF_CD": "8284673",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-05-10 오전"
+      },
+      {
+        "CRQF_CD": "2698824",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-03-09 오후"
+      },
+      {
+        "CRQF_CD": "4187406",
+        "QULF_ITNM": "건설기계정비기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-04-10 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10047",
+    "JHNT_CTN": "C10047",
+    "LICENSES": [
+      {
+        "CRQF_CD": "5450404",
+        "QULF_ITNM": "토익",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-08-11 오전"
+      },
+      {
+        "CRQF_CD": "5989554",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-12-21 오전"
+      },
+      {
+        "CRQF_CD": "1832744",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-01-20 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10048",
+    "JHNT_CTN": "C10048",
+    "LICENSES": [
+      {
+        "CRQF_CD": "9236745",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-04-29 오후"
+      },
+      {
+        "CRQF_CD": "7053704",
+        "QULF_ITNM": "전기기능사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2021-09-06 오후"
+      },
+      {
+        "CRQF_CD": "2470159",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2023-04-08 오후"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10049",
+    "JHNT_CTN": "C10049",
+    "LICENSES": [
+      {
+        "CRQF_CD": "9058573",
+        "QULF_ITNM": "한국사능력검정시험",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-06-23 오전"
+      },
+      {
+        "CRQF_CD": "1431773",
+        "QULF_ITNM": "산업안전기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2022-11-01 오후"
+      },
+      {
+        "CRQF_CD": "5895783",
+        "QULF_ITNM": "정보처리기사",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2023-05-10 오전"
+      }
+    ]
+  },
+  {
+    "SEEK_CUST_NO": "W10050",
+    "JHNT_CTN": "C10050",
+    "LICENSES": [
+      {
+        "CRQF_CD": "2937918",
+        "QULF_ITNM": "SQLD(데이터베이스 개발자)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2021-08-15 오전"
+      },
+      {
+        "CRQF_CD": "8901136",
+        "QULF_ITNM": "ADsP(데이터분석준전문가)",
+        "QULF_LCNS_LCFN": "민간자격",
+        "ETL_DT": "2022-09-04 오전"
+      },
+      {
+        "CRQF_CD": "2529023",
+        "QULF_ITNM": "컴퓨터활용능력 2급",
+        "QULF_LCNS_LCFN": "국가기술자격",
+        "ETL_DT": "2024-10-01 오전"
+      }
+    ]
+  }
+]

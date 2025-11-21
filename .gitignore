@@ -116,3 +116,6 @@ docs/source/example_notebooks/lalonde.csv
 dowhy-docs
 
 *.DS_Store
+
+*.tar
+ollama_models/

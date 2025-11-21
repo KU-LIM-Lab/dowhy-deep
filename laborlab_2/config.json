@@ -1,0 +1,16 @@
+{
+  "data_dir": "data",
+  "seis_data_dir": "seis_data",
+  "graph_data_dir": "graph_data",
+  "output_dir": "log",
+  "auto_extract_treatments": true,
+  "graphs": [],
+  "treatments": [],
+  "outcomes": ["ACQ_180_YN"],
+  "estimators": ["linear_regression", "tabpfn"],
+  "no_logs": false,
+  "verbose": false,
+  "api_key": null,
+  "comment": "auto_extract_treatments가 true이면 graphs와 treatments는 무시되고, 각 graph 파일에서 자동으로 추출됩니다. api_key는 LLM API 키를 설정하세요. null이면 환경변수 LLM_API_KEY를 사용합니다."
+}
+

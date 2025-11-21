@@ -1,0 +1,97 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    ACCR_CD [label="학력코드"];
+    ACQ_180_YN [label="180일이내취업여부"];
+    AGE [label="연령"];
+    AREA_CD [label="지역코드"];
+    BFR_UEPS_RECP_CT [label="이전실업급여수급건수"];
+    DLY_LABR_HOPE_YN [label="일용근로희망여부"];
+    HOPE_JSCD1 [label="희망직종코드1"];
+    HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
+    JHNT_RQUT_CHNL_SECD [label="구직신청채널구분코드"];
+    MDTN_HOPE_GRD_CD [label="알선희망수준코드"];
+    MDTN_HOPE_YN [label="알선희망여부"];
+    RQAG_HOPE_YN [label="재신청희망여부"];
+    UEPS_RECP_YN [label="실업급여수급여부"];
+
+    AGE -> ACCR_CD;
+    ACCR_CD -> HOPE_JSCD1;
+    ACCR_CD -> HOPE_WAGE_SM_AMT;
+    AGE -> BFR_UEPS_RECP_CT;
+    BFR_UEPS_RECP_CT -> UEPS_RECP_YN;
+    UEPS_RECP_YN -> DLY_LABR_HOPE_YN;
+    MDTN_HOPE_YN -> MDTN_HOPE_GRD_CD;
+    MDTN_HOPE_YN -> JHNT_RQUT_CHNL_SECD;
+    MDTN_HOPE_GRD_CD -> JHNT_RQUT_CHNL_SECD;
+    MDTN_HOPE_YN -> RQAG_HOPE_YN;
+    DLY_LABR_HOPE_YN -> JHNT_RQUT_CHNL_SECD;
+    RQAG_HOPE_YN -> JHNT_RQUT_CHNL_SECD;
+    JHNT_RQUT_CHNL_SECD -> ACQ_180_YN;
+    BFR_UEPS_RECP_CT -> ACQ_180_YN;
+    UEPS_RECP_YN -> ACQ_180_YN;
+    MDTN_HOPE_YN -> ACQ_180_YN;
+    MDTN_HOPE_GRD_CD -> ACQ_180_YN;
+    DLY_LABR_HOPE_YN -> ACQ_180_YN;
+    RQAG_HOPE_YN -> ACQ_180_YN;
+    AREA_CD -> ACQ_180_YN;
+    HOPE_JSCD1 -> ACQ_180_YN;
+    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+    AGE -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: MDTN_HOPE_YN",
+            role="treatment_meta",
+            treatment_var="MDTN_HOPE_YN",
+            treatment_name="MDTN_HOPE_YN",
+            treatment_def="알선희망여부(MDTN_HOPE_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="알선희망여부(MDTN_HOPE_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T2 [
+            label="T2: MDTN_HOPE_GRD_CD",
+            role="treatment_meta",
+            treatment_var="MDTN_HOPE_GRD_CD",
+            treatment_name="MDTN_HOPE_GRD_CD",
+            treatment_def="알선희망수준코드(MDTN_HOPE_GRD_CD) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="알선희망수준코드(MDTN_HOPE_GRD_CD) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T3 [
+            label="T3: BFR_UEPS_RECP_CT",
+            role="treatment_meta",
+            treatment_var="BFR_UEPS_RECP_CT",
+            treatment_name="BFR_UEPS_RECP_CT",
+            treatment_def="이전실업급여수급건수(BFR_UEPS_RECP_CT) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="이전실업급여수급건수(BFR_UEPS_RECP_CT) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T4 [
+            label="T4: DLY_LABR_HOPE_YN",
+            role="treatment_meta",
+            treatment_var="DLY_LABR_HOPE_YN",
+            treatment_name="DLY_LABR_HOPE_YN",
+            treatment_def="일용근로희망여부(DLY_LABR_HOPE_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="일용근로희망여부(DLY_LABR_HOPE_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T5 [
+            label="T5: RQAG_HOPE_YN",
+            role="treatment_meta",
+            treatment_var="RQAG_HOPE_YN",
+            treatment_name="RQAG_HOPE_YN",
+            treatment_def="재신청희망여부(RQAG_HOPE_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="재신청희망여부(RQAG_HOPE_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+    }
+}
