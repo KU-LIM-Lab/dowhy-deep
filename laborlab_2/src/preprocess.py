@@ -154,26 +154,36 @@ class Preprocessor:
             df = df.drop(columns=agree_vars)
             print(f"[DEBUG] agree_vars 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
+        # HOPE_JSCD3_NAME 변수 추가 (HOPE_JSCD3 코드를 소분류명으로 변환)
+        if "HOPE_JSCD3" in df.columns:
+            df["HOPE_JSCD3_NAME"] = df["HOPE_JSCD3"].apply(lambda code: self.get_job_name_from_code(code))
+            print(f"[DEBUG] HOPE_JSCD3_NAME 변수 추가 완료: {df['HOPE_JSCD3_NAME'].nunique()}개 고유값")
+
         print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
         if 'SEEK_CUST_NO' in df.columns:
             print(f"[DEBUG] SEEK_CUST_NO 샘플 값: {df['SEEK_CUST_NO'].head(3).tolist()}")
         
         return df
 
-    def nlp_preprocessing(self, data, json_name=None):
+    def nlp_preprocessing(self, data, json_name=None, limit_data=False, limit_size=5000):
         """
         NLP 기반 데이터 전처리를 수행하는 함수
         
         Args:
             data: json 파일 (자기소개서, 이력서, 직업훈련, 자격증)
             json_name (str): JSON 데이터 타입에 따라 다른 전처리 적용
+            limit_data (bool): 테스트 모드로 데이터 제한 여부
+            limit_size (int): 제한할 데이터 크기
         Returns:
             pd.DataFrame: NLP 전처리된 데이터프레임
         """
-        # JSON 전처리 시간 단축을 위해 앞에서 5개로 제한
         # JSON 파일은 배열 형태로 저장되어 있으므로 리스트로 로드됨
         if isinstance(data, list):
-            if len(data) > 10000:
+            if limit_data and len(data) > limit_size:
+                original_count = len(data)
+                data = data[:limit_size]
+                print(f"📊 {json_name} 데이터 제한: {len(data)}개 레코드 사용 (전체 {original_count}개 중 앞 {limit_size}개)")
+            elif not limit_data and len(data) > 10000:
                 original_count = len(data)
                 data = data[:10000]
                 print(f"📊 {json_name} 데이터 제한: {len(data)}개 레코드 사용 (전체 {original_count}개 중 앞 10000개)")
@@ -584,7 +594,7 @@ class Preprocessor:
         return pd.DataFrame(cleaned_rows)
 
 
-    def load_and_preprocess_data(self, data_file, json_name=None):
+    def load_and_preprocess_data(self, data_file, json_name=None, limit_data=False, limit_size=5000):
         """
         데이터를 로드하고 전처리하는 함수
         
@@ -592,6 +602,8 @@ class Preprocessor:
             data_file (str): 데이터 파일 경로
             sheet_name (str): 엑셀 시트명 (Excel 파일용)
             json_name (str): JSON 데이터 타입 ('이력서', '자기소개서', '직업훈련', '자격증')
+            limit_data (bool): 테스트 모드로 데이터 제한 여부
+            limit_size (int): 제한할 데이터 크기
         
         Returns:
             pd.DataFrame: 전처리된 데이터프레임
@@ -599,22 +611,32 @@ class Preprocessor:
         # 데이터 로드
         if data_file.endswith('.csv'):
             data = pd.read_csv(data_file)
+            # 테스트 모드일 경우 CSV 파일도 제한
+            if limit_data and len(data) > limit_size:
+                original_count = len(data)
+                data = data.head(limit_size)
+                print(f"📊 CSV 데이터 제한: {len(data)}개 행 사용 (전체 {original_count}개 중 앞 {limit_size}개)")
             data_processed = self.basic_preprocessing(data)
         elif data_file.endswith(('.xlsx', '.xls')):
             data = pd.read_excel(data_file, sheet_name=self.sheet_name)
+            # 테스트 모드일 경우 Excel 파일도 제한
+            if limit_data and len(data) > limit_size:
+                original_count = len(data)
+                data = data.head(limit_size)
+                print(f"📊 Excel 데이터 제한: {len(data)}개 행 사용 (전체 {original_count}개 중 앞 {limit_size}개)")
             data_processed = self.basic_preprocessing(data)
         elif data_file.endswith('.json'):
             with open(data_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 # JSON 파일의 경우 json_name을 데이터 타입으로 사용
-                data_processed = self.nlp_preprocessing(data, json_name=json_name)
+                data_processed = self.nlp_preprocessing(data, json_name=json_name, limit_data=limit_data, limit_size=limit_size)
         else:
             raise ValueError("지원하지 않는 파일 형식입니다. CSV, Excel 또는 JSON 파일을 사용하세요.")
         
         return data_processed
 
 
-    def get_merged_df(self, file_list):
+    def get_merged_df(self, file_list, limit_data=False, limit_size=5000):
         """
         파일명 리스트를 받아 각 파일을 load_and_preprocess_data로 읽고 self.df_list에 append,
         이후 SEEK_CUST_NO 컬럼 기준으로 순차적으로 조인하여 데이터프레임 반환
@@ -623,6 +645,8 @@ class Preprocessor:
 
         Args:
             file_list (list): 파일명(str) 리스트
+            limit_data (bool): 테스트 모드로 데이터 제한 여부
+            limit_size (int): 제한할 데이터 크기
  
         Returns:
             pd.DataFrame: SEEK_CUST_NO 또는 JHNT_CTN 기준으로 조인된 데이터프레임 -> repeat 처리 필요
@@ -635,13 +659,7 @@ class Preprocessor:
             # 첫 번째 파일은 정형 데이터이므로 json_name=None
             csv_start_time = time.time()
             print(f"[DEBUG] 첫 번째 파일 처리 시작: {file_list[0]}, 타입: 정형 데이터 (CSV)")
-            df = self.load_and_preprocess_data(file_list[0], json_name=None)
-            
-            # 테이블 파일 앞에서 5개로 제한
-            original_csv_count = len(df)
-            if len(df) > 10000:
-                df = df.head(10000)
-                print(f"📊 테이블 데이터 제한: {len(df)}개 행 사용 (전체 {original_csv_count}개 중 앞 10000개)")
+            df = self.load_and_preprocess_data(file_list[0], json_name=None, limit_data=limit_data, limit_size=limit_size)
             
             csv_elapsed = time.time() - csv_start_time
             print(f"⏱️ 정형 데이터(CSV) 처리 소요 시간: {csv_elapsed:.2f}초")
@@ -678,7 +696,7 @@ class Preprocessor:
             try:
                 file_start_time = time.time()
                 print(f"[DEBUG] {idx+1}번째 파일 처리 시작: {file}, 타입: {json_name}")
-                df = self.load_and_preprocess_data(file, json_name=json_name)
+                df = self.load_and_preprocess_data(file, json_name=json_name, limit_data=limit_data, limit_size=limit_size)
                 file_elapsed = time.time() - file_start_time
                 print(f"[DEBUG] {json_name} 데이터프레임 크기: {df.shape}")
                 print(f"[DEBUG] {json_name} 데이터프레임 컬럼: {list(df.columns)}")
@@ -767,6 +785,24 @@ class Preprocessor:
         
         merge_elapsed = time.time() - merge_start_time
         print(f"⏱️ 데이터 병합 소요 시간: {merge_elapsed:.2f}초")
+        
+        # 병합 후 결측치가 존재하는 row의 비율 확인 (inner join으로 인한 결측치 확인)
+        total_rows = len(result)
+        rows_with_missing = result.isnull().any(axis=1).sum()
+        missing_ratio = (rows_with_missing / total_rows * 100) if total_rows > 0 else 0
+        print(f"\n📊 병합 후 결측치 분석:")
+        print(f"   전체 행 수: {total_rows}개")
+        print(f"   결측치가 있는 행 수: {rows_with_missing}개")
+        print(f"   결측치가 있는 행 비율: {missing_ratio:.2f}%")
+        
+        # 컬럼별 결측치 비율도 출력
+        missing_by_column = result.isnull().sum()
+        columns_with_missing = missing_by_column[missing_by_column > 0]
+        if len(columns_with_missing) > 0:
+            print(f"\n📊 컬럼별 결측치 현황:")
+            for col, missing_count in columns_with_missing.items():
+                missing_pct = (missing_count / total_rows * 100) if total_rows > 0 else 0
+                print(f"   {col}: {missing_count}개 ({missing_pct:.2f}%)")
         
         # 결측치가 존재하는 행 제거 (제거 전후 행 개수 로깅)
         before_dropna_count = len(result)

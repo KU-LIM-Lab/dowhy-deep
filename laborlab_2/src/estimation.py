@@ -12,6 +12,8 @@ from pathlib import Path
 from datetime import datetime
 import os
 import sys
+import pickle
+import json
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
@@ -881,3 +883,172 @@ def print_summary_report(estimate, validation_results, sensitivity_df):
         print(f"  - 최소 절대 효과 지점: et={min_abs_effect['effect_strength_on_treatment']:.2f}, eo={min_abs_effect['effect_strength_on_outcome']:.2f}")
     
     print(f"\n✅ 전체 분석 완료!")
+
+
+# ============================================================================
+# Checkpoint 저장/로드 함수
+# ============================================================================
+
+def save_checkpoint(estimate, checkpoint_dir, experiment_id, graph_name=None, logger=None):
+    """
+    CausalEstimate 객체를 checkpoint로 저장하는 함수
+    
+    Args:
+        estimate: CausalEstimate 객체
+        checkpoint_dir (str or Path): checkpoint 저장 디렉토리
+        experiment_id (str): 실험 ID (파일명에 사용)
+        graph_name (str, optional): 그래프 파일명 (metadata에 저장)
+        logger: 로거 객체
+    
+    Returns:
+        str: 저장된 checkpoint 파일 경로
+    """
+    checkpoint_path = Path(checkpoint_dir)
+    checkpoint_path.mkdir(parents=True, exist_ok=True)
+    
+    # checkpoint 파일명 생성
+    checkpoint_filename = f"checkpoint_{experiment_id}.pkl"
+    checkpoint_file = checkpoint_path / checkpoint_filename
+    
+    # experiment_id에서 graph_name 추출 (없으면 전달받은 값 사용)
+    if graph_name is None and experiment_id:
+        # experiment_id 형식: exp_0001_graph_name_treatment_outcome_estimator
+        parts = experiment_id.split('_')
+        if len(parts) >= 3:
+            graph_name = parts[2]  # graph_name 위치
+    
+    # 메타데이터 저장
+    metadata = {
+        "experiment_id": experiment_id,
+        "graph_name": graph_name,
+        "treatment": estimate._treatment_name[0] if isinstance(estimate._treatment_name, list) else estimate._treatment_name,
+        "outcome": estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name,
+        "ate_value": estimate.value,
+        "control_value": estimate.control_value,
+        "treatment_value": estimate.treatment_value,
+        "estimator_type": type(estimate.estimator).__name__ if hasattr(estimate, 'estimator') else None,
+        "saved_at": datetime.now().isoformat()
+    }
+    
+    metadata_filename = f"metadata_{experiment_id}.json"
+    metadata_file = checkpoint_path / metadata_filename
+    
+    try:
+        # CausalEstimate 객체 저장
+        with open(checkpoint_file, 'wb') as f:
+            pickle.dump(estimate, f)
+        
+        # 메타데이터 저장
+        with open(metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2, ensure_ascii=False)
+        
+        if logger:
+            logger.info(f"✅ Checkpoint 저장 완료: {checkpoint_file}")
+        print(f"✅ Checkpoint 저장 완료: {checkpoint_file}")
+        
+        return str(checkpoint_file)
+        
+    except Exception as e:
+        error_msg = f"Checkpoint 저장 실패: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(f"❌ {error_msg}")
+        raise
+
+
+def load_checkpoint(checkpoint_file, logger=None):
+    """
+    Checkpoint에서 CausalEstimate 객체를 로드하는 함수
+    
+    Args:
+        checkpoint_file (str or Path): checkpoint 파일 경로
+        logger: 로거 객체
+    
+    Returns:
+        CausalEstimate: 로드된 CausalEstimate 객체
+    """
+    checkpoint_path = Path(checkpoint_file)
+    
+    if not checkpoint_path.exists():
+        error_msg = f"Checkpoint 파일을 찾을 수 없습니다: {checkpoint_file}"
+        if logger:
+            logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
+    
+    try:
+        with open(checkpoint_path, 'rb') as f:
+            estimate = pickle.load(f)
+        
+        if logger:
+            logger.info(f"✅ Checkpoint 로드 완료: {checkpoint_file}")
+        print(f"✅ Checkpoint 로드 완료: {checkpoint_file}")
+        
+        return estimate
+        
+    except Exception as e:
+        error_msg = f"Checkpoint 로드 실패: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(f"❌ {error_msg}")
+        raise
+
+
+def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, logger=None):
+    """
+    주어진 조건에 맞는 checkpoint 파일을 찾는 함수
+    
+    Args:
+        checkpoint_dir (str or Path): checkpoint 디렉토리
+        graph_name (str): 그래프 파일명
+        treatment (str): 처치 변수명
+        outcome (str): 결과 변수명
+        estimator (str): 추정 방법
+        logger: 로거 객체
+    
+    Returns:
+        str or None: 찾은 checkpoint 파일 경로, 없으면 None
+    """
+    checkpoint_path = Path(checkpoint_dir)
+    
+    if not checkpoint_path.exists():
+        if logger:
+            logger.warning(f"Checkpoint 디렉토리가 존재하지 않습니다: {checkpoint_dir}")
+        return None
+    
+    # metadata 파일들을 읽어서 조건에 맞는 checkpoint 찾기
+    metadata_files = list(checkpoint_path.glob("metadata_*.json"))
+    
+    for metadata_file in metadata_files:
+        try:
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                metadata = json.load(f)
+            
+            # 조건 확인: graph_name, treatment, outcome, estimator 모두 일치해야 함
+            metadata_graph = metadata.get("graph_name", "")
+            metadata_treatment = metadata.get("treatment", "")
+            metadata_outcome = metadata.get("outcome", "")
+            metadata_estimator = metadata.get("estimator_type", "").lower().replace("estimator", "")
+            target_estimator = estimator.lower().replace("_", "")
+            
+            if (metadata_graph == graph_name and
+                metadata_treatment == treatment and 
+                metadata_outcome == outcome and
+                metadata_estimator == target_estimator):
+                
+                # experiment_id에서 checkpoint 파일명 생성
+                experiment_id = metadata.get("experiment_id", "")
+                checkpoint_file = checkpoint_path / f"checkpoint_{experiment_id}.pkl"
+                
+                if checkpoint_file.exists():
+                    if logger:
+                        logger.info(f"✅ Checkpoint 발견: {checkpoint_file}")
+                    return str(checkpoint_file)
+                    
+        except Exception as e:
+            if logger:
+                logger.warning(f"Metadata 파일 읽기 실패 ({metadata_file}): {e}")
+            continue
+    
+    if logger:
+        logger.warning(f"조건에 맞는 checkpoint를 찾을 수 없습니다: graph={graph_name}, treatment={treatment}, outcome={outcome}, estimator={estimator}")
+    return None

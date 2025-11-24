@@ -3,7 +3,7 @@ LaborLab 2 - 인과추론 분석 메인 파이프라인
 
 전체 파이프라인:
 1. 경로를 통해 데이터 로드
-1-1. (필요시) 전처리과정이 잘 되는지를 확인하기 위해 로드된 데이터의 앞에서 5000개만 잘라서 사용
+1-1. (Test mode) 전처리과정이 잘 되는지를 확인하기 위해 로드된 데이터의 앞에서 5000개만 잘라서 사용
 2. 데이터 전처리
 3. 데이터 병합
 4. train test split (1:99)
@@ -37,38 +37,21 @@ from .utils import (
     setup_logging,
     load_config,
     run_single_experiment,
+    run_inference,
     save_predictions_to_excel
 )
+from . import estimation
 from datetime import datetime
 import json
 
 
 def main():
-    """
-    메인 실행 함수 - 전체 파이프라인 실행
-    
-    파이프라인 단계:
-    1. 경로를 통해 데이터 로드
-    1-1. (필요시) 전처리과정이 잘 되는지를 확인하기 위해 로드된 데이터의 앞에서 5000개만 잘라서 사용
-    2. 데이터 전처리
-    3. 데이터 병합
-    4. train test split (1:99)
-    5. causal graph 로드해서 실험정의
-    6. 각 실험별 estimation - refutation - prediction 진행 후 결과저장
-    """
     parser = argparse.ArgumentParser(description="LaborLab 2 인과추론 분석 파이프라인")
     
     default_config = os.environ.get(
-        "EXPERIMENT_CONFIG",
         "config.json"
     )
     
-    parser.add_argument(
-        "--config",
-        type=str,
-        default=default_config,
-        help="설정 JSON 파일 경로"
-    )
     
     args = parser.parse_args()
     
@@ -101,6 +84,8 @@ def main():
     api_key = config.get("api_key", None) or os.environ.get("LLM_API_KEY", None)
     limit_data = config.get("limit_data", False)  # 5000개 제한 옵션
     limit_size = config.get("limit_size", 5000)  # 제한할 데이터 크기
+    mode = config.get("mode", "learning")  # "learning" 또는 "inference"
+    checkpoint_dir = config.get("checkpoint_dir", "data/checkpoint")  # checkpoint 디렉토리
     
     # 절대 경로로 변환
     data_dir_path = script_dir / data_dir
@@ -125,17 +110,15 @@ def main():
     print("2️⃣ 데이터 전처리 및 3️⃣ 데이터 병합 시작")
     print("="*80)
     
+    # 테스트 모드 안내
+    if limit_data:
+        print(f"\n(Test mode): 전처리 전에 각 파일에서 앞 {limit_size}개만 사용합니다.")
+    
     print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
     preprocessing_start = time.time()
     
-    merged_df = preprocess_and_merge_data(file_list, str(data_dir_path), api_key=api_key)
+    merged_df = preprocess_and_merge_data(file_list, str(data_dir_path), api_key=api_key, limit_data=limit_data, limit_size=limit_size)
     print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
-    
-    # 1-1. (필요시) 전처리과정이 잘 되는지를 확인하기 위해 로드된 데이터의 앞에서 5000개만 잘라서 사용
-    if limit_data:
-        print(f"\n⚠️ 데이터 제한 모드: 앞에서 {limit_size}개만 사용합니다.")
-        merged_df = merged_df.head(limit_size)
-        print(f"✅ 제한된 데이터: {len(merged_df)}건")
     
     preprocessing_elapsed = time.time() - preprocessing_start
     print(f"⏱️ 전처리 및 병합 완료! 소요 시간: {preprocessing_elapsed:.2f}초")
@@ -203,7 +186,7 @@ def main():
                     graph_outcomes_map[graph_file] = extracted_treatments[0]["outcome"]
                 print(f"   ✅ {graph_path.name}: {len(graph_treatments_map[graph_file])}개의 treatment 발견")
     
-    # 실험 조합 생성
+    # 실험 조합 생성 (learning과 inference 모두에서 사용)
     sorted_estimators = []
     if "linear_regression" in estimators:
         sorted_estimators.append("linear_regression")
@@ -247,7 +230,9 @@ def main():
         all_outcomes.update(outcomes)
     
     essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
-    required_vars = list(all_graph_variables | essential_vars)
+    # HOPE_JSCD3_NAME은 그래프에 포함되지 않지만 데이터에는 유지해야 함 (직종소분류별 분리용)
+    stratification_vars = {"HOPE_JSCD3_NAME"}
+    required_vars = list(all_graph_variables | essential_vars | stratification_vars)
     
     merged_df_clean = clean_dataframe_for_causal_model(
         merged_df, 
@@ -256,7 +241,7 @@ def main():
     )
     
     data_variables = set(merged_df_clean.columns)
-    vars_to_keep = (all_graph_variables | essential_vars) & data_variables
+    vars_to_keep = (all_graph_variables | essential_vars | stratification_vars) & data_variables
     vars_to_remove = data_variables - vars_to_keep
     
     if vars_to_remove:
@@ -265,6 +250,102 @@ def main():
     
     print(f"✅ 정리된 데이터: {len(merged_df_clean)}건, {len(merged_df_clean.columns)}개 변수")
     print("="*80 + "\n")
+    
+    # ========================================================================
+    # 모드에 따른 분기: learning 또는 inference
+    # ========================================================================
+    if mode == "inference":
+        # ========================================================================
+        # Inference 모드: checkpoint 로드 후 바로 prediction
+        # ========================================================================
+        print("="*80)
+        print("🔮 Inference 모드 실행")
+        print("="*80)
+        
+        # checkpoint 디렉토리 경로 설정
+        checkpoint_dir_path = script_dir / checkpoint_dir
+        checkpoint_dir_path.mkdir(parents=True, exist_ok=True)
+        
+        # 로거 설정
+        logger = None
+        if not config.get("no_logs", False):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir_path = script_dir / output_dir
+            output_dir_path.mkdir(exist_ok=True)
+            logger = setup_logging(
+                log_dir=output_dir_path,
+                log_filename=f"inference_{timestamp}.log"
+            )
+            if logger:
+                logger.info(f"Inference 모드 시작 - {timestamp}")
+        
+        # 실험 조합은 이미 위에서 생성됨
+        total_experiments = len(experiment_combinations)
+        print(f"\n📊 총 {total_experiments}개의 inference 실험을 실행합니다.\n")
+        
+        # Inference 실행
+        results = []
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir_path = script_dir / output_dir
+        output_dir_path.mkdir(exist_ok=True)
+        
+        for idx, (graph_file, treatment, outcome, estimator) in enumerate(experiment_combinations, 1):
+            experiment_id = f"exp_{idx:04d}_{Path(graph_file).stem}_{treatment}_{outcome}_{estimator}"
+            
+            print(f"\n[{idx}/{total_experiments}] Inference 실행 중...")
+            
+            try:
+                result = run_inference(
+                    merged_df_clean=merged_df_clean,
+                    graph_file=graph_file,
+                    checkpoint_dir=checkpoint_dir_path,
+                    treatment=treatment,
+                    outcome=outcome,
+                    estimator=estimator,
+                    logger=logger,
+                    experiment_id=experiment_id
+                )
+                result["experiment_id"] = experiment_id
+                result["graph_name"] = Path(graph_file).stem
+                result["treatment"] = treatment
+                result["outcome"] = outcome
+                result["estimator"] = estimator
+                results.append(result)
+                
+            except Exception as e:
+                print(f"❌ Inference 실패: {experiment_id}")
+                print(f"   에러: {e}")
+                results.append({
+                    "status": "failed",
+                    "experiment_id": experiment_id,
+                    "error": str(e)
+                })
+        
+        # 결과 저장
+        results_file = output_dir_path / f"inference_results_{timestamp}.json"
+        with open(results_file, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        
+        success_count = sum(1 for r in results if r.get("status") == "success")
+        failed_count = sum(1 for r in results if r.get("status") == "failed")
+        
+        print(f"\n{'='*80}")
+        print("📋 Inference 완료")
+        print(f"{'='*80}")
+        print(f"총 실험 수: {total_experiments}")
+        print(f"성공: {success_count}")
+        print(f"실패: {failed_count}")
+        print(f"결과 파일: {results_file}")
+        print(f"{'='*80}\n")
+        
+        return
+    
+    # ========================================================================
+    # Learning 모드: 기존 파이프라인 (estimation → refutation → prediction)
+    # ========================================================================
+    print("="*80)
+    print("🎓 Learning 모드 실행")
+    print("="*80)
     
     # ========================================================================
     # 4. train test split (1:99) - 실제로는 run_analysis_without_preprocessing에서 수행

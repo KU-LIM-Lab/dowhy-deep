@@ -465,7 +465,7 @@ def clean_dataframe_for_causal_model(df: pd.DataFrame, required_vars: Optional[L
     return df_clean
 
 
-def preprocess_and_merge_data(file_list: List[str], data_dir: str, api_key: Optional[str] = None) -> pd.DataFrame:
+def preprocess_and_merge_data(file_list: List[str], data_dir: str, api_key: Optional[str] = None, limit_data: bool = False, limit_size: int = 5000) -> pd.DataFrame:
     """
     Preprocessor 클래스를 사용하여 모든 데이터를 전처리하고 병합하는 함수
     
@@ -473,6 +473,8 @@ def preprocess_and_merge_data(file_list: List[str], data_dir: str, api_key: Opti
         file_list (List[str]): 파일 경로 리스트 [정형데이터, 이력서, 자기소개서, 직업훈련, 자격증]
         data_dir (str): 데이터 디렉토리 경로
         api_key (Optional[str]): LLM API 키
+        limit_data (bool): 테스트 모드로 데이터 제한 여부
+        limit_size (int): 제한할 데이터 크기
     
     Output:
         pd.DataFrame: 병합된 데이터프레임
@@ -480,7 +482,7 @@ def preprocess_and_merge_data(file_list: List[str], data_dir: str, api_key: Opti
     from . import preprocess
     preprocessor = preprocess.Preprocessor([], api_key=api_key)
     absolute_file_list = [str(Path(f).resolve()) for f in file_list]
-    merged_df = preprocessor.get_merged_df(absolute_file_list)
+    merged_df = preprocessor.get_merged_df(absolute_file_list, limit_data=limit_data, limit_size=limit_size)
     print(f"✅ 모든 데이터 전처리 및 병합 완료")
     return merged_df
 
@@ -535,7 +537,8 @@ def run_analysis_without_preprocessing(
     outcome: str,
     estimator: str,
     logger: Optional[logging.Logger] = None,
-    experiment_id: Optional[str] = None
+    experiment_id: Optional[str] = None,
+    job_category: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -549,6 +552,7 @@ def run_analysis_without_preprocessing(
         estimator (str): 추정 방법
         logger (Optional[logging.Logger]): 로거 객체
         experiment_id (Optional[str]): 실험 ID (선택적)
+        job_category (Optional[str]): 직종소분류명 (checkpoint 저장 경로에 사용)
     
     Output:
         Dict[str, Any]: 분석 결과 딕셔너리
@@ -588,7 +592,9 @@ def run_analysis_without_preprocessing(
         graph_variables = set(causal_graph.nodes())
         data_variables = set(merged_df_clean.columns)
         essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
-        vars_to_keep = (graph_variables | essential_vars) & data_variables
+        # HOPE_JSCD3_NAME은 그래프에 포함되지 않지만 데이터에는 유지해야 함
+        stratification_vars = {"HOPE_JSCD3_NAME"}
+        vars_to_keep = (graph_variables | essential_vars | stratification_vars) & data_variables
         df_for_analysis = merged_df_clean[list(vars_to_keep)].copy()
         
         missing_vars = [var for var in [treatment, outcome] if var not in df_for_analysis.columns]
@@ -648,13 +654,44 @@ def run_analysis_without_preprocessing(
         )
         step_times['인과효과 추정'] = time.time() - step_start
         
+        # 6-1. Checkpoint 저장 (learning 모드일 때만)
+        checkpoint_path = None
+        if experiment_id:
+            try:
+                # checkpoint 디렉토리 경로 생성 (data/checkpoint)
+                script_dir = Path(__file__).parent.parent
+                checkpoint_dir = script_dir / "data" / "checkpoint"
+                
+                # 직종소분류별 폴더 생성
+                if job_category:
+                    job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+                    checkpoint_dir = checkpoint_dir / job_category_safe
+                
+                graph_name = Path(graph_file).stem if graph_file else None
+                checkpoint_path = estimation.save_checkpoint(
+                    estimate,
+                    checkpoint_dir,
+                    experiment_id,
+                    graph_name=graph_name,
+                    logger=logger
+                )
+            except Exception as e:
+                if logger:
+                    logger.warning(f"Checkpoint 저장 실패 (계속 진행): {e}")
+                print(f"⚠️ Checkpoint 저장 실패 (계속 진행): {e}")
+        
         # 7. 예측
         print("7️⃣ 예측 중...")
         step_start = time.time()
         essential_vars_for_pred = {treatment, outcome}
+        # 예측 전에 실제값 저장 (예측 후 outcome이 덮어씌워지므로)
+        if outcome in df_test.columns:
+            df_test = df_test.copy()
+            df_test[f"{outcome}_actual"] = df_test[outcome].copy()
+        
         df_test_clean = clean_dataframe_for_causal_model(
             df_test,
-            required_vars=list(essential_vars_for_pred),
+            required_vars=list(essential_vars_for_pred) + [f"{outcome}_actual"] if f"{outcome}_actual" in df_test.columns else list(essential_vars_for_pred),
             logger=logger
         )
         metrics, df_with_predictions = estimation.predict_conditional_expectation(
@@ -723,6 +760,7 @@ def run_analysis_without_preprocessing(
             "sensitivity_df": sensitivity_df,
             "metrics": metrics,
             "excel_path": excel_path,
+            "checkpoint_path": checkpoint_path,
             "step_times": step_times,
             "train_size": len(df_train),
             "test_size": len(df_test)
@@ -744,7 +782,8 @@ def run_single_experiment(
     outcome: str,
     estimator: str,
     experiment_id: str,
-    logger: Optional[logging.Logger] = None
+    logger: Optional[logging.Logger] = None,
+    split_by_job_category: bool = True
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -781,15 +820,135 @@ def run_single_experiment(
     from . import estimation
     start_time = datetime.now()
     try:
-        result = run_analysis_without_preprocessing(
-            merged_df_clean=merged_df_clean,
-            graph_file=graph_file,
-            treatment=treatment,
-            outcome=outcome,
-            estimator=estimator,
-            logger=logger,
-            experiment_id=experiment_id
-        )
+        # 직종소분류별로 분리하여 실험 실행
+        if split_by_job_category and "HOPE_JSCD3_NAME" in merged_df_clean.columns:
+            # 직종소분류별로 데이터 분리
+            job_categories = merged_df_clean["HOPE_JSCD3_NAME"].dropna().unique()
+            print(f"📊 직종소분류별 실험 실행: {len(job_categories)}개 직종소분류")
+            
+            all_results = []
+            all_predictions = []
+            all_metrics = []
+            
+            for job_category in job_categories:
+                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD3_NAME"] == job_category].copy()
+                
+                if len(job_df) < 10:  # 최소 데이터 수 체크
+                    if logger:
+                        logger.warning(f"직종소분류 '{job_category}' 데이터가 너무 적어 건너뜁니다: {len(job_df)}건")
+                    print(f"⚠️ 직종소분류 '{job_category}' 데이터가 너무 적어 건너뜁니다: {len(job_df)}건")
+                    continue
+                
+                # 직종소분류별 experiment_id 생성
+                job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+                job_experiment_id = f"{experiment_id}_{job_category_safe}"
+                
+                print(f"\n  🔹 직종소분류: {job_category} ({len(job_df)}건)")
+                
+                try:
+                    job_result = run_analysis_without_preprocessing(
+                        merged_df_clean=job_df,
+                        graph_file=graph_file,
+                        treatment=treatment,
+                        outcome=outcome,
+                        estimator=estimator,
+                        logger=logger,
+                        experiment_id=job_experiment_id,
+                        job_category=job_category
+                    )
+                    
+                    all_results.append(job_result)
+                    
+                    # 예측 결과 수집
+                    if job_result.get("excel_path"):
+                        try:
+                            pred_df = pd.read_excel(job_result["excel_path"])
+                            all_predictions.append(pred_df)
+                        except:
+                            pass
+                    
+                    # 메트릭 수집
+                    if job_result.get("metrics"):
+                        all_metrics.append(job_result["metrics"])
+                        
+                except Exception as e:
+                    if logger:
+                        logger.error(f"직종소분류 '{job_category}' 실험 실패: {e}")
+                    print(f"  ❌ 직종소분류 '{job_category}' 실험 실패: {e}")
+                    continue
+            
+            # 모든 직종소분류 결과 통합
+            if not all_results:
+                raise ValueError("모든 직종소분류 실험이 실패했습니다.")
+            
+            # 예측 결과 합치기
+            if all_predictions:
+                combined_predictions = pd.concat(all_predictions, ignore_index=True)
+                
+                # 통합 메트릭 계산
+                combined_metrics = {}
+                if all_metrics:
+                    # Accuracy, F1, AUC는 전체 예측 결과로 계산
+                    actual_outcome_col = f"{outcome}_actual"
+                    if actual_outcome_col in combined_predictions.columns and outcome in combined_predictions.columns:
+                        actual_y = combined_predictions[actual_outcome_col]
+                        predicted_y = combined_predictions[outcome]  # 예측값
+                        
+                        if pd.api.types.is_numeric_dtype(actual_y):
+                            from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+                            unique_values = set(actual_y.dropna().unique())
+                            is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
+                            
+                            if is_binary:
+                                predicted_classes = (predicted_y > 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
+                                combined_metrics['accuracy'] = accuracy_score(actual_y, predicted_classes)
+                                combined_metrics['f1_score'] = f1_score(actual_y, predicted_classes, zero_division=0)
+                                try:
+                                    combined_metrics['auc'] = roc_auc_score(actual_y, predicted_y)
+                                except:
+                                    combined_metrics['auc'] = None
+                
+                # 예측 결과 저장
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                excel_path = save_predictions_to_excel(
+                    combined_predictions, 
+                    filename=f"predictions_{experiment_id}_combined_{timestamp}.xlsx",
+                    logger=logger
+                )
+            else:
+                combined_metrics = {}
+                excel_path = None
+            
+            # 첫 번째 결과를 기본으로 사용 (ATE는 평균 계산 가능)
+            base_result = all_results[0]
+            ate_values = [r.get("estimate", {}).get("value") if hasattr(r.get("estimate"), "value") else None 
+                         for r in all_results if r.get("estimate")]
+            avg_ate = sum([v for v in ate_values if v is not None]) / len([v for v in ate_values if v is not None]) if ate_values else None
+            
+            result = {
+                "status": "success",
+                "estimate": base_result.get("estimate"),
+                "validation_results": base_result.get("validation_results", {}),
+                "sensitivity_df": base_result.get("sensitivity_df"),
+                "metrics": combined_metrics,
+                "excel_path": excel_path,
+                "step_times": base_result.get("step_times", {}),
+                "train_size": sum([r.get("train_size", 0) for r in all_results]),
+                "test_size": sum([r.get("test_size", 0) for r in all_results]),
+                "job_category_results": all_results,
+                "num_job_categories": len(all_results)
+            }
+        else:
+            # 직종소분류별 분리 없이 기존 방식
+            result = run_analysis_without_preprocessing(
+                merged_df_clean=merged_df_clean,
+                graph_file=graph_file,
+                treatment=treatment,
+                outcome=outcome,
+                estimator=estimator,
+                logger=logger,
+                experiment_id=experiment_id
+            )
         
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
@@ -865,6 +1024,197 @@ def run_single_experiment(
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
         }
+
+
+def run_inference(
+    merged_df_clean: pd.DataFrame,
+    graph_file: str,
+    checkpoint_dir: Path,
+    treatment: str,
+    outcome: str,
+    estimator: str,
+    logger: Optional[logging.Logger] = None,
+    experiment_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Inference 모드: checkpoint에서 모델을 로드하여 예측만 수행하는 함수
+    직종소분류별로 분리하여 checkpoint를 찾고 예측한 후 합칩니다.
+    
+    Input:
+        merged_df_clean (pd.DataFrame): 전처리 및 정리된 데이터프레임
+        graph_file (str): 그래프 파일 경로
+        checkpoint_dir (Path): checkpoint 디렉토리 경로
+        treatment (str): 처치 변수명
+        outcome (str): 결과 변수명
+        estimator (str): 추정 방법
+        logger (Optional[logging.Logger]): 로거 객체
+        experiment_id (Optional[str]): 실험 ID (선택적)
+    
+    Output:
+        Dict[str, Any]: 예측 결과 딕셔너리
+            - status: "success" 또는 "failed"
+            - metrics: 예측 메트릭 (통합)
+            - excel_path: 예측 결과 Excel 파일 경로 (통합)
+            - step_times: 단계별 소요 시간
+    """
+    try:
+        from . import estimation
+        step_times = {}
+        step_start = time.time()
+        
+        if experiment_id:
+            print(f"\n{'='*80}")
+            print(f"Inference 모드 - 실험 ID: {experiment_id}")
+            print(f"그래프: {Path(graph_file).name}")
+            print(f"Treatment: {treatment}, Outcome: {outcome}, Estimator: {estimator}")
+            print(f"{'='*80}\n")
+        
+        graph_name = Path(graph_file).stem
+        
+        # 직종소분류별로 분리하여 예측
+        if "HOPE_JSCD3_NAME" in merged_df_clean.columns:
+            job_categories = merged_df_clean["HOPE_JSCD3_NAME"].dropna().unique()
+            print(f"📊 직종소분류별 Inference 실행: {len(job_categories)}개 직종소분류")
+            
+            all_predictions = []
+            all_metrics = []
+            
+            for job_category in job_categories:
+                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD3_NAME"] == job_category].copy()
+                
+                if len(job_df) == 0:
+                    continue
+                
+                job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+                job_checkpoint_dir = checkpoint_dir / job_category_safe
+                
+                print(f"\n  🔹 직종소분류: {job_category} ({len(job_df)}건)")
+                
+                # 해당 직종소분류의 checkpoint 찾기
+                checkpoint_file = estimation.find_checkpoint(
+                    job_checkpoint_dir,
+                    graph_name,
+                    treatment,
+                    outcome,
+                    estimator,
+                    logger
+                )
+                
+                if not checkpoint_file:
+                    print(f"  ⚠️ Checkpoint를 찾을 수 없어 건너뜁니다: {job_category}")
+                    continue
+                
+                try:
+                    # Checkpoint에서 모델 로드
+                    estimate = estimation.load_checkpoint(checkpoint_file, logger)
+                    
+                    # 데이터 필터링
+                    essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+                    data_variables = set(job_df.columns)
+                    vars_to_keep = essential_vars & data_variables
+                    
+                    missing_vars = [var for var in [treatment, outcome] if var not in job_df.columns]
+                    if missing_vars:
+                        print(f"  ⚠️ 필수 변수가 없어 건너뜁니다: {missing_vars}")
+                        continue
+                    
+                    df_for_prediction = job_df[list(vars_to_keep)].copy()
+                    
+                    # 예측 전에 실제값 저장 (예측 후 outcome이 덮어씌워지므로)
+                    if outcome in df_for_prediction.columns:
+                        df_for_prediction[f"{outcome}_actual"] = df_for_prediction[outcome].copy()
+                    
+                    # 예측
+                    df_pred_clean = clean_dataframe_for_causal_model(
+                        df_for_prediction,
+                        required_vars=list(essential_vars) + [f"{outcome}_actual"] if f"{outcome}_actual" in df_for_prediction.columns else list(essential_vars),
+                        logger=logger
+                    )
+                    metrics, df_with_predictions = estimation.predict_conditional_expectation(
+                        estimate, df_pred_clean, logger=logger
+                    )
+                    
+                    all_predictions.append(df_with_predictions)
+                    if metrics:
+                        all_metrics.append(metrics)
+                    
+                    print(f"  ✅ 예측 완료: {len(df_with_predictions)}건")
+                    
+                except Exception as e:
+                    print(f"  ❌ 직종소분류 '{job_category}' 예측 실패: {e}")
+                    if logger:
+                        logger.error(f"직종소분류 '{job_category}' 예측 실패: {e}")
+                    continue
+            
+            # 모든 직종소분류 예측 결과 합치기
+            if not all_predictions:
+                raise ValueError("모든 직종소분류 예측이 실패했습니다.")
+            
+            combined_predictions = pd.concat(all_predictions, ignore_index=True)
+            
+            # 통합 메트릭 계산
+            combined_metrics = {}
+            actual_outcome_col = f"{outcome}_actual"
+            if actual_outcome_col in combined_predictions.columns and outcome in combined_predictions.columns:
+                actual_y = combined_predictions[actual_outcome_col]
+                predicted_y = combined_predictions[outcome]  # 예측값
+                
+                if pd.api.types.is_numeric_dtype(actual_y):
+                    from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+                    unique_values = set(actual_y.dropna().unique())
+                    is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
+                    
+                    if is_binary:
+                        predicted_classes = (predicted_y > 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
+                        valid_mask = ~(pd.isna(actual_y) | pd.isna(predicted_classes))
+                        if valid_mask.sum() > 0:
+                            combined_metrics['accuracy'] = accuracy_score(actual_y[valid_mask], predicted_classes[valid_mask])
+                            combined_metrics['f1_score'] = f1_score(actual_y[valid_mask], predicted_classes[valid_mask], zero_division=0)
+                            try:
+                                combined_metrics['auc'] = roc_auc_score(actual_y[valid_mask], predicted_y[valid_mask])
+                            except:
+                                combined_metrics['auc'] = None
+            
+            # 예측 결과 저장
+            step_start = time.time()
+            if experiment_id:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"predictions_inference_{experiment_id}_combined_{timestamp}.xlsx"
+            else:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"predictions_inference_combined_{timestamp}.xlsx"
+            
+            excel_path = save_predictions_to_excel(combined_predictions, filename=filename, logger=logger)
+            step_times['예측 결과 저장'] = time.time() - step_start
+            
+        else:
+            # HOPE_JSCD3_NAME이 없으면 기존 방식 (단일 checkpoint)
+            raise ValueError("HOPE_JSCD3_NAME 변수가 데이터에 없습니다. 직종소분류별 분리가 불가능합니다.")
+        
+        total_time = sum(step_times.values())
+        step_times['전체'] = total_time
+        
+        print(f"\n✅ Inference 완료! (총 소요 시간: {total_time:.2f}초)")
+        if combined_metrics:
+            print(f"   Accuracy: {combined_metrics.get('accuracy', 'N/A')}")
+            print(f"   F1 Score: {combined_metrics.get('f1_score', 'N/A')}")
+            print(f"   AUC: {combined_metrics.get('auc', 'N/A')}")
+        
+        return {
+            "status": "success",
+            "metrics": combined_metrics,
+            "excel_path": excel_path,
+            "step_times": step_times,
+            "data_size": len(combined_predictions)
+        }
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"Inference 중 오류 발생: {e}")
+        print(f"❌ Inference 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 # ============================================================================
