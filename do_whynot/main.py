@@ -9,6 +9,7 @@ from datetime import datetime
 import pytz
 import re
 import io
+import csv
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
@@ -169,14 +170,13 @@ def main():
         bad_rows, bad_cells = fast_find_problematic_rows(intermediate_df, main_logger)
 
         intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
-        intermediate_df.to_csv(intermediate_path, index=False, encoding="utf-8")
+        intermediate_df.to_csv(intermediate_path, index=False, encoding="utf-8", quoting=csv.QUOTE_MINIMAL, escapechar="\\")
         main_logger.info(f"[OK] Intermediate preprocessed data saved to: {intermediate_path.name}")
         
         # 2) 후처리 (이진 매핑, 날짜 차이, 결측 컬럼 제거)
         intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
-        intermediate_df = pd.read_csv(intermediate_path)
+        intermediate_df = pd.read_csv(intermediate_path, encoding="utf-8")
         main_logger.info(f"Intermediate data loaded. DataFrame shape: {intermediate_df.shape}")
-        main_logger.info(f"Intermediate_df")
 
         final_df = postprocess(intermediate_df, main_logger, DATA_OUTPUT_DIR) 
         main_logger.info(f"Preprocessing complete. Final DataFrame shape: {final_df.shape}")

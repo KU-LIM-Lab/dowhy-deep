@@ -2,7 +2,13 @@
     "JHNT_RQUT_CHNL_SECD": {
         "고용24": 0,
         "오프라인": 1,
-        "온라인": 2
+        "온라인": 2,
+        "온라인\"대면": 3,
+        "온라인,오프라인": 4
+    },
+    "MDTN_HOPE_GRD_CD": {
+        "불필요": 0,
+        "필요": 1
     },
     "EMPL_STLE_CD": {
         "기간의 정함이 없는 근로계약": 0,
@@ -52,9 +58,6 @@
     },
     "RESUME_TITLE": {
         "OOO님의 이력서입니다.": 0
-    },
-    "BASIC_RESUME_YN": {
-        "Y": 0
     },
     "DS_RESUME_ITEM_CLCD": {
         "개인경력": 0,
@@ -254,13 +257,6 @@
     "RESUME_ITEM_5_NM": {
         "주요활동": 0,
         "훈련과정": 1
-    },
-    "COMP_NM_OPEN_YN": {
-        "N": 0,
-        "Y": 1
-    },
-    "BASS_SFID_YN": {
-        "Y": 0
     },
     "SFID_SJNM": {
         "OOO님의 자기소개서 입니다.": 0

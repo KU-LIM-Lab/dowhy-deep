@@ -440,11 +440,14 @@ def parse_license_to_lists(all_license_data: List[Dict[str, Any]]) -> pd.DataFra
 def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info("Reading raw CSV data.")
 
-    dtype_map = {}
-    for k in ["JHNT_MBN", "JHNT_CTN"]:
-        dtype_map[k] = str
+    # dtype_map = {}
+    # for k in ["JHNT_MBN", "JHNT_CTN"]:
+    #     dtype_map[k] = str
 
-    base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
+    # base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
+    base = pd.read_csv(RAW_CSV, encoding="utf-8")
+    base['JHNT_MBN'] = base['JHNT_MBN'].astype(str)    
+    base['JHNT_CTN'] = base['JHNT_CTN'].astype(str)
 
     # 1. 이력서 데이터 처리
     logger.info(f"Detecting resume JSON structure based on {TOTAL_RESUME_JSON}.")
@@ -517,22 +520,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
 def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir) -> pd.DataFrame:
     logger.info("Starting postprocessing: Binary mapping and date calculation.")
     
-    # ---- (1) 바이너리 매핑 ----
-    bin_map = {"예":1, "아니오":0, "아니요":0, "필요":1, "불필요":0}
-    mapped_cols = [] 
-    
-    for col in df.columns:
-        if df[col].dtype == object:
-            df[col] = df[col].replace(bin_map)
-            if df[col].dtype != object:
-                mapped_cols.append(col)
-                
-    if mapped_cols:
-        logger.info(f"Successfully applied Binary Mapping to {len(mapped_cols)} columns: {', '.join(mapped_cols)}") 
-    else:
-        logger.info("No object columns were successfully converted by binary mapping.")
-
-    # ---- (2) 날짜 차이 계산  ----
+    # ---- (1) 날짜 차이 계산  ----
     date_diff_cols = [] 
     if "JHCR_DE" in df.columns:
         anchor = pd.to_datetime(df["JHCR_DE"], errors="coerce")
@@ -558,7 +546,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
     else:
         logger.warning("Anchor column 'JHCR_DE' not found. Skipping date difference calculation.")
 
-    # ---- (3) 모든 값이 결측인 컬럼 제거 ----
+    # ---- (2) 모든 값이 결측인 컬럼 제거 ----
     original_cols = df.shape[1]
     cols_to_drop = df.columns[df.isnull().all()].tolist()
     
@@ -568,7 +556,58 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
     if dropped_cols_count > 0:
         logger.info(f"Dropped {dropped_cols_count} columns that were entirely missing values: {', '.join(cols_to_drop)}")
     
-    # ---- (4) label encoding ----
+    # ---- (3) 바이너리 매핑 (Y=1, N=0) ----
+    strict_binary_map = {"Y": 1.0, "N": 0.0} 
+    strict_binary_set = {"Y", "N"}
+    mapped_cols = [] 
+    
+    for col in df.columns:
+        if df[col].dtype == object:
+            non_na_unique = df[col].dropna().astype(str).str.strip().unique()
+            
+            if len(non_na_unique) <= 2:
+                # 오직 'Y'와 'N'만 포함하는지 확인 (대소문자 구분)
+                has_only_yn = all(val in strict_binary_set for val in non_na_unique)
+                
+                if has_only_yn:
+                    # 안정적인 replace와 Int64 캐스팅
+                    df[col] = df[col].replace(strict_binary_map)
+                    
+                    # Y/N만 있었으므로, dtype을 Int64로 강제 변환
+                    try:
+                        df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
+                        mapped_cols.append(col)
+                    except Exception:
+                         # 변환 실패 시 object 타입 유지 (mapped_cols에 추가 안됨)
+                        pass
+                
+    if mapped_cols:
+        logger.info(f"Successfully applied Binary Mapping (Y=1, N=0) to {len(mapped_cols)} columns: {', '.join(mapped_cols)}") 
+    else:
+        logger.info("No object columns were successfully converted by binary mapping.")
+        
+    # ---- (4) 나머지 object 컬럼에서 'y'를 -1로 처리 ---- 
+    y_to_neg1_count = 0
+    
+    for col in df.columns:
+        if df[col].dtype == object: 
+            mask = df[col].astype(str).str.strip() == 'y'
+            if mask.any():
+                df[col] = df[col].mask(mask, -1.0)
+                y_to_neg1_count += mask.sum()
+                
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
+                    logger.info(f"Successfully converted {col} columns to numeric with transformation of 'y' to -1.")
+                except Exception:
+                    pass
+    
+    if y_to_neg1_count > 0:
+        logger.info(f"Successfully converted {y_to_neg1_count} instances of 'y' to -1 in remaining columns (case-sensitive).")
+    else:
+        logger.info("No instances of 'y' found to convert to -1 in remaining columns.")
+
+    # ---- (5) label encoding ----
     clos_ym_prefix_cols = [c for c in df.columns if c.startswith('CLOS_YM')]
     jhcr_de_prefix_cols = [c for c in df.columns if c.startswith('JHCR_DE')]
     excluded_cols = list(set(EXCLUDE_COLS + clos_ym_prefix_cols + jhcr_de_prefix_cols))

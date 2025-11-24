@@ -27,7 +27,7 @@ DATA_OUTPUT_DIR = project_root / folder_name / "data" / "output"   # 데이터 �
 DAG_DIR = project_root / folder_name / "dags"   # DAG 파일 경로
 MODEL_DIR = project_root / folder_name / "models"   # 모델 파일 경로
 
-RAW_CSV = project_root / folder_name / "data" / "synthetic_data_raw.csv"   # 구직인증데이터 경로
+RAW_CSV = project_root / folder_name / "data" / "synthetic_data_raw_error.csv"   # 구직인증데이터 경로
 
 RESUME_DIR   =  project_root / folder_name / "data" / "RESUME_JSON"    # 이력서 json 파일 경로
 COVER_DIR    = project_root / folder_name / "data"  / "COVERLETTERS_JSON"   # 자기소개서 json 파일 경로
@@ -35,6 +35,6 @@ TRAINING_DIR = project_root / folder_name / "data"  / "TRAININGS_JSON"  # 직업
 LICENSE_DIR  = project_root / folder_name / "data"  / "LICENSES_JSON"  # 자격증 json 파일 경로
 
 TOTAL_RESUME_JSON = RESUME_DIR / "resume_total.json"
-TOTAL_COVER_JSON = COVER_DIR / "coverletter_total.json"
+TOTAL_COVER_JSON = COVER_DIR / "coverletter_error.json"
 TOTAL_TRAINING_JSON = TRAINING_DIR / "trainings_total.json"
 TOTAL_LICENSE_JSON = LICENSE_DIR / "license_total.json"
