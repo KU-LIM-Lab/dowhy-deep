@@ -518,7 +518,7 @@ def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
 # 6) 후처리 (옵션)
 # =========================
 def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir) -> pd.DataFrame:
-    logger.info("Starting postprocessing: Binary mapping and date calculation.")
+    logger.info("Starting postprocessing")
     
     # ---- (1) 날짜 차이 계산  ----
     date_diff_cols = [] 
@@ -586,26 +586,26 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
     else:
         logger.info("No object columns were successfully converted by binary mapping.")
         
-    # ---- (4) 나머지 object 컬럼에서 'y'를 -1로 처리 ---- 
-    y_to_neg1_count = 0
+    # # ---- (4) 나머지 object 컬럼에서 'y'를 -1로 처리 ---- 
+    # y_to_neg1_count = 0
     
-    for col in df.columns:
-        if df[col].dtype == object: 
-            mask = df[col].astype(str).str.strip() == 'y'
-            if mask.any():
-                df[col] = df[col].mask(mask, -1.0)
-                y_to_neg1_count += mask.sum()
+    # for col in df.columns:
+    #     if df[col].dtype == object: 
+    #         mask = df[col].astype(str).str.strip() == 'y'
+    #         if mask.any():
+    #             df[col] = df[col].mask(mask, -1.0)
+    #             y_to_neg1_count += mask.sum()
                 
-                try:
-                    df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
-                    logger.info(f"Successfully converted {col} columns to numeric with transformation of 'y' to -1.")
-                except Exception:
-                    pass
+    #             try:
+    #                 df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
+    #                 logger.info(f"Successfully converted {col} columns to numeric with transformation of 'y' to -1.")
+    #             except Exception:
+    #                 pass
     
-    if y_to_neg1_count > 0:
-        logger.info(f"Successfully converted {y_to_neg1_count} instances of 'y' to -1 in remaining columns (case-sensitive).")
-    else:
-        logger.info("No instances of 'y' found to convert to -1 in remaining columns.")
+    # if y_to_neg1_count > 0:
+    #     logger.info(f"Successfully converted {y_to_neg1_count} instances of 'y' to -1 in remaining columns (case-sensitive).")
+    # else:
+    #     logger.info("No instances of 'y' found to convert to -1 in remaining columns.")
 
     # ---- (5) label encoding ----
     clos_ym_prefix_cols = [c for c in df.columns if c.startswith('CLOS_YM')]
@@ -616,6 +616,28 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
 
     encoding_map = {}
     for c in cat_cols:
+        # # Debug str < int error
+        # col_series = df[c]
+        # non_na = col_series.dropna()
+        # unique_vals = non_na.unique()
+
+        # unique_types = {type(v).__name__ for v in unique_vals}
+        # if len(unique_types) > 1:
+        #     logger.warning(
+        #         f"[LabelEncoding][MIXED_TYPE] Column '{c}' has mixed python types: {unique_types}. "
+        #         f"Sample values (up to 10): {list(unique_vals[:10])}"
+        #     )
+
+        # try:
+        #     sorted_categories = sorted(unique_vals)
+        # except TypeError:
+        #     logger.error(
+        #         f"[LabelEncoding][TYPE_ERROR] Failed to sort unique values for column '{c}'. "
+        #         f"This usually happens when incomparable types (e.g., str vs int) are mixed.\n"
+        #         f"    Types: {unique_types}\n"
+        #         f"    Sample values (up to 20): {list(unique_vals[:20])}"
+        #     )
+
         cat_dtype = pd.Categorical(df[c], categories=sorted(df[c].dropna().unique()))
         
         mapping = {label: code for code, label in enumerate(cat_dtype.categories)}

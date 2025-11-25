@@ -144,9 +144,9 @@ def fast_find_problematic_rows(df, logger, sample_limit=1000):
     bad_rows_df = pd.DataFrame(bad_rows)
     bad_cells_df = pd.DataFrame(bad_cells)
 
-    for i, r in bad_rows_df.head(50).iterrows():
-        logger.warning(f"ROW {r['index']} | error: {r['error']}")
-        logger.warning(f"VALUES: {r['row_values']}")
+    # for i, r in bad_rows_df.head(50).iterrows():
+    #     logger.warning(f"ROW {r['index']} | error: {r['error']}")
+    #     logger.warning(f"VALUES: {r['row_values']}")
     for i, r in bad_cells_df.head(50).iterrows():
         logger.warning(f"ROW {r['index']} | col: {r['column']}")
         logger.warning(f"VALUES: {repr(r['value'])}")
