@@ -127,6 +127,41 @@ else
 fi
 echo ""
 
+# Docker 관련 확인
+echo "[5] Docker 환경 확인"
+if command -v docker &> /dev/null; then
+    echo "  ✓ Docker 설치됨 ($(docker --version))"
+    
+    # Docker 이미지 확인
+    if docker images | grep -q "laborlab"; then
+        echo "  ✓ LaborLab Docker 이미지 발견"
+        docker images | grep "laborlab" | head -3
+    else
+        echo "  ⚠ LaborLab Docker 이미지 없음"
+        echo "    폐쇠망 환경에서 docker load로 이미지를 로드해야 합니다."
+    fi
+    
+    if docker images | grep -q "ollama"; then
+        echo "  ✓ Ollama Docker 이미지 발견"
+    else
+        echo "  ⚠ Ollama Docker 이미지 없음"
+        echo "    폐쇠망 환경에서 docker load로 이미지를 로드해야 합니다."
+    fi
+else
+    echo "  ✗ Docker가 설치되지 않음"
+    echo "    경고: Docker는 필수입니다."
+    ((ERROR_COUNT++))
+fi
+
+if command -v docker-compose &> /dev/null; then
+    echo "  ✓ Docker Compose 설치됨 ($(docker-compose --version))"
+else
+    echo "  ✗ Docker Compose가 설치되지 않음"
+    echo "    경고: Docker Compose는 필수입니다."
+    ((ERROR_COUNT++))
+fi
+echo ""
+
 # 요약
 echo "=========================================="
 if [ "$ERROR_COUNT" -eq 0 ]; then
