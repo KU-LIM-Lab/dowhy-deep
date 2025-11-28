@@ -364,8 +364,8 @@ class Preprocessor:
         # score와 오탈자 수만 반환 (그래프 변수명과 일치)
         return {
             "SEEK_CUST_NO": seek_id,
-            "cover_score": score,  # 그래프: cover_score
-            "cover_typo_count": typo_count  # 그래프: cover_typo_count
+            "cover_letter_score": score,  # 그래프: cover_letter_score
+            "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
         }
     
     def _preprocess_cover_letter(self, data):
@@ -391,8 +391,8 @@ class Preprocessor:
                     print(f"⚠️ 자기소개서 처리 오류 (SEEK_CUST_NO: {seek_id}): {e}")
                     rows.append({
                         "SEEK_CUST_NO": seek_id,
-                        "cover_score": None,
-                        "cover_typo_count": 0
+                        "cove_letter_score": None,
+                        "cover_letter_typo_count": 0
                     })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
@@ -562,7 +562,7 @@ class Preprocessor:
         return {
             "SEEK_CUST_NO": seek_id,
             "JHNT_CTN": jhnt_ctn,
-            "license_score": score  # 그래프: license_score
+            "certification_score": score  # 그래프: certification_score
         }
     
     def _preprocess_certification(self, data):
@@ -589,7 +589,7 @@ class Preprocessor:
                     rows.append({
                         "SEEK_CUST_NO": seek_id,
                         "JHNT_CTN": item.get("JHNT_CTN", ""),
-                        "license_score": None
+                        "certification_score": None
                     })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
