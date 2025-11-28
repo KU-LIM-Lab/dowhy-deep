@@ -154,10 +154,10 @@ class Preprocessor:
             df = df.drop(columns=["BFR_OCTR_YN"])
             print(f"[DEBUG] BFR_OCTR_YN 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
-        # 8개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
+        # 9개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
         agree_vars = [
             "EMAIL_RCYN", "SAEIL_CNTC_AGRE_YN", "SHRS_IDIF_AOFR_YN", "SULC_IDIF_AOFR_YN",
-            "IDIF_IQRY_AGRE_YN", "SMS_RCYN", "EMAIL_OTPB_YN", "MPNO_OTPB_YN"
+            "IDIF_IQRY_AGRE_YN", "SMS_RCYN", "EMAIL_OTPB_YN", "MPNO_OTPB_YN", "EMAIL_RCYN"
         ]
 
         # 존재하는 경우만 사용
@@ -165,7 +165,7 @@ class Preprocessor:
 
         if agree_vars:
             agree_count = (df[agree_vars] == "예").sum(axis=1)
-            df["AGREE_LEVEL"] = agree_count.apply(lambda x: "하" if x <= 2 else ("중" if x <= 5 else "상"))
+            df["AGREE_LEVEL"] = agree_count.apply(lambda x: "하" if x <= 3 else ("중" if x <= 6 else "상"))
             df = df.drop(columns=agree_vars)
             print(f"[DEBUG] agree_vars 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
@@ -364,8 +364,8 @@ class Preprocessor:
         # score와 오탈자 수만 반환 (그래프 변수명과 일치)
         return {
             "SEEK_CUST_NO": seek_id,
-            "cover_score": score,  # 그래프: cover_score
-            "cover_typo_count": typo_count  # 그래프: cover_typo_count
+            "cover_letter_score": score,  # 그래프: cover_letter_score
+            "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
         }
     
     def _preprocess_cover_letter(self, data):
@@ -391,8 +391,8 @@ class Preprocessor:
                     print(f"⚠️ 자기소개서 처리 오류 (SEEK_CUST_NO: {seek_id}): {e}")
                     rows.append({
                         "SEEK_CUST_NO": seek_id,
-                        "cover_score": None,
-                        "cover_typo_count": 0
+                        "cove_letter_score": None,
+                        "cover_letter_typo_count": 0
                     })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
@@ -562,7 +562,7 @@ class Preprocessor:
         return {
             "SEEK_CUST_NO": seek_id,
             "JHNT_CTN": jhnt_ctn,
-            "license_score": score  # 그래프: license_score
+            "certification_score": score  # 그래프: certification_score
         }
     
     def _preprocess_certification(self, data):
@@ -589,7 +589,7 @@ class Preprocessor:
                     rows.append({
                         "SEEK_CUST_NO": seek_id,
                         "JHNT_CTN": item.get("JHNT_CTN", ""),
-                        "license_score": None
+                        "certification_score": None
                     })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거

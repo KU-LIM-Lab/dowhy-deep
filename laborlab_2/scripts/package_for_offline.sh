@@ -1,5 +1,5 @@
 #!/bin/bash
-# 폐쇠망 배포를 위한 패키징 스크립트
+# 폐쇠망 배포를 위한 패키징 스크립트 (Docker 전용)
 # 온라인 환경에서 실행하여 배포 패키지를 생성합니다.
 
 set -e
@@ -10,7 +10,7 @@ DEPLOY_DIR="${PROJECT_DIR}/deploy_package"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 echo "=========================================="
-echo "폐쇠망 배포 패키지 생성"
+echo "폐쇠망 배포 패키지 생성 (Docker 전용)"
 echo "=========================================="
 echo ""
 
@@ -27,7 +27,6 @@ cp -r src/ "${DEPLOY_DIR}/laborlab_2/"
 cp config.json "${DEPLOY_DIR}/laborlab_2/"
 cp requirements.txt "${DEPLOY_DIR}/laborlab_2/"
 cp Dockerfile "${DEPLOY_DIR}/laborlab_2/"
-cp Dockerfile.offline "${DEPLOY_DIR}/laborlab_2/"
 cp docker-compose.yml "${DEPLOY_DIR}/laborlab_2/"
 cp README.md "${DEPLOY_DIR}/laborlab_2/"
 cp OFFLINE_DEPLOYMENT.md "${DEPLOY_DIR}/laborlab_2/" 2>/dev/null || true
@@ -88,7 +87,6 @@ echo ""
 echo "[5] DoWhy 라이브러리 확인..."
 if [ -d "../dowhy" ]; then
     echo "  ✓ DoWhy 라이브러리 발견: ../dowhy"
-    echo "  ⚠️ DoWhy 라이브러리는 별도로 전송해야 합니다."
     read -p "  DoWhy 라이브러리도 압축에 포함하시겠습니까? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -101,7 +99,80 @@ else
     echo "     프로젝트 루트(../dowhy)에 DoWhy 라이브러리가 있어야 합니다."
 fi
 
-# 6. 요약
+# 6. Docker 이미지 빌드 및 저장
+echo ""
+echo "[6] Docker 이미지 빌드 및 저장 중..."
+cd "${PROJECT_DIR}"
+
+# Docker Compose로 이미지 빌드
+echo "  - Docker 이미지 빌드 중..."
+if docker-compose build; then
+    echo "    ✓ Docker 이미지 빌드 완료"
+    
+    # 빌드된 이미지 확인
+    IMAGE_NAME=$(docker images | grep "laborlab_2-laborlab" | head -1 | awk '{print $1":"$2}')
+    if [ -z "$IMAGE_NAME" ]; then
+        IMAGE_NAME=$(docker images | grep "laborlab" | head -1 | awk '{print $1":"$2}')
+    fi
+    
+    if [ -n "$IMAGE_NAME" ]; then
+        echo "  - 이미지 저장 중: ${IMAGE_NAME}"
+        docker save "${IMAGE_NAME}" -o "${PROJECT_DIR}/laborlab-2-image_${TIMESTAMP}.tar"
+        echo "    ✓ 애플리케이션 이미지 저장 완료: laborlab-2-image_${TIMESTAMP}.tar"
+    else
+        echo "    ⚠️ 이미지 이름을 찾을 수 없습니다. 수동으로 저장하세요:"
+        echo "       docker images"
+        echo "       docker save <IMAGE_NAME> -o laborlab-2-image.tar"
+    fi
+else
+    echo "    ⚠️ Docker 이미지 빌드 실패"
+    echo "       수동으로 빌드 및 저장하세요:"
+    echo "       docker-compose build"
+    echo "       docker save laborlab_2-laborlab:latest -o laborlab-2-image.tar"
+fi
+
+# Ollama 이미지 저장
+echo ""
+read -p "  Ollama 이미지를 저장하시겠습니까? (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if docker images | grep -q "ollama/ollama"; then
+        docker save ollama/ollama:latest -o "${PROJECT_DIR}/ollama_${TIMESTAMP}.tar"
+        echo "    ✓ Ollama 이미지 저장 완료: ollama_${TIMESTAMP}.tar"
+    else
+        echo "    - Ollama 이미지 다운로드 중..."
+        if docker pull ollama/ollama:latest; then
+            docker save ollama/ollama:latest -o "${PROJECT_DIR}/ollama_${TIMESTAMP}.tar"
+            echo "    ✓ Ollama 이미지 저장 완료: ollama_${TIMESTAMP}.tar"
+        else
+            echo "    ⚠️ Ollama 이미지 다운로드 실패"
+        fi
+    fi
+fi
+
+# CUDA 베이스 이미지 저장 (선택사항)
+echo ""
+read -p "  CUDA 베이스 이미지를 저장하시겠습니까? (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if docker images | grep -q "nvidia/cuda.*12.4.0"; then
+        CUDA_IMAGE=$(docker images | grep "nvidia/cuda.*12.4.0.*runtime" | head -1 | awk '{print $1":"$2}')
+        if [ -n "$CUDA_IMAGE" ]; then
+            docker save "${CUDA_IMAGE}" -o "${PROJECT_DIR}/nvidia-cuda_${TIMESTAMP}.tar"
+            echo "    ✓ CUDA 이미지 저장 완료: nvidia-cuda_${TIMESTAMP}.tar"
+        fi
+    else
+        echo "    - CUDA 이미지 다운로드 중..."
+        if docker pull nvidia/cuda:12.4.0-runtime-ubuntu22.04; then
+            docker save nvidia/cuda:12.4.0-runtime-ubuntu22.04 -o "${PROJECT_DIR}/nvidia-cuda_${TIMESTAMP}.tar"
+            echo "    ✓ CUDA 이미지 저장 완료: nvidia-cuda_${TIMESTAMP}.tar"
+        else
+            echo "    ⚠️ CUDA 이미지 다운로드 실패"
+        fi
+    fi
+fi
+
+# 7. 요약
 echo ""
 echo "=========================================="
 echo "패키징 완료!"
@@ -112,6 +183,15 @@ echo "  - ${PROJECT_DIR}/laborlab_2_deploy_${TIMESTAMP}.tar.gz"
 if [ -f "${PROJECT_DIR}/../dowhy_library_${TIMESTAMP}.tar.gz" ]; then
     echo "  - ${PROJECT_DIR}/../dowhy_library_${TIMESTAMP}.tar.gz"
 fi
+if [ -f "${PROJECT_DIR}/laborlab-2-image_${TIMESTAMP}.tar" ]; then
+    echo "  - ${PROJECT_DIR}/laborlab-2-image_${TIMESTAMP}.tar"
+fi
+if [ -f "${PROJECT_DIR}/ollama_${TIMESTAMP}.tar" ]; then
+    echo "  - ${PROJECT_DIR}/ollama_${TIMESTAMP}.tar"
+fi
+if [ -f "${PROJECT_DIR}/nvidia-cuda_${TIMESTAMP}.tar" ]; then
+    echo "  - ${PROJECT_DIR}/nvidia-cuda_${TIMESTAMP}.tar"
+fi
 echo ""
 echo "폐쇠망 환경으로 전송할 파일:"
 echo "  1. laborlab_2_deploy_${TIMESTAMP}.tar.gz"
@@ -120,12 +200,21 @@ if [ -f "${PROJECT_DIR}/../dowhy_library_${TIMESTAMP}.tar.gz" ]; then
 else
     echo "  2. dowhy/ 폴더 (별도 전송 필요)"
 fi
+if [ -f "${PROJECT_DIR}/laborlab-2-image_${TIMESTAMP}.tar" ]; then
+    echo "  3. laborlab-2-image_${TIMESTAMP}.tar"
+fi
+if [ -f "${PROJECT_DIR}/ollama_${TIMESTAMP}.tar" ]; then
+    echo "  4. ollama_${TIMESTAMP}.tar"
+fi
+if [ -f "${PROJECT_DIR}/nvidia-cuda_${TIMESTAMP}.tar" ]; then
+    echo "  5. nvidia-cuda_${TIMESTAMP}.tar (선택사항)"
+fi
 echo ""
 echo "폐쇠망 환경에서 실행:"
 echo "  1. tar -xzf laborlab_2_deploy_${TIMESTAMP}.tar.gz"
 echo "  2. tar -xzf dowhy_library_${TIMESTAMP}.tar.gz (DoWhy가 별도인 경우)"
-echo "  3. cd laborlab_2"
-echo "  4. cd .."
-echo "  5. python -m laborlab_2.src.main --config laborlab_2/config.json"
+echo "  3. docker load < laborlab-2-image_${TIMESTAMP}.tar"
+echo "  4. docker load < ollama_${TIMESTAMP}.tar"
+echo "  5. cd laborlab_2"
+echo "  6. docker-compose up -d"
 echo ""
-
