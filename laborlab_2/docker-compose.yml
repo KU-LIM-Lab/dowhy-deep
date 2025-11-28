@@ -20,8 +20,6 @@ services:
       - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log
       - EXPERIMENT_CONFIG=/app/laborlab_2/config.json
       - OLLAMA_HOST=http://ollama:11434
-      # LLM API 키 (선택적)
-      # - LLM_API_KEY=your-api-key-here
     depends_on: [ollama]
     working_dir: /app/laborlab_2
     # GPU 지원 (NVIDIA Docker 필요)

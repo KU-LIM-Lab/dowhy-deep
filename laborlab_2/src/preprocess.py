@@ -42,13 +42,14 @@ from .llm_scorer import LLMScorer
 
 
 class Preprocessor:
-    def __init__(self, df_list, api_key=None):
+    def __init__(self, df_list, job_category_file="KSIC"):
         self.json_names = JSON_NAMES
         self.sheet_name = '구직인증 관련 데이터'
         self.df_list = []
         self.variable_mapping = self.load_variable_mapping()
-        self.llm_scorer = LLMScorer(api_key)
+        self.llm_scorer = LLMScorer()
         self.hope_jscd1_map = {}  # SEEK_CUST_NO -> HOPE_JSCD1 매핑 저장
+        self.job_category_file = job_category_file  # 직종 소분류 파일명 (KECO, KSCO, KSIC)
         self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
 
     def load_variable_mapping(self):
@@ -63,19 +64,33 @@ class Preprocessor:
         return variable_mapping
     
     def load_job_mapping(self):
-        """job_subcategories.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
+        """job_subcategories_XXXX.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
         try:
             # __file__ 기준으로 경로 계산: src/preprocess.py -> laborlab_2/ -> data/
             preprocess_file = Path(__file__)  # src/preprocess.py
             laborlab_dir = preprocess_file.parent.parent  # laborlab_2/
-            job_mapping_path = laborlab_dir / "data" / "job_subcategories.csv"
+            
+            # job_category_file에 따라 파일명 결정 (KECO, KSCO, KSIC)
+            job_category_file = self.job_category_file.upper()
+            if job_category_file not in ["KECO", "KSCO", "KSIC"]:
+                print(f"⚠️ 잘못된 직종 소분류 파일명: {job_category_file}. 기본값 KSIC 사용")
+                job_category_file = "KSIC"
+            
+            job_mapping_path = laborlab_dir / "data" / f"job_subcategories_{job_category_file}.csv"
+            
+            if not job_mapping_path.exists():
+                print(f"⚠️ 직종 소분류 파일을 찾을 수 없습니다: {job_mapping_path}")
+                print(f"   기본값 job_subcategories_KSIC.csv 사용 시도")
+                job_mapping_path = laborlab_dir / "data" / "job_subcategories_KSIC.csv"
             
             job_df = pd.read_csv(job_mapping_path, encoding='utf-8')
+            print(f"✅ 직종 소분류 파일 로드 완료: {job_mapping_path.name} ({len(job_df)}개 직종)")
+            
             # 소분류코드를 문자열로 변환하여 딕셔너리 생성
             job_mapping = dict(zip(job_df['소분류코드'].astype(str).str.zfill(3), job_df['소분류명']))
             return job_mapping
         except Exception as e:
-            print(f"job_subcategories.csv 로드 실패: {e}")
+            print(f"❌ 직종 소분류 파일 로드 실패: {e}")
             return {}
     
     def get_job_name_from_code(self, code):

@@ -465,22 +465,22 @@ def clean_dataframe_for_causal_model(df: pd.DataFrame, required_vars: Optional[L
     return df_clean
 
 
-def preprocess_and_merge_data(file_list: List[str], data_dir: str, api_key: Optional[str] = None, limit_data: bool = False, limit_size: int = 5000) -> pd.DataFrame:
+def preprocess_and_merge_data(file_list: List[str], data_dir: str, limit_data: bool = False, limit_size: int = 5000, job_category_file: str = "KSIC") -> pd.DataFrame:
     """
     Preprocessor 클래스를 사용하여 모든 데이터를 전처리하고 병합하는 함수
     
     Input:
         file_list (List[str]): 파일 경로 리스트 [정형데이터, 이력서, 자기소개서, 직업훈련, 자격증]
         data_dir (str): 데이터 디렉토리 경로
-        api_key (Optional[str]): LLM API 키
         limit_data (bool): 테스트 모드로 데이터 제한 여부
         limit_size (int): 제한할 데이터 크기
+        job_category_file (str): 직종 소분류 파일명 (KECO, KSCO, KSIC 중 선택, 기본값: KSIC)
     
     Output:
         pd.DataFrame: 병합된 데이터프레임
     """
     from . import preprocess
-    preprocessor = preprocess.Preprocessor([], api_key=api_key)
+    preprocessor = preprocess.Preprocessor([], job_category_file=job_category_file)
     absolute_file_list = [str(Path(f).resolve()) for f in file_list]
     merged_df = preprocessor.get_merged_df(absolute_file_list, limit_data=limit_data, limit_size=limit_size)
     print(f"✅ 모든 데이터 전처리 및 병합 완료")

@@ -42,13 +42,6 @@ FEWSHOT_EXAMPLES = {
     ]
 }
 
-# 키워드 기반 점수 계산용 키워드 리스트
-SCORING_KEYWORDS = [
-    '데이터','분석','SQL','파이썬','머신','시각화','대시보드','A/B','통계','모델','예측',
-    'React','TypeScript','API','Spring','배포','ETL','Spark','Kafka','Airflow',
-    '회계','결산','세무','채용','온보딩','GA4','ROI','엑셀','보고서','대학','경력'
-]
-
 # 기본 설정값
 DEFAULT_MAX_COVER_LEN = 400
 DEFAULT_COVER_EXCEED_RATIO = 0.85

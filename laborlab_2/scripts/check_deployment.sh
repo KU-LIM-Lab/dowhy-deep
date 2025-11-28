@@ -8,6 +8,11 @@ echo ""
 
 ERROR_COUNT=0
 
+# 프로젝트 루트 디렉토리로 이동
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${PROJECT_DIR}"
+
 # 소스 코드 확인
 echo "[1] 소스 코드 확인"
 REQUIRED_SRC_FILES=(

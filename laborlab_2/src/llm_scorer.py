@@ -2,7 +2,7 @@
 LLM 기반 점수 계산 모듈
 """
 import json
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
 try:
@@ -12,14 +12,14 @@ except ImportError:
     OLLAMA_AVAILABLE = False
     ollama = None
 
-from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, SCORING_KEYWORDS, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
+from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
 
 
 class LLMScorer:
     """LLM을 사용한 점수 계산 클래스"""
     
-    def __init__(self, api_key: Optional[str] = None):
-        # api_key는 더 이상 사용하지 않지만 하위 호환성을 위해 유지
+    def __init__(self):
+        # Local ollama 사용으로 api_key 불필요
         pass
     
         

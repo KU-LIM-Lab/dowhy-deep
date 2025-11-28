@@ -60,8 +60,7 @@ laborlab_2/
   "outcomes": ["ACQ_180_YN"],
   "estimators": ["linear_regression", "tabpfn"],
   "no_logs": false,
-  "verbose": false,
-  "api_key": null
+  "verbose": false
 }
 ```
 
@@ -106,10 +105,20 @@ python -m src.main --config config.json
 - `graphs`: 수동으로 지정할 그래프 파일 목록 (auto_extract_treatments가 true이면 무시)
 - `treatments`: 수동으로 지정할 treatment 목록 (auto_extract_treatments가 true이면 무시)
 - `outcomes`: 결과 변수 목록 (기본값: ["ACQ_180_YN"])
-- `estimators`: 사용할 추정 방법 목록 (기본값: ["linear_regression", "tabpfn"])
 - `no_logs`: 로그 저장 비활성화 여부 (기본값: false)
 - `verbose`: 상세 출력 활성화 여부 (기본값: false)
-- `api_key`: LLM API 키 (null이면 환경변수 LLM_API_KEY 사용)
+- `experiment_list`: 실험 조합 리스트 (배열 형식)
+  - 각 실험은 `[graph_file, treatment, outcome, estimator]` 형식
+  - 예: `["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"]`
+  - graph_file은 `graph_data_dir` 내의 파일명 또는 절대 경로
+  - treatment는 그래프 파일의 `subgraph cluster_treatments` 블록에서 정의된 `treatment_var` 값
+  - outcome은 일반적으로 "ACQ_180_YN"
+  - estimator는 "tabpfn" 또는 "linear_regression"
+
+**참고**: 
+- Local ollama를 사용하므로 API 키 설정이 필요하지 않습니다.
+- `experiment_list`가 정의되어 있으면 자동 생성 로직은 무시됩니다.
+- `experiment_list`가 없으면 기존 방식(auto_extract_treatments 등)을 사용합니다.
 
 ## 📊 결과 확인
 
