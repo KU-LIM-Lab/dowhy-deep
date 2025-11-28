@@ -2,6 +2,7 @@
 LLM 기반 점수 계산 모듈
 """
 import json
+import os
 from typing import List, Tuple
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
@@ -19,8 +20,26 @@ class LLMScorer:
     """LLM을 사용한 점수 계산 클래스"""
     
     def __init__(self):
-        # Local ollama 사용으로 api_key 불필요
-        pass
+        # 무조건 로컬 Ollama만 사용
+        # OLLAMA_HOST 환경변수에서 로컬 Ollama 주소 가져오기
+        self.ollama_host = self._get_ollama_host()
+        if not self.ollama_host:
+            raise ValueError("OLLAMA_HOST 환경변수가 설정되지 않았습니다. 로컬 Ollama 주소를 설정하세요.")
+    
+    def _get_ollama_host(self) -> str:
+        """Ollama 호스트 주소 결정 (로컬만 사용)"""
+        # 환경변수에서 로컬 Ollama 주소 가져오기
+        env_host = os.getenv("OLLAMA_HOST")
+        if env_host:
+            # http:// 또는 https:// 제거 (ollama 클라이언트가 자동 추가)
+            if env_host.startswith("http://"):
+                env_host = env_host.replace("http://", "")
+            elif env_host.startswith("https://"):
+                env_host = env_host.replace("https://", "")
+            return env_host
+        
+        # 환경변수가 없으면 None 반환 (에러 발생)
+        return None
     
         
     def count_typos(self, text: str) -> int:
@@ -36,7 +55,10 @@ class LLMScorer:
             sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
             
-            resp = ollama.chat(
+            # 로컬 Ollama 클라이언트 생성 (무조건 환경변수에서 가져온 호스트 사용)
+            client = ollama.Client(host=self.ollama_host)
+            
+            resp = client.chat(
                 model="llama3.2:1b",
                 messages=[sys_msg, user_msg],
                 options={"temperature": 0.1}
@@ -82,7 +104,10 @@ class LLMScorer:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
             
-            resp = ollama.chat(
+            # 로컬 Ollama 클라이언트 생성 (무조건 환경변수에서 가져온 호스트 사용)
+            client = ollama.Client(host=self.ollama_host)
+            
+            resp = client.chat(
                 model="llama3.2:1b",
                 messages=[sys_msg, user_msg],
                 options={"temperature": 0.2}

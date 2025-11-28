@@ -49,7 +49,8 @@ def preprocess(
     seis_data_dir: str,
     limit_data: bool = False,
     limit_size: int = 5000,
-    job_category_file: str = "KSIC"
+    job_category_file: str = "KSIC",
+    output_dir: Optional[Path] = None
 ) -> pd.DataFrame:
     """
     전처리 함수 (limit_data 옵션으로 데이터 제한 가능)
@@ -98,9 +99,15 @@ def preprocess(
     preprocessing_elapsed = time.time() - preprocessing_start
     print(f"⏱️ 전처리 및 병합 완료! 소요 시간: {preprocessing_elapsed:.2f}초")
     
-    # merged_df.csv를 seis_data 폴더에 저장
-    seis_data_path = data_dir_path / seis_data_dir
-    merged_df_csv_path = seis_data_path / "merged_df.csv"
+    # merged_df.csv를 output_dir에 저장 (쓰기 가능한 디렉토리)
+    if output_dir is None:
+        # output_dir이 없으면 환경변수에서 가져오거나 기본값 사용
+        output_dir = Path(os.getenv("TERMINAL_OUTPUT_DIR", "log"))
+        if not output_dir.is_absolute():
+            output_dir = data_dir_path.parent / output_dir
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    merged_df_csv_path = output_dir / "merged_df.csv"
     print(f"\n💾 병합된 데이터를 CSV로 저장 중: {merged_df_csv_path}")
     merged_df.to_csv(merged_df_csv_path, index=False, encoding='utf-8-sig')
     print(f"✅ CSV 저장 완료: {merged_df_csv_path}")
@@ -513,9 +520,8 @@ def main():
     # ========================================================================
     # 1. 전처리 실행 또는 merged_df.csv 로드
     # ========================================================================
-    # seis_data 폴더에 merged_df.csv가 있는지 확인
-    seis_data_path = data_dir_path / seis_data_dir
-    merged_df_csv_path = seis_data_path / "merged_df.csv"
+    # output_dir에 merged_df.csv가 있는지 확인 (쓰기 가능한 디렉토리)
+    merged_df_csv_path = output_dir_path / "merged_df.csv"
     
     if merged_df_csv_path.exists():
         print("="*80)
@@ -555,7 +561,8 @@ def main():
                 seis_data_dir=seis_data_dir,
                 limit_data=limit_data,
                 limit_size=limit_size,
-                job_category_file=job_category_file
+                job_category_file=job_category_file,
+                output_dir=output_dir_path
             )
             
             # 인과 모델을 위한 데이터 준비

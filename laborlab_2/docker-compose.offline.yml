@@ -21,6 +21,7 @@ services:
       - PYTHONPATH=/app
       - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log
       - EXPERIMENT_CONFIG=/app/laborlab_2/config.json
+      # Docker 컨테이너의 ollama 서비스 사용
       - OLLAMA_HOST=http://ollama:11434
     depends_on: [ollama]
     working_dir: /app/laborlab_2
