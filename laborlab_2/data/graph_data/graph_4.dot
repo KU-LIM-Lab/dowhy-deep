@@ -1,99 +1,39 @@
-digraph {
-    rankdir=LR;
-    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+digraph G {
+rankdir=LR;
+node [fillcolor="#F8F9FB", fontname="Helvetica", shape=box, style="rounded,filled"];
+ACQ_180_YN [label="180일이내취업여부"];
+HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
+COMM_WAGE_TYCD [label="임금형태코드"];
+AFIV_RDJT_PSBL_YN [label="면접후재조정가능여부"];
+AREA_CD [label="지역코드"];
+HOPE_JSCD1 [label="희망직종코드1"];
+ACCR_CD [label="학력코드"];
+CARR_MYCT1 [label="경력월수1"];
+AGE [label="연령"];
+AGE -> ACCR_CD;
+ACCR_CD -> CARR_MYCT1;
+ACCR_CD -> HOPE_JSCD1;
+ACCR_CD -> HOPE_WAGE_SM_AMT;
+CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
+HOPE_WAGE_SM_AMT -> AFIV_RDJT_PSBL_YN;
+HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+COMM_WAGE_TYCD -> ACQ_180_YN;
+AFIV_RDJT_PSBL_YN -> ACQ_180_YN;
+ACCR_CD -> ACQ_180_YN;
+CARR_MYCT1 -> ACQ_180_YN;
+AREA_CD -> ACQ_180_YN;
+HOPE_JSCD1 -> ACQ_180_YN;
+subgraph cluster_treatments {
+color="#CCCCCC";
+label="Treatments (outcome: ACQ_180_YN)";
+style=dashed;
+node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,filled"];
+T1 [label="T1: HOPE_WAGE_SM_AMT", role="treatment_meta", treatment_def="희망임금 수준 차이의 효과", treatment_name="HOPE_WAGE_SM_AMT", treatment_question="희망임금이 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?", treatment_var="HOPE_WAGE_SM_AMT"];
+T2 [label="T2: COMM_WAGE_TYCD", role="treatment_meta", treatment_def="임금형태코드 차이의 효과", treatment_name="COMM_WAGE_TYCD", treatment_question="임금형태(월급/시급 등)가 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="COMM_WAGE_TYCD"];
+T3 [label="T3: NTR_OTIO_MYAV_RMNT_AMT", role="treatment_meta", treatment_def="직종×지역 중앙입직임금 수준 차이의 효과", treatment_name="NTR_OTIO_MYAV_RMNT_AMT", treatment_question="중앙 입직임금이 높은 환경과 낮은 환경의 구직자 6개월 내 취업 확률 차이?", treatment_var="NTR_OTIO_MYAV_RMNT_AMT"];
+T4 [label="T4: NTR_HOPE_WAGE_SM_AMT", role="treatment_meta", treatment_def="직종×지역 중앙희망임금 수준 차이의 효과", treatment_name="NTR_HOPE_WAGE_SM_AMT", treatment_question="주변 구직자들의 중앙 희망임금이 높은 환경과 낮은 환경에서의 6개월 내 취업 확률 차이?", treatment_var="NTR_HOPE_WAGE_SM_AMT"];
+T5 [label="T5: AFIV_RDJT_PSBL_YN", role="treatment_meta", treatment_def="면접후재조정가능여부 차이의 효과", treatment_name="AFIV_RDJT_PSBL_YN", treatment_question="임금 재조정이 가능하다고 응답한 사람과 불가능하다고 응답한 사람의 6개월 내 취업 확률 차이?", treatment_var="AFIV_RDJT_PSBL_YN"];
+}
 
-    ACQ_180_YN               [label="180일이내취업여부"];
-    HOPE_WAGE_SM_AMT         [label="희망임금합계금액"];
-    COMM_WAGE_TYCD           [label="임금형태코드"];
-    AFIV_RDJT_PSBL_YN        [label="면접후재조정가능여부"];
-    NTR_OTIO_MYAV_RMNT_AMT   [label="중앙입직월평균보수금액"];
-    NTR_HOPE_WAGE_SM_AMT     [label="중앙평균희망임금합계금액"];
-
-    AREA_CD                  [label="지역코드"];
-    HOPE_JSCD1               [label="희망직종코드1"];
-    ACCR_CD                  [label="학력코드"];
-    CARR_MYCT1               [label="경력월수1"];
-    AGE                      [label="연령"];
-
-    // 인과관계
-    AGE      -> ACCR_CD;
-    ACCR_CD  -> CARR_MYCT1;
-    ACCR_CD  -> HOPE_JSCD1;
-    ACCR_CD  -> HOPE_WAGE_SM_AMT;
-
-    CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
-
-    AREA_CD    -> NTR_OTIO_MYAV_RMNT_AMT;
-    AREA_CD    -> NTR_HOPE_WAGE_SM_AMT;
-    HOPE_JSCD1 -> NTR_OTIO_MYAV_RMNT_AMT;
-    HOPE_JSCD1 -> NTR_HOPE_WAGE_SM_AMT;
-
-    NTR_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
-    NTR_HOPE_WAGE_SM_AMT   -> HOPE_WAGE_SM_AMT;
-
-    HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
-    HOPE_WAGE_SM_AMT -> AFIV_RDJT_PSBL_YN;
-
-    HOPE_WAGE_SM_AMT       -> ACQ_180_YN;
-    COMM_WAGE_TYCD         -> ACQ_180_YN;
-    AFIV_RDJT_PSBL_YN      -> ACQ_180_YN;
-    NTR_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
-    NTR_HOPE_WAGE_SM_AMT   -> ACQ_180_YN;
-    ACCR_CD                -> ACQ_180_YN;
-    CARR_MYCT1             -> ACQ_180_YN;
-    AREA_CD                -> ACQ_180_YN;
-    HOPE_JSCD1             -> ACQ_180_YN;
-
-    // Treatments
-    subgraph cluster_treatments {
-        label="Treatments (outcome: ACQ_180_YN)";
-        style=dashed;
-        color="#CCCCCC";
-        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
-
-        T1 [
-            label="T1: HOPE_WAGE_SM_AMT",
-            role="treatment_meta",
-            treatment_var="HOPE_WAGE_SM_AMT",
-            treatment_name="HOPE_WAGE_SM_AMT",
-            treatment_def="희망임금 수준 차이의 효과",
-            treatment_question="희망임금이 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?"
-        ];
-
-        T2 [
-            label="T2: COMM_WAGE_TYCD",
-            role="treatment_meta",
-            treatment_var="COMM_WAGE_TYCD",
-            treatment_name="COMM_WAGE_TYCD",
-            treatment_def="임금형태코드 차이의 효과",
-            treatment_question="임금형태(월급/시급 등)가 다른 구직자 간 6개월 내 취업 확률 차이?"
-        ];
-
-        T3 [
-            label="T3: NTR_OTIO_MYAV_RMNT_AMT",
-            role="treatment_meta",
-            treatment_var="NTR_OTIO_MYAV_RMNT_AMT",
-            treatment_name="NTR_OTIO_MYAV_RMNT_AMT",
-            treatment_def="직종×지역 중앙입직임금 수준 차이의 효과",
-            treatment_question="중앙 입직임금이 높은 환경과 낮은 환경의 구직자 6개월 내 취업 확률 차이?"
-        ];
-
-        T4 [
-            label="T4: NTR_HOPE_WAGE_SM_AMT",
-            role="treatment_meta",
-            treatment_var="NTR_HOPE_WAGE_SM_AMT",
-            treatment_name="NTR_HOPE_WAGE_SM_AMT",
-            treatment_def="직종×지역 중앙희망임금 수준 차이의 효과",
-            treatment_question="주변 구직자들의 중앙 희망임금이 높은 환경과 낮은 환경에서의 6개월 내 취업 확률 차이?"
-        ];
-
-        T5 [
-            label="T5: AFIV_RDJT_PSBL_YN",
-            role="treatment_meta",
-            treatment_var="AFIV_RDJT_PSBL_YN",
-            treatment_name="AFIV_RDJT_PSBL_YN",
-            treatment_def="면접후재조정가능여부 차이의 효과",
-            treatment_question="임금 재조정이 가능하다고 응답한 사람과 불가능하다고 응답한 사람의 6개월 내 취업 확률 차이?"
-        ];
-    }
 }
