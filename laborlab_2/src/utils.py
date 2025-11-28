@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from sklearn.model_selection import train_test_split
+import joblib
 
 # DoWhy 라이브러리 임포트
 from dowhy import CausalModel
@@ -775,6 +776,65 @@ def run_analysis_without_preprocessing(
         raise
 
 
+def _save_estimator(
+    estimate,
+    graph_file: str,
+    treatment: str,
+    job_experiment_id: str,
+    job_category: str,
+    logger: Optional[logging.Logger] = None
+) -> Optional[Path]:
+    """
+    Estimator를 joblib으로 저장하는 내부 함수
+    
+    Args:
+        estimate: CausalEstimate 객체
+        graph_file: 그래프 파일 경로
+        treatment: treatment 변수명
+        job_experiment_id: 실험 ID
+        job_category: 직종소분류명
+        logger: 로거 객체
+    
+    Returns:
+        저장된 파일 경로 (실패 시 None)
+    """
+    if not estimate or not hasattr(estimate, "estimator"):
+        return None
+    
+    try:
+        estimator_obj = estimate.estimator
+        
+        # 저장 경로 생성: graph_file/treatment/job_experiment_id/job_category
+        script_dir = Path(__file__).parent.parent
+        checkpoint_base_dir = script_dir / "data" / "checkpoint"
+        
+        graph_name = Path(graph_file).stem
+        job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+        
+        # 경로 구조: checkpoint/graph_name/treatment/job_experiment_id/job_category
+        estimator_save_dir = checkpoint_base_dir / graph_name / treatment / job_experiment_id / job_category_safe
+        estimator_save_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 파일명 생성
+        estimator_filename = f"estimator_{graph_name}_{treatment}_{job_experiment_id}_{job_category_safe}.joblib"
+        estimator_save_path = estimator_save_dir / estimator_filename
+        
+        # joblib으로 저장
+        joblib.dump(estimator_obj, estimator_save_path, compress=1)
+        
+        if logger:
+            logger.info(f"Estimator 저장 완료: {estimator_save_path}")
+        print(f"  💾 Estimator 저장 완료: {estimator_save_path}")
+        
+        return estimator_save_path
+        
+    except Exception as e:
+        if logger:
+            logger.warning(f"Estimator 저장 실패 (계속 진행): {e}")
+        print(f"  ⚠️ Estimator 저장 실패 (계속 진행): {e}")
+        return None
+
+
 def run_single_experiment(
     merged_df_clean: pd.DataFrame,
     graph_file: str,
@@ -858,6 +918,17 @@ def run_single_experiment(
                     )
                     
                     all_results.append(job_result)
+                    
+                    # Estimator 저장 (joblib)
+                    if job_result.get("estimate"):
+                        _save_estimator(
+                            estimate=job_result["estimate"],
+                            graph_file=graph_file,
+                            treatment=treatment,
+                            job_experiment_id=job_experiment_id,
+                            job_category=job_category,
+                            logger=logger
+                        )
                     
                     # 예측 결과 수집
                     if job_result.get("excel_path"):
