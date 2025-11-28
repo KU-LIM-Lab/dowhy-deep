@@ -169,10 +169,10 @@ class Preprocessor:
             df = df.drop(columns=agree_vars)
             print(f"[DEBUG] agree_vars 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
-        # HOPE_JSCD3_NAME 변수 추가 (HOPE_JSCD3 코드를 소분류명으로 변환)
-        if "HOPE_JSCD3" in df.columns:
-            df["HOPE_JSCD3_NAME"] = df["HOPE_JSCD3"].apply(lambda code: self.get_job_name_from_code(code))
-            print(f"[DEBUG] HOPE_JSCD3_NAME 변수 추가 완료: {df['HOPE_JSCD3_NAME'].nunique()}개 고유값")
+        # HOPE_JSCD1_NAME 변수 추가 (HOPE_JSCD1 코드를 소분류명으로 변환)
+        if "HOPE_JSCD1" in df.columns:
+            df["HOPE_JSCD1_NAME"] = df["HOPE_JSCD1"].apply(lambda code: self.get_job_name_from_code(code))
+            print(f"[DEBUG] HOPE_JSCD1_NAME 변수 추가 완료: {df['HOPE_JSCD1_NAME'].nunique()}개 고유값")
 
         print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
         if 'SEEK_CUST_NO' in df.columns:

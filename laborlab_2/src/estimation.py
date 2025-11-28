@@ -1161,7 +1161,7 @@ def prepare_data_for_causal_model(
         all_outcomes.update(outcomes)
     
     essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
-    stratification_vars = {"HOPE_JSCD3_NAME"}
+    stratification_vars = {"HOPE_JSCD1_NAME"}
     required_vars = list(all_graph_variables | essential_vars | stratification_vars)
     
     merged_df_clean = utils.clean_dataframe_for_causal_model(
@@ -1240,7 +1240,7 @@ def run_analysis_without_preprocessing(
         graph_variables = set(causal_graph.nodes())
         data_variables = set(merged_df_clean.columns)
         essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
-        stratification_vars = {"HOPE_JSCD3_NAME"}
+        stratification_vars = {"HOPE_JSCD1_NAME"}
         vars_to_keep = (graph_variables | essential_vars | stratification_vars) & data_variables
         df_for_analysis = merged_df_clean[list(vars_to_keep)].copy()
         
@@ -1448,8 +1448,8 @@ def run_single_experiment(
     start_time = datetime.now()
     try:
         # 직종소분류별로 분리하여 실험 실행
-        if split_by_job_category and "HOPE_JSCD3_NAME" in merged_df_clean.columns:
-            job_categories = merged_df_clean["HOPE_JSCD3_NAME"].dropna().unique()
+        if split_by_job_category and "HOPE_JSCD1_NAME" in merged_df_clean.columns:
+            job_categories = merged_df_clean["HOPE_JSCD1_NAME"].dropna().unique()
             print(f"📊 직종소분류별 실험 실행: {len(job_categories)}개 직종소분류")
             
             all_results = []
@@ -1457,7 +1457,7 @@ def run_single_experiment(
             all_metrics = []
             
             for job_category in job_categories:
-                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD3_NAME"] == job_category].copy()
+                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD1_NAME"] == job_category].copy()
                 
                 if len(job_df) < 10:
                     if logger:
@@ -1678,15 +1678,15 @@ def run_inference(
         graph_name = Path(graph_file).stem
         
         # 직종소분류별로 분리하여 예측
-        if "HOPE_JSCD3_NAME" in merged_df_clean.columns:
-            job_categories = merged_df_clean["HOPE_JSCD3_NAME"].dropna().unique()
+        if "HOPE_JSCD1_NAME" in merged_df_clean.columns:
+            job_categories = merged_df_clean["HOPE_JSCD1_NAME"].dropna().unique()
             print(f"📊 직종소분류별 Inference 실행: {len(job_categories)}개 직종소분류")
             
             all_predictions = []
             all_metrics = []
             
             for job_category in job_categories:
-                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD3_NAME"] == job_category].copy()
+                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD1_NAME"] == job_category].copy()
                 
                 if len(job_df) == 0:
                     continue
@@ -1787,7 +1787,7 @@ def run_inference(
             step_times['예측 결과 저장'] = time.time() - step_start
             
         else:
-            raise ValueError("HOPE_JSCD3_NAME 변수가 데이터에 없습니다. 직종소분류별 분리가 불가능합니다.")
+            raise ValueError("HOPE_JSCD1_NAME 변수가 데이터에 없습니다. 직종소분류별 분리가 불가능합니다.")
         
         total_time = sum(step_times.values())
         step_times['전체'] = total_time
