@@ -98,6 +98,13 @@ def preprocess(
     preprocessing_elapsed = time.time() - preprocessing_start
     print(f"⏱️ 전처리 및 병합 완료! 소요 시간: {preprocessing_elapsed:.2f}초")
     
+    # merged_df.csv를 seis_data 폴더에 저장
+    seis_data_path = data_dir_path / seis_data_dir
+    merged_df_csv_path = seis_data_path / "merged_df.csv"
+    print(f"\n💾 병합된 데이터를 CSV로 저장 중: {merged_df_csv_path}")
+    merged_df.to_csv(merged_df_csv_path, index=False, encoding='utf-8-sig')
+    print(f"✅ CSV 저장 완료: {merged_df_csv_path}")
+    
     return merged_df
 
 
@@ -504,24 +511,64 @@ def main():
     experiment_list = []
     
     # ========================================================================
-    # 1. 전처리 실행
+    # 1. 전처리 실행 또는 merged_df.csv 로드
     # ========================================================================
-    if do_preprocess:
-        merged_df = preprocess(
-            data_dir_path=data_dir_path,
-            seis_data_dir=seis_data_dir,
-            limit_data=limit_data,
-            limit_size=limit_size,
-            job_category_file=job_category_file
-        )
+    # seis_data 폴더에 merged_df.csv가 있는지 확인
+    seis_data_path = data_dir_path / seis_data_dir
+    merged_df_csv_path = seis_data_path / "merged_df.csv"
+    
+    if merged_df_csv_path.exists():
+        print("="*80)
+        print("📂 기존 merged_df.csv 파일 발견 - 로드 중")
+        print("="*80)
+        print(f"파일 경로: {merged_df_csv_path}")
         
-        # 인과 모델을 위한 데이터 준비
-        merged_df_clean = prepare_data_for_causal_model(
-            merged_df=merged_df,
-            config=config,
-            data_dir_path=data_dir_path,
-            graph_data_dir=graph_data_dir
-        )
+        try:
+            load_start = time.time()
+            merged_df = pd.read_csv(merged_df_csv_path, encoding='utf-8-sig')
+            load_elapsed = time.time() - load_start
+            print(f"✅ CSV 로드 완료: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
+            print(f"⏱️ 로드 소요 시간: {load_elapsed:.2f}초")
+            
+            # 인과 모델을 위한 데이터 준비
+            merged_df_clean = prepare_data_for_causal_model(
+                merged_df=merged_df,
+                config=config,
+                data_dir_path=data_dir_path,
+                graph_data_dir=graph_data_dir
+            )
+            
+            if do_preprocess:
+                print("\n⚠️ merged_df.csv가 이미 존재하므로 전처리를 건너뜁니다.")
+                print("   전처리를 다시 실행하려면 merged_df.csv를 삭제하거나 preprocess를 false로 설정하세요.")
+        except Exception as e:
+            print(f"❌ merged_df.csv 로드 실패: {e}")
+            print("   전처리를 다시 실행합니다.")
+            merged_df = None
+            merged_df_clean = None
+    
+    # merged_df.csv가 없거나 로드 실패한 경우 전처리 실행
+    if merged_df is None:
+        if do_preprocess:
+            merged_df = preprocess(
+                data_dir_path=data_dir_path,
+                seis_data_dir=seis_data_dir,
+                limit_data=limit_data,
+                limit_size=limit_size,
+                job_category_file=job_category_file
+            )
+            
+            # 인과 모델을 위한 데이터 준비
+            merged_df_clean = prepare_data_for_causal_model(
+                merged_df=merged_df,
+                config=config,
+                data_dir_path=data_dir_path,
+                graph_data_dir=graph_data_dir
+            )
+        else:
+            print("❌ 전처리된 데이터가 없고 merged_df.csv도 존재하지 않습니다.")
+            print("   preprocess를 true로 설정하거나 merged_df.csv를 준비하세요.")
+            return
     
     # ========================================================================
     # 2. experiment_list 생성

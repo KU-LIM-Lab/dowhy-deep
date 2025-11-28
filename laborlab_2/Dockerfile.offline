@@ -8,9 +8,11 @@ FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 # APT 패키지 설치
 # 오프라인 환경에서는 CUDA 베이스 이미지에 이미 포함되어 있거나
 # 빌드 시점에 필요한 패키지가 설치되어 있어야 합니다
+# python3-pip를 설치하여 pip 사용 가능하게 함 (폐쇠망용)
 RUN apt-get update && apt-get install -y \
         python3.11 \
         python3.11-dev \
+        python3.11-venv \
         python3-pip \
         gcc \
         g++ \
@@ -19,9 +21,24 @@ RUN apt-get update && apt-get install -y \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# python3.11을 기본 python으로 설정
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 || true
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1 || true
+# python3.11을 기본 python 및 python3로 설정 (우선순위 높게)
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 10 || true && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 10 || true && \
+    update-alternatives --set python /usr/bin/python3.11 || true && \
+    update-alternatives --set python3 /usr/bin/python3.11 || true
+
+# python3.11에 pip 설치 (python3-pip를 사용하되 python3.11 -m pip로 사용)
+# python3-pip는 시스템 pip이지만, python3.11 -m pip를 통해 python3.11에 패키지 설치 가능
+RUN python3.11 -m pip install --upgrade pip setuptools wheel || \
+    (curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
+     python3.11 /tmp/get-pip.py && \
+     rm /tmp/get-pip.py && \
+     python3.11 -m pip install --upgrade pip setuptools wheel) || true
+
+# pip를 python3.11의 pip로 설정
+RUN update-alternatives --install /usr/bin/pip pip /usr/local/bin/pip3.11 10 2>/dev/null || \
+    ln -sf /usr/local/bin/pip3.11 /usr/bin/pip 2>/dev/null || \
+    ln -sf $(which pip3.11) /usr/bin/pip 2>/dev/null || true
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -30,12 +47,11 @@ WORKDIR /app
 COPY . /app/
 
 # Python 의존성 설치
-# 오프라인 환경에서는 requirements.txt의 패키지들이 이미 설치되어 있거나
-# 빌드 시점에 인터넷 연결이 필요합니다
-# 폐쇄망에서는 이미 빌드된 이미지를 사용하므로 이 단계는 온라인 환경에서만 실행됩니다
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /app/laborlab_2/requirements.txt && \
-    pip install --no-cache-dir -e /app
+# 폐쇠망에서는 이미 빌드된 이미지를 사용하므로 이 단계는 온라인 환경에서만 실행됩니다
+# python3.11 -m pip를 사용하여 python3.11에 직접 설치 (버전 통일 보장)
+RUN python3.11 -m pip install --no-cache-dir --upgrade pip && \
+    python3.11 -m pip install --no-cache-dir -r /app/laborlab_2/requirements.txt && \
+    python3.11 -m pip install --no-cache-dir -e /app
 
 # 환경 변수 설정
 ENV PYTHONPATH=/app
