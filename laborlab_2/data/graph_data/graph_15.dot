@@ -1,48 +1,98 @@
-digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname="Helvetica", shape=box, style="rounded,filled"];
-ACCR_CD [label="학력코드"];
-ACQ_180_YN [label="180일이내취업여부"];
-AGE [label="연령"];
-BFR_OCTR_CT [label="이전직업훈련건수"];
-CARR_MYCT1 [label="경력월수1"];
-HOPE_JSCD1 [label="희망직종코드1"];
-HOPE_JSCD2 [label="희망직종코드2"];
-KECO_CD1 [label="KECO코드1"];
-OCTR_HOPE_JSFC_CSCY_SCOR1 [label="직업훈련희망직종일치도점수1"];
-OCTR_HOPE_JSFC_CSCY_SCOR2 [label="직업훈련희망직종일치도점수2"];
-AGE -> ACCR_CD;
-AGE -> BFR_OCTR_CT;
-ACCR_CD -> BFR_OCTR_CT;
-ACCR_CD -> CARR_MYCT1;
-ACCR_CD -> HOPE_JSCD1;
-ACCR_CD -> HOPE_JSCD2;
-BFR_OCTR_CT -> KECO_CD1;
-KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
-KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR2;
-HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
-HOPE_JSCD2 -> OCTR_HOPE_JSFC_CSCY_SCOR2;
-BFR_OCTR_CT -> CARR_MYCT1;
-CARR_MYCT1 -> HOPE_JSCD1;
-BFR_OCTR_CT -> ACQ_180_YN;
-OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
-OCTR_HOPE_JSFC_CSCY_SCOR2 -> ACQ_180_YN;
-KECO_CD1 -> ACQ_180_YN;
-CARR_MYCT1 -> ACQ_180_YN;
-HOPE_JSCD1 -> ACQ_180_YN;
-HOPE_JSCD2 -> ACQ_180_YN;
-AGE -> ACQ_180_YN;
-ACCR_CD -> ACQ_180_YN;
-subgraph cluster_treatments {
-color="#CCCCCC";
-label="Treatments (outcome: ACQ_180_YN)";
-style=dashed;
-node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,filled"];
-T1 [label="T1: BFR_OCTR_YN", role="treatment_meta", treatment_def="이전직업훈련여부(BFR_OCTR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과", treatment_name="BFR_OCTR_YN", treatment_question="이전직업훈련여부(BFR_OCTR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?", treatment_var="BFR_OCTR_YN"];
-T2 [label="T2: BFR_OCTR_CT", role="treatment_meta", treatment_def="이전직업훈련건수(BFR_OCTR_CT) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과", treatment_name="BFR_OCTR_CT", treatment_question="이전직업훈련건수(BFR_OCTR_CT) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?", treatment_var="BFR_OCTR_CT"];
-T3 [label="T3: OCTR_HOPE_JSFC_CSCY_SCOR1", role="treatment_meta", treatment_def="직업훈련희망직종일치도점수1(OCTR_HOPE_JSFC_CSCY_SCOR1) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과", treatment_name="OCTR_HOPE_JSFC_CSCY_SCOR1", treatment_question="직업훈련희망직종일치도점수1(OCTR_HOPE_JSFC_CSCY_SCOR1) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?", treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR1"];
-T4 [label="T4: OCTR_HOPE_JSFC_CSCY_SCOR2", role="treatment_meta", treatment_def="직업훈련희망직종일치도점수2(OCTR_HOPE_JSFC_CSCY_SCOR2) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과", treatment_name="OCTR_HOPE_JSFC_CSCY_SCOR2", treatment_question="직업훈련희망직종일치도점수2(OCTR_HOPE_JSFC_CSCY_SCOR2) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?", treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR2"];
-T5 [label="T5: KECO_CD1", role="treatment_meta", treatment_def="KECO코드1(KECO_CD1) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과", treatment_name="KECO_CD1", treatment_question="KECO코드1(KECO_CD1) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?", treatment_var="KECO_CD1"];
-}
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
 
+    ACCR_CD [label="학력코드"];
+    ACQ_180_YN [label="180일이내취업여부"];
+    AGE [label="연령"];
+    BFR_OCTR_CT [label="이전직업훈련건수"];
+    BFR_OCTR_YN [label="이전직업훈련여부"];
+    CARR_MYCT1 [label="경력월수1"];
+    HOPE_JSCD1 [label="희망직종코드1"];
+    HOPE_JSCD2 [label="희망직종코드2"];
+    KECO_CD1 [label="KECO코드1"];
+    OCTR_HOPE_JSFC_CSCY_SCOR1 [label="직업훈련희망직종일치도점수1"];
+    OCTR_HOPE_JSFC_CSCY_SCOR2 [label="직업훈련희망직종일치도점수2"];
+
+    AGE -> ACCR_CD;
+    AGE -> BFR_OCTR_YN;
+    AGE -> BFR_OCTR_CT;
+    ACCR_CD -> BFR_OCTR_YN;
+    ACCR_CD -> BFR_OCTR_CT;
+    ACCR_CD -> CARR_MYCT1;
+    ACCR_CD -> HOPE_JSCD1;
+    ACCR_CD -> HOPE_JSCD2;
+    BFR_OCTR_YN -> BFR_OCTR_CT;
+    BFR_OCTR_YN -> KECO_CD1;
+    BFR_OCTR_CT -> KECO_CD1;
+    KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR2;
+    HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+    HOPE_JSCD2 -> OCTR_HOPE_JSFC_CSCY_SCOR2;
+    BFR_OCTR_CT -> CARR_MYCT1;
+    CARR_MYCT1 -> HOPE_JSCD1;
+    BFR_OCTR_YN -> ACQ_180_YN;
+    BFR_OCTR_CT -> ACQ_180_YN;
+    OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+    OCTR_HOPE_JSFC_CSCY_SCOR2 -> ACQ_180_YN;
+    KECO_CD1 -> ACQ_180_YN;
+    CARR_MYCT1 -> ACQ_180_YN;
+    HOPE_JSCD1 -> ACQ_180_YN;
+    HOPE_JSCD2 -> ACQ_180_YN;
+    AGE -> ACQ_180_YN;
+    ACCR_CD -> ACQ_180_YN;
+
+    // Treatments
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        T1 [
+            label="T1: BFR_OCTR_YN",
+            role="treatment_meta",
+            treatment_var="BFR_OCTR_YN",
+            treatment_name="BFR_OCTR_YN",
+            treatment_def="이전직업훈련여부(BFR_OCTR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="이전직업훈련여부(BFR_OCTR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T2 [
+            label="T2: BFR_OCTR_CT",
+            role="treatment_meta",
+            treatment_var="BFR_OCTR_CT",
+            treatment_name="BFR_OCTR_CT",
+            treatment_def="이전직업훈련건수(BFR_OCTR_CT) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="이전직업훈련건수(BFR_OCTR_CT) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T3 [
+            label="T3: OCTR_HOPE_JSFC_CSCY_SCOR1",
+            role="treatment_meta",
+            treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR1",
+            treatment_name="OCTR_HOPE_JSFC_CSCY_SCOR1",
+            treatment_def="직업훈련희망직종일치도점수1(OCTR_HOPE_JSFC_CSCY_SCOR1) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="직업훈련희망직종일치도점수1(OCTR_HOPE_JSFC_CSCY_SCOR1) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T4 [
+            label="T4: OCTR_HOPE_JSFC_CSCY_SCOR2",
+            role="treatment_meta",
+            treatment_var="OCTR_HOPE_JSFC_CSCY_SCOR2",
+            treatment_name="OCTR_HOPE_JSFC_CSCY_SCOR2",
+            treatment_def="직업훈련희망직종일치도점수2(OCTR_HOPE_JSFC_CSCY_SCOR2) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="직업훈련희망직종일치도점수2(OCTR_HOPE_JSFC_CSCY_SCOR2) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+        T5 [
+            label="T5: KECO_CD1",
+            role="treatment_meta",
+            treatment_var="KECO_CD1",
+            treatment_name="KECO_CD1",
+            treatment_def="KECO코드1(KECO_CD1) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+            treatment_question="KECO코드1(KECO_CD1) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
+        ];
+
+    }
 }
