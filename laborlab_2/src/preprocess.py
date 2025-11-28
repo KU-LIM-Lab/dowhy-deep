@@ -154,11 +154,10 @@ class Preprocessor:
             df = df.drop(columns=["BFR_OCTR_YN"])
             print(f"[DEBUG] BFR_OCTR_YN 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
 
-        # 10개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
+        # 9개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
         agree_vars = [
             "EMAIL_RCYN", "SAEIL_CNTC_AGRE_YN", "SHRS_IDIF_AOFR_YN", "SULC_IDIF_AOFR_YN",
-            "IDIF_IQRY_AGRE_YN", "SMS_RCYN", "EMAIL_OTPB_YN", "MPNO_OTPB_YN",
-            "IDIF_AOFR_YN", "EMAIL_RCYN"
+            "IDIF_IQRY_AGRE_YN", "SMS_RCYN", "EMAIL_OTPB_YN", "MPNO_OTPB_YN", "EMAIL_RCYN"
         ]
 
         # 존재하는 경우만 사용
