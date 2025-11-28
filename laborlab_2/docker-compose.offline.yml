@@ -1,8 +1,8 @@
 services:
   laborlab:
-    build:
-      context: ..  # 프로젝트 루트를 빌드 컨텍스트로
-      dockerfile: laborlab_2/Dockerfile
+    # 폐쇄망 환경에서는 미리 로드된 이미지 사용
+    # docker load < laborlab-2-image_*.tar 로 이미지를 먼저 로드해야 함
+    image: laborlab_2-laborlab:latest
     container_name: laborlab-2-analysis
     volumes:
       # 데이터 디렉토리 마운트
@@ -20,11 +20,18 @@ services:
       - OLLAMA_HOST=http://ollama:11434
     depends_on: [ollama]
     working_dir: /app/laborlab_2
-    # CPU 모드 (온라인 환경용)
-    # GPU를 사용하려면 docker-compose.offline.yml 사용
+    # GPU 지원 (폐쇄망 환경용 - NVIDIA Container Toolkit 필요)
+    # CPU 모드를 사용하려면 docker-compose.offline.cpu.yml 사용
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     # 컨테이너 시작 시 자동으로 파이프라인 실행
-    # docker-compose up 시 자동 실행됨
-    # 재실행: docker-compose restart laborlab
+    # docker-compose -f docker-compose.offline.yml up 시 자동 실행됨
+    # 재실행: docker-compose -f docker-compose.offline.yml restart laborlab
     restart: unless-stopped
 
   ollama:
@@ -34,7 +41,14 @@ services:
       - ./ollama_models:/root/.ollama/models
     ports:
       - "11434:11434"
-    # CPU 모드 (온라인 환경용)
-    # GPU를 사용하려면 docker-compose.offline.yml 사용
+    # GPU 지원 (폐쇄망 환경용 - NVIDIA Container Toolkit 필요)
+    # CPU 모드를 사용하려면 docker-compose.offline.cpu.yml 사용
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     restart: unless-stopped
 

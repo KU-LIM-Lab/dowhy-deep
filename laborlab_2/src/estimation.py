@@ -14,42 +14,21 @@ import os
 import sys
 import pickle
 import json
+import time
+import itertools
+from typing import Dict, Any, Optional, List, Tuple
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
+from dowhy import CausalModel
 
 # 로컬 DoWhy 라이브러리 경로 추가
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 # DoWhy 내부 함수 임포트
 from dowhy.causal_estimator import estimate_effect as dowhy_estimate_effect
-
-def log_estimation_results(logger, estimate, method_name):
-    """
-    추정 결과를 로깅하는 함수
-    
-    Args:
-        logger: 로거 객체
-        estimate: 추정된 인과효과 객체
-        method_name (str): 추정 방법명
-    """
-    logger.info("="*60)
-    logger.info("인과 효과 추정 결과")
-    logger.info("="*60)
-    logger.info(f"추정 방법: {method_name}")
-    logger.info(f"추정된 인과 효과 (ATE): {estimate.value:.6f}")
-    
-    if hasattr(estimate, 'p_value') and estimate.p_value is not None:
-        logger.info(f"P-value: {estimate.p_value:.6f}")
-        significance = "유의함" if estimate.p_value <= 0.05 else "유의하지 않음"
-        logger.info(f"통계적 유의성: {significance}")
-    
-    # 추정치의 신뢰구간이 있다면 로깅
-    if hasattr(estimate, 'confidence_intervals'):
-        logger.info(f"신뢰구간: {estimate.confidence_intervals}")
-
 
 def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None):
     """
@@ -271,76 +250,6 @@ def calculate_refutation_pvalue(refutation_result, test_type="placebo"):
         return None
 
 
-def log_validation_results(logger, validation_results):
-    """
-    검증 결과를 로깅하는 함수
-    
-    Args:
-        logger: 로거 객체
-        validation_results (dict): 검증 결과 딕셔너리
-    """
-    logger.info("="*60)
-    logger.info("검증 결과 요약")
-    logger.info("="*60)
-    
-    # 가상 원인 테스트
-    if validation_results.get('placebo'):
-        placebo = validation_results['placebo']
-        effect_change = abs(placebo.new_effect - placebo.estimated_effect)
-        p_value = calculate_refutation_pvalue(placebo, "placebo")
-        # 효과 변화가 작으면 통과 (0.01 이하)
-        status = "통과" if effect_change < 0.01 else "실패"
-        logger.info(f"가상 원인 테스트: {status}")
-        logger.info(f"  - 기존 추정치: {placebo.estimated_effect:.6f}")
-        logger.info(f"  - 가상처치 후 추정치: {placebo.new_effect:.6f}")
-        logger.info(f"  - 효과 변화: {effect_change:.6f}")
-        if p_value is not None:
-            logger.info(f"  - P-value: {p_value:.6f}")
-            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
-    
-    # 미관측 교란 테스트
-    if validation_results.get('unobserved'):
-        unobserved = validation_results['unobserved']
-        change_rate = abs(unobserved.new_effect - unobserved.estimated_effect) / abs(unobserved.estimated_effect) if abs(unobserved.estimated_effect) > 0 else float('inf')
-        p_value = calculate_refutation_pvalue(unobserved, "unobserved")
-        # 변화율이 20% 미만이면 강건함
-        status = "강건함" if change_rate < 0.2 else "민감함"
-        logger.info(f"미관측 교란 테스트: {status}")
-        logger.info(f"  - 기존 추정치: {unobserved.estimated_effect:.6f}")
-        logger.info(f"  - 교란 추가 후 추정치: {unobserved.new_effect:.6f}")
-        logger.info(f"  - 변화율: {change_rate:.2%}")
-        if p_value is not None:
-            logger.info(f"  - P-value: {p_value:.6f}")
-            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
-    
-    # 부분표본 안정성 테스트
-    if validation_results.get('subset'):
-        subset = validation_results['subset']
-        effect_change = abs(subset.new_effect - subset.estimated_effect)
-        p_value = calculate_refutation_pvalue(subset, "subset")
-        # 효과 변화가 작으면 통과 (10% 이하)
-        change_rate = abs(subset.estimated_effect) > 0 and abs(effect_change / subset.estimated_effect) or float('inf')
-        status = "통과" if change_rate < 0.1 else "실패"
-        logger.info(f"부분표본 안정성 테스트: {status}")
-        logger.info(f"  - 기존 추정치: {subset.estimated_effect:.6f}")
-        logger.info(f"  - 부분표본 추정치: {subset.new_effect:.6f}")
-        logger.info(f"  - 효과 변화: {effect_change:.6f}")
-        if p_value is not None:
-            logger.info(f"  - P-value: {p_value:.6f}")
-            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
-    
-    # 더미 결과 테스트
-    if validation_results.get('dummy'):
-        dummy = validation_results['dummy']
-        p_value = calculate_refutation_pvalue(dummy, "dummy")
-        # new_effect가 0에 가까우면 통과 (0.01 이하)
-        status = "통과" if abs(dummy.new_effect) < 0.01 else "실패"
-        logger.info(f"더미 결과 테스트: {status}")
-        logger.info(f"  - 더미 결과 추정치: {dummy.new_effect:.6f}")
-        if p_value is not None:
-            logger.info(f"  - P-value: {p_value:.6f}")
-            logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
-
 def run_validation_tests(model, identified_estimand, estimate, logger=None):
     """검증 테스트를 실행하는 함수 (4개 테스트 모두 포함)"""
     if logger:
@@ -523,123 +432,64 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
         logger.info("="*60)
         logger.info("검증 테스트 완료 (4개 테스트)")
         logger.info("="*60)
-        log_validation_results(logger, validation_results)
+        logger.info("검증 결과 요약")
+        logger.info("="*60)
+        
+        # 가상 원인 테스트
+        if validation_results.get('placebo'):
+            placebo = validation_results['placebo']
+            effect_change = abs(placebo.new_effect - placebo.estimated_effect)
+            p_value = calculate_refutation_pvalue(placebo, "placebo")
+            status = "통과" if effect_change < 0.01 else "실패"
+            logger.info(f"가상 원인 테스트: {status}")
+            logger.info(f"  - 기존 추정치: {placebo.estimated_effect:.6f}")
+            logger.info(f"  - 가상처치 후 추정치: {placebo.new_effect:.6f}")
+            logger.info(f"  - 효과 변화: {effect_change:.6f}")
+            if p_value is not None:
+                logger.info(f"  - P-value: {p_value:.6f}")
+                logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
+        
+        # 미관측 교란 테스트
+        if validation_results.get('unobserved'):
+            unobserved = validation_results['unobserved']
+            change_rate = abs(unobserved.new_effect - unobserved.estimated_effect) / abs(unobserved.estimated_effect) if abs(unobserved.estimated_effect) > 0 else float('inf')
+            p_value = calculate_refutation_pvalue(unobserved, "unobserved")
+            status = "강건함" if change_rate < 0.2 else "민감함"
+            logger.info(f"미관측 교란 테스트: {status}")
+            logger.info(f"  - 기존 추정치: {unobserved.estimated_effect:.6f}")
+            logger.info(f"  - 교란 추가 후 추정치: {unobserved.new_effect:.6f}")
+            logger.info(f"  - 변화율: {change_rate:.2%}")
+            if p_value is not None:
+                logger.info(f"  - P-value: {p_value:.6f}")
+                logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
+        
+        # 부분표본 안정성 테스트
+        if validation_results.get('subset'):
+            subset = validation_results['subset']
+            effect_change = abs(subset.new_effect - subset.estimated_effect)
+            p_value = calculate_refutation_pvalue(subset, "subset")
+            change_rate = abs(subset.estimated_effect) > 0 and abs(effect_change / subset.estimated_effect) or float('inf')
+            status = "통과" if change_rate < 0.1 else "실패"
+            logger.info(f"부분표본 안정성 테스트: {status}")
+            logger.info(f"  - 기존 추정치: {subset.estimated_effect:.6f}")
+            logger.info(f"  - 부분표본 추정치: {subset.new_effect:.6f}")
+            logger.info(f"  - 효과 변화: {effect_change:.6f}")
+            if p_value is not None:
+                logger.info(f"  - P-value: {p_value:.6f}")
+                logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
+        
+        # 더미 결과 테스트
+        if validation_results.get('dummy'):
+            dummy = validation_results['dummy']
+            p_value = calculate_refutation_pvalue(dummy, "dummy")
+            status = "통과" if abs(dummy.new_effect) < 0.01 else "실패"
+            logger.info(f"더미 결과 테스트: {status}")
+            logger.info(f"  - 더미 결과 추정치: {dummy.new_effect:.6f}")
+            if p_value is not None:
+                logger.info(f"  - P-value: {p_value:.6f}")
+                logger.info(f"  - 통계적 유의성: {'유의함' if p_value <= 0.05 else '유의하지 않음'}")
     
     return validation_results
-
-def log_sensitivity_analysis(logger, sensitivity_df, config):
-    """
-    민감도 분석 결과를 로깅하는 함수
-    
-    Args:
-        logger: 로거 객체
-        sensitivity_df (pd.DataFrame): 민감도 분석 결과
-        config (dict): 민감도 분석 설정
-    """
-    logger.info("="*60)
-    logger.info("민감도 분석 결과")
-    logger.info("="*60)
-    
-    logger.info(f"효과 강도 범위: {config['effect_strength_range'][0]} ~ {config['effect_strength_range'][1]}")
-    logger.info(f"그리드 포인트 수: {config['num_points']}")
-    logger.info(f"시뮬레이션 수: {config['num_simulations']}")
-    logger.info(f"분석된 조합 수: {len(sensitivity_df)}")
-    
-    if not sensitivity_df.empty:
-        logger.info(f"효과 범위: {sensitivity_df['new_effect'].min():.6f} ~ {sensitivity_df['new_effect'].max():.6f}")
-        
-        # 효과가 0에 가까운 지점 찾기
-        min_abs_effect = sensitivity_df.loc[sensitivity_df['new_effect'].abs().idxmin()]
-        logger.info(f"최소 절대 효과 지점:")
-        logger.info(f"  - 처치 강도 (et): {min_abs_effect['effect_strength_on_treatment']:.2f}")
-        logger.info(f"  - 결과 강도 (eo): {min_abs_effect['effect_strength_on_outcome']:.2f}")
-        logger.info(f"  - 효과값: {min_abs_effect['new_effect']:.6f}")
-        
-        # 효과가 음수인 조합 수
-        negative_effects = len(sensitivity_df[sensitivity_df['new_effect'] < 0])
-        logger.info(f"음수 효과 조합 수: {negative_effects} ({negative_effects/len(sensitivity_df)*100:.1f}%)")
-        
-        # 효과가 0에 가까운 조합 수 (절대값 < 0.01)
-        near_zero_effects = len(sensitivity_df[sensitivity_df['new_effect'].abs() < 0.01])
-        logger.info(f"0에 가까운 효과 조합 수: {near_zero_effects} ({near_zero_effects/len(sensitivity_df)*100:.1f}%)")
-
-def run_sensitivity_analysis(model, identified_estimand, estimate, config, logger=None):
-    """
-    민감도 분석을 실행하는 함수
-    
-    Args:
-        model: CausalModel 객체
-        identified_estimand: 식별된 추정량 객체
-        estimate: 추정된 인과효과 객체
-        config (dict): 민감도 분석 설정
-        logger: 로거 객체 (선택사항)
-    
-    Returns:
-        pd.DataFrame: 민감도 분석 결과 데이터프레임
-    """
-    try:
-        effect_range = config['effect_strength_range']
-        num_points = config['num_points']
-        num_simulations = config['num_simulations']
-        
-        grid = np.linspace(effect_range[0], effect_range[1], num_points)
-        
-        rows = []
-        for i, et in enumerate(grid):
-            for j, eo in enumerate(grid):
-                try:
-                    ref = model.refute_estimate(
-                        identified_estimand, estimate,
-                        method_name="add_unobserved_common_cause",
-                        confounders_effect_on_treatment="binary_flip",
-                        confounders_effect_on_outcome="linear",
-                        effect_strength_on_treatment=et,
-                        effect_strength_on_outcome=eo,
-                        num_simulations=num_simulations
-                    )
-                    rows.append((et, eo, ref.new_effect))
-                except Exception as e:
-                    rows.append((et, eo, np.nan))
-                    if logger:
-                        logger.warning(f"민감도 분석 그리드 포인트 ({et}, {eo}) 실행 실패: {e}")
-        
-        sensitivity_df = pd.DataFrame(rows, columns=[
-            "effect_strength_on_treatment", 
-            "effect_strength_on_outcome", 
-            "new_effect"
-        ])
-        
-        if logger:
-            log_sensitivity_analysis(logger, sensitivity_df, config)
-        
-        return sensitivity_df
-        
-    except Exception as e:
-        if logger:
-            logger.error(f"민감도 분석 중 오류 발생: {e}")
-        return pd.DataFrame()
-
-def log_heatmap_info(logger, heatmap_path, config):
-    """
-    히트맵 정보를 로깅하는 함수
-    
-    Args:
-        logger: 로거 객체
-        heatmap_path (str): 히트맵 파일 경로
-        config (dict): 시각화 설정
-    """
-    logger.info("="*60)
-    logger.info("시각화 결과")
-    logger.info("="*60)
-    
-    if heatmap_path and os.path.exists(heatmap_path):
-        file_size = os.path.getsize(heatmap_path)
-        logger.info(f"히트맵 파일: {heatmap_path}")
-        logger.info(f"파일 크기: {file_size:,} bytes")
-        logger.info(f"이미지 해상도: {config['figsize'][0]}x{config['figsize'][1]} inches")
-        logger.info(f"DPI: {config['dpi']}")
-    else:
-        logger.warning("히트맵 파일이 생성되지 않았습니다.")
 
 def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
     """민감도 분석을 실행하는 함수"""
@@ -1052,3 +902,914 @@ def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, l
     if logger:
         logger.warning(f"조건에 맞는 checkpoint를 찾을 수 없습니다: graph={graph_name}, treatment={treatment}, outcome={outcome}, estimator={estimator}")
     return None
+
+
+# ============================================================================
+# 실험 관리 함수
+# ============================================================================
+
+def _get_graph_files(
+    config: Dict[str, Any],
+    data_dir_path: Path,
+    graph_data_dir: str
+) -> List[str]:
+    """
+    설정에 따라 그래프 파일 목록을 반환하는 내부 함수
+    
+    Args:
+        config: 설정 딕셔너리
+        data_dir_path: 데이터 디렉토리 경로
+        graph_data_dir: 그래프 데이터 디렉토리명
+    
+    Returns:
+        그래프 파일 경로 리스트
+    """
+    from . import utils
+    graphs = config.get("graphs", [])
+    auto_extract_treatments = config.get("auto_extract_treatments", False)
+    
+    if auto_extract_treatments:
+        found_graphs = utils.find_all_graph_files(data_dir_path, graph_data_dir)
+        return [str(g) for g in found_graphs]
+    
+    graph_files = []
+    for graph in graphs:
+        if isinstance(graph, str):
+            graph_path = data_dir_path / graph_data_dir / graph
+            if graph_path.exists():
+                graph_files.append(str(graph_path))
+            else:
+                graph_path = Path(graph)
+                if graph_path.exists():
+                    graph_files.append(str(graph_path))
+    
+    return graph_files
+
+
+def _extract_treatments_from_graphs(
+    graph_files: List[str],
+    auto_extract: bool
+) -> Tuple[Dict[str, List[str]], Dict[str, str]]:
+    """
+    그래프 파일들에서 treatment와 outcome을 추출하는 내부 함수
+    
+    Args:
+        graph_files: 그래프 파일 경로 리스트
+        auto_extract: 자동 추출 여부
+    
+    Returns:
+        (graph_treatments_map, graph_outcomes_map) 튜플
+    """
+    from . import utils
+    graph_treatments_map = {}
+    graph_outcomes_map = {}
+    
+    if auto_extract:
+        for graph_file in graph_files:
+            graph_path = Path(graph_file)
+            extracted_treatments = utils.extract_treatments_from_graph(graph_path)
+            
+            if extracted_treatments:
+                graph_treatments_map[graph_file] = [
+                    t["treatment_var"] for t in extracted_treatments 
+                    if t.get("treatment_var")
+                ]
+                if extracted_treatments[0].get("outcome"):
+                    graph_outcomes_map[graph_file] = extracted_treatments[0]["outcome"]
+    
+    return graph_treatments_map, graph_outcomes_map
+
+
+def _sort_estimators(estimators: List[str]) -> List[str]:
+    """
+    estimator 리스트를 정렬하는 내부 함수 (linear_regression, tabpfn 우선)
+    
+    Args:
+        estimators: estimator 리스트
+    
+    Returns:
+        정렬된 estimator 리스트
+    """
+    sorted_estimators = []
+    priority_estimators = ["linear_regression", "tabpfn"]
+    
+    for est in priority_estimators:
+        if est in estimators:
+            sorted_estimators.append(est)
+    
+    for est in estimators:
+        if est not in sorted_estimators:
+            sorted_estimators.append(est)
+    
+    return sorted_estimators
+
+
+def create_experiment_list(
+    config: Dict[str, Any],
+    data_dir_path: Path,
+    graph_data_dir: str
+) -> List[Tuple[str, str, str, str]]:
+    """
+    config.json에서 experiment_list를 읽어서 실험 조합 리스트 생성
+    
+    Args:
+        config: 설정 딕셔너리
+        data_dir_path: 데이터 디렉토리 경로
+        graph_data_dir: 그래프 데이터 디렉토리명
+    
+    Returns:
+        실험 조합 리스트 [(graph_file, treatment, outcome, estimator), ...]
+    """
+    # config.json에 experiment_list가 정의되어 있는지 확인
+    experiment_list_config = config.get("experiment_list", [])
+    
+    if experiment_list_config:
+        # config.json에서 직접 정의된 experiment_list 사용
+        experiment_combinations = []
+        graph_data_path = data_dir_path / graph_data_dir
+        
+        for exp in experiment_list_config:
+            if isinstance(exp, list) and len(exp) >= 4:
+                # 배열 형식: ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"]
+                graph_name, treatment, outcome, estimator = exp[0], exp[1], exp[2], exp[3]
+            elif isinstance(exp, dict):
+                # 딕셔너리 형식: {"graph": "graph_1.dot", "treatment": "BFR_OCTR_CT", ...}
+                graph_name = exp.get("graph", "")
+                treatment = exp.get("treatment", "")
+                outcome = exp.get("outcome", "ACQ_180_YN")
+                estimator = exp.get("estimator", "tabpfn")
+            else:
+                print(f"⚠️ 잘못된 experiment_list 형식: {exp}")
+                continue
+            
+            # 그래프 파일 경로 확인
+            graph_path = graph_data_path / graph_name
+            if not graph_path.exists():
+                # 절대 경로로 시도
+                graph_path = Path(graph_name)
+                if not graph_path.exists():
+                    print(f"⚠️ 그래프 파일을 찾을 수 없습니다: {graph_name}")
+                    continue
+            
+            experiment_combinations.append(
+                (str(graph_path), treatment, outcome, estimator)
+            )
+        
+        return experiment_combinations
+    
+    # 기존 방식 (하위 호환성)
+    treatments = config.get("treatments", [])
+    outcomes = config.get("outcomes", ["ACQ_180_YN"])
+    estimators = config.get("estimators", ["tabpfn"])
+    auto_extract_treatments = config.get("auto_extract_treatments", False)
+    
+    # 그래프 파일 경로 처리
+    graph_files = _get_graph_files(config, data_dir_path, graph_data_dir)
+    
+    if not graph_files:
+        return []
+    
+    # treatment 자동 추출
+    graph_treatments_map, graph_outcomes_map = _extract_treatments_from_graphs(
+        graph_files, auto_extract_treatments
+    )
+    
+    # estimator 정렬
+    sorted_estimators = _sort_estimators(estimators)
+    
+    # 실험 조합 생성
+    if auto_extract_treatments and graph_treatments_map:
+        experiment_combinations = []
+        for graph_file in graph_files:
+            graph_treatments = graph_treatments_map.get(graph_file, treatments)
+            graph_outcome = graph_outcomes_map.get(
+                graph_file, 
+                outcomes[0] if outcomes else "ACQ_180_YN"
+            )
+            
+            for treatment in graph_treatments:
+                for estimator in sorted_estimators:
+                    experiment_combinations.append(
+                        (graph_file, treatment, graph_outcome, estimator)
+                    )
+    else:
+        experiment_combinations = list(itertools.product(
+            graph_files,
+            treatments,
+            outcomes,
+            sorted_estimators
+        ))
+    
+    return experiment_combinations
+
+
+def prepare_data_for_causal_model(
+    merged_df: pd.DataFrame,
+    config: Dict[str, Any],
+    data_dir_path: Path,
+    graph_data_dir: str
+) -> pd.DataFrame:
+    """
+    인과 모델을 위한 데이터 준비 (그래프 변수에 맞게 데이터 정리)
+    
+    Args:
+        merged_df: 병합된 데이터프레임
+        config: 설정 딕셔너리
+        data_dir_path: 데이터 디렉토리 경로
+        graph_data_dir: 그래프 데이터 디렉토리명
+    
+    Returns:
+        정리된 데이터프레임
+    """
+    from . import utils
+    treatments = config.get("treatments", [])
+    outcomes = config.get("outcomes", ["ACQ_180_YN"])
+    auto_extract_treatments = config.get("auto_extract_treatments", False)
+    
+    # 그래프 파일 경로 처리
+    graph_files = _get_graph_files(config, data_dir_path, graph_data_dir)
+    
+    if not graph_files:
+        return merged_df
+    
+    # 모든 그래프의 변수 수집
+    all_graph_variables = set()
+    for graph_file in graph_files:
+        graph_path = Path(graph_file)
+        try:
+            causal_graph = utils.create_causal_graph(str(graph_path))
+            all_graph_variables.update(causal_graph.nodes())
+        except Exception as e:
+            print(f"⚠️ 그래프 파일 로드 실패 ({graph_path.name}): {e}")
+    
+    # treatment 자동 추출
+    graph_treatments_map, graph_outcomes_map = _extract_treatments_from_graphs(
+        graph_files, auto_extract_treatments
+    )
+    
+    # 데이터 정리
+    all_treatments = set()
+    all_outcomes = set()
+    for graph_file in graph_files:
+        if graph_file in graph_treatments_map:
+            all_treatments.update(graph_treatments_map[graph_file])
+        if graph_file in graph_outcomes_map:
+            all_outcomes.add(graph_outcomes_map[graph_file])
+    if not auto_extract_treatments:
+        all_treatments.update(treatments)
+    if not graph_outcomes_map:
+        all_outcomes.update(outcomes)
+    
+    essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+    stratification_vars = {"HOPE_JSCD3_NAME"}
+    required_vars = list(all_graph_variables | essential_vars | stratification_vars)
+    
+    merged_df_clean = utils.clean_dataframe_for_causal_model(
+        merged_df, 
+        required_vars=required_vars, 
+        logger=None
+    )
+    
+    data_variables = set(merged_df_clean.columns)
+    vars_to_keep = (all_graph_variables | essential_vars | stratification_vars) & data_variables
+    vars_to_remove = data_variables - vars_to_keep
+    
+    if vars_to_remove:
+        print(f"🗑️ 그래프에 정의되지 않은 변수 제거 중 ({len(vars_to_remove)}개)...")
+        merged_df_clean = merged_df_clean[list(vars_to_keep)]
+    
+    print(f"✅ 정리된 데이터: {len(merged_df_clean)}건, {len(merged_df_clean.columns)}개 변수")
+    
+    return merged_df_clean
+
+
+# ============================================================================
+# 분석 실행 함수
+# ============================================================================
+
+def run_analysis_without_preprocessing(
+    merged_df_clean: pd.DataFrame,
+    graph_file: str,
+    treatment: str,
+    outcome: str,
+    estimator: str,
+    logger: Optional[logging.Logger] = None,
+    experiment_id: Optional[str] = None,
+    job_category: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
+    (estimation → refutation → prediction만 수행)
+    
+    Args:
+        merged_df_clean (pd.DataFrame): 전처리 및 정리된 데이터프레임
+        graph_file (str): 그래프 파일 경로
+        treatment (str): 처치 변수명
+        outcome (str): 결과 변수명
+        estimator (str): 추정 방법
+        logger (Optional[logging.Logger]): 로거 객체
+        experiment_id (Optional[str]): 실험 ID (선택적)
+        job_category (Optional[str]): 직종소분류명 (checkpoint 저장 경로에 사용)
+    
+    Returns:
+        Dict[str, Any]: 분석 결과 딕셔너리
+    """
+    from . import utils
+    try:
+        step_times = {}
+        step_start = time.time()
+        
+        if experiment_id:
+            print(f"\n{'='*80}")
+            print(f"실험 ID: {experiment_id}")
+            print(f"그래프: {Path(graph_file).name}")
+            print(f"Treatment: {treatment}, Outcome: {outcome}")
+            print(f"Estimator: {estimator}")
+            print(f"{'='*80}\n")
+        
+        # 1. 그래프 로드
+        print("1️⃣ 인과 그래프 로드 중...")
+        step_start = time.time()
+        causal_graph = utils.create_causal_graph(graph_file)
+        step_times['그래프 로드'] = time.time() - step_start
+        
+        # 2. 데이터 필터링
+        print("2️⃣ 그래프 변수에 맞게 데이터 필터링 중...")
+        step_start = time.time()
+        
+        graph_variables = set(causal_graph.nodes())
+        data_variables = set(merged_df_clean.columns)
+        essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        stratification_vars = {"HOPE_JSCD3_NAME"}
+        vars_to_keep = (graph_variables | essential_vars | stratification_vars) & data_variables
+        df_for_analysis = merged_df_clean[list(vars_to_keep)].copy()
+        
+        missing_vars = [var for var in [treatment, outcome] if var not in df_for_analysis.columns]
+        if missing_vars:
+            raise ValueError(f"필수 변수가 데이터에 없습니다: {missing_vars}")
+        
+        step_times['데이터 필터링'] = time.time() - step_start
+        
+        # 3. Train/Test Split
+        print("3️⃣ Train/Test Split 중 (1:99)...")
+        step_start = time.time()
+        
+        outcome_data = df_for_analysis[outcome]
+        is_binary = outcome_data.nunique() <= 2 and outcome_data.dtype in ['int64', 'int32', 'bool']
+        
+        if is_binary:
+            df_train, df_test = train_test_split(
+                df_for_analysis,
+                test_size=0.99,
+                random_state=42,
+                stratify=outcome_data
+            )
+        else:
+            df_train, df_test = train_test_split(
+                df_for_analysis,
+                test_size=0.99,
+                random_state=42
+            )
+        
+        step_times['Train/Test Split'] = time.time() - step_start
+        
+        # 4. 인과모델 생성
+        print("4️⃣ 인과모델 생성 중...")
+        step_start = time.time()
+        model = CausalModel(
+            data=df_train,
+            treatment=treatment,
+            outcome=outcome,
+            graph=causal_graph
+        )
+        step_times['인과모델 생성'] = time.time() - step_start
+        
+        # 5. 인과효과 식별
+        print("5️⃣ 인과효과 식별 중...")
+        step_start = time.time()
+        identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
+        step_times['인과효과 식별'] = time.time() - step_start
+        
+        # 6. 인과효과 추정
+        print("6️⃣ 인과효과 추정 중...")
+        step_start = time.time()
+        estimate = estimate_causal_effect(
+            model,
+            identified_estimand,
+            estimator,
+            logger
+        )
+        step_times['인과효과 추정'] = time.time() - step_start
+        
+        # 6-1. Checkpoint 저장
+        checkpoint_path = None
+        if experiment_id:
+            try:
+                script_dir = Path(__file__).parent.parent
+                checkpoint_dir = script_dir / "data" / "checkpoint"
+                
+                if job_category:
+                    job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+                    checkpoint_dir = checkpoint_dir / job_category_safe
+                
+                graph_name = Path(graph_file).stem if graph_file else None
+                checkpoint_path = save_checkpoint(
+                    estimate,
+                    checkpoint_dir,
+                    experiment_id,
+                    graph_name=graph_name,
+                    logger=logger
+                )
+            except Exception as e:
+                if logger:
+                    logger.warning(f"Checkpoint 저장 실패 (계속 진행): {e}")
+                print(f"⚠️ Checkpoint 저장 실패 (계속 진행): {e}")
+        
+        # 7. 예측
+        print("7️⃣ 예측 중...")
+        step_start = time.time()
+        essential_vars_for_pred = {treatment, outcome}
+        if outcome in df_test.columns:
+            df_test = df_test.copy()
+            df_test[f"{outcome}_actual"] = df_test[outcome].copy()
+        
+        df_test_clean = utils.clean_dataframe_for_causal_model(
+            df_test,
+            required_vars=list(essential_vars_for_pred) + [f"{outcome}_actual"] if f"{outcome}_actual" in df_test.columns else list(essential_vars_for_pred),
+            logger=logger
+        )
+        metrics, df_with_predictions = predict_conditional_expectation(
+            estimate, df_test_clean, logger=logger
+        )
+        step_times['예측'] = time.time() - step_start
+        
+        # 예측 결과 저장
+        if experiment_id:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"predictions_{experiment_id}_{timestamp}.xlsx"
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"predictions_{timestamp}.xlsx"
+        
+        step_start = time.time()
+        excel_path = utils.save_predictions_to_excel(df_with_predictions, filename=filename, logger=logger)
+        step_times['예측 결과 저장'] = time.time() - step_start
+        
+        # 8. 검증 테스트
+        print("8️⃣ 검증 테스트 실행 중...")
+        step_start = time.time()
+        validation_results = run_validation_tests(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['검증 테스트'] = time.time() - step_start
+        
+        # 9. 민감도 분석
+        print("9️⃣ 민감도 분석 실행 중...")
+        step_start = time.time()
+        sensitivity_df = run_sensitivity_analysis(
+            model,
+            identified_estimand,
+            estimate,
+            logger
+        )
+        step_times['민감도 분석'] = time.time() - step_start
+        
+        # 10. 시각화
+        print("🔟 시각화 생성 중...")
+        step_start = time.time()
+        heatmap_path = create_sensitivity_heatmap(
+            sensitivity_df,
+            logger
+        ) if not sensitivity_df.empty else None
+        step_times['시각화 생성'] = time.time() - step_start
+        
+        # 11. 요약 보고서
+        print("1️⃣1️⃣ 최종 요약 보고서 출력 중...")
+        step_start = time.time()
+        print_summary_report(estimate, validation_results, sensitivity_df)
+        step_times['요약 보고서'] = time.time() - step_start
+        
+        total_time = sum(step_times.values())
+        step_times['전체'] = total_time
+        
+        print(f"\n✅ 분석 완료! (총 소요 시간: {total_time:.2f}초)")
+        
+        return {
+            "status": "success",
+            "estimate": estimate,
+            "validation_results": validation_results,
+            "sensitivity_df": sensitivity_df,
+            "metrics": metrics,
+            "excel_path": excel_path,
+            "checkpoint_path": checkpoint_path,
+            "step_times": step_times,
+            "train_size": len(df_train),
+            "test_size": len(df_test)
+        }
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"분석 중 오류 발생: {e}")
+        print(f"❌ 분석 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+def run_single_experiment(
+    merged_df_clean: pd.DataFrame,
+    graph_file: str,
+    treatment: str,
+    outcome: str,
+    estimator: str,
+    experiment_id: str,
+    logger: Optional[logging.Logger] = None,
+    split_by_job_category: bool = True
+) -> Dict[str, Any]:
+    """
+    단일 실험을 실행합니다
+    
+    Args:
+        merged_df_clean (pd.DataFrame): 전처리 및 정리된 데이터프레임
+        graph_file (str): 그래프 파일 경로
+        treatment (str): 처치 변수명
+        outcome (str): 결과 변수명
+        estimator (str): 추정 방법
+        experiment_id (str): 실험 ID
+        logger (Optional[logging.Logger]): 로거 객체
+    
+    Returns:
+        Dict[str, Any]: 실험 결과 딕셔너리
+    """
+    from . import utils
+    start_time = datetime.now()
+    try:
+        # 직종소분류별로 분리하여 실험 실행
+        if split_by_job_category and "HOPE_JSCD3_NAME" in merged_df_clean.columns:
+            job_categories = merged_df_clean["HOPE_JSCD3_NAME"].dropna().unique()
+            print(f"📊 직종소분류별 실험 실행: {len(job_categories)}개 직종소분류")
+            
+            all_results = []
+            all_predictions = []
+            all_metrics = []
+            
+            for job_category in job_categories:
+                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD3_NAME"] == job_category].copy()
+                
+                if len(job_df) < 10:
+                    if logger:
+                        logger.warning(f"직종소분류 '{job_category}' 데이터가 너무 적어 건너뜁니다: {len(job_df)}건")
+                    print(f"⚠️ 직종소분류 '{job_category}' 데이터가 너무 적어 건너뜁니다: {len(job_df)}건")
+                    continue
+                
+                job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+                job_experiment_id = f"{experiment_id}_{job_category_safe}"
+                
+                print(f"\n  🔹 직종소분류: {job_category} ({len(job_df)}건)")
+                
+                try:
+                    job_result = run_analysis_without_preprocessing(
+                        merged_df_clean=job_df,
+                        graph_file=graph_file,
+                        treatment=treatment,
+                        outcome=outcome,
+                        estimator=estimator,
+                        logger=logger,
+                        experiment_id=job_experiment_id,
+                        job_category=job_category
+                    )
+                    
+                    all_results.append(job_result)
+                    
+                    if job_result.get("excel_path"):
+                        try:
+                            pred_df = pd.read_excel(job_result["excel_path"])
+                            all_predictions.append(pred_df)
+                        except:
+                            pass
+                    
+                    if job_result.get("metrics"):
+                        all_metrics.append(job_result["metrics"])
+                        
+                except Exception as e:
+                    if logger:
+                        logger.error(f"직종소분류 '{job_category}' 실험 실패: {e}")
+                    print(f"  ❌ 직종소분류 '{job_category}' 실험 실패: {e}")
+                    continue
+            
+            if not all_results:
+                raise ValueError("모든 직종소분류 실험이 실패했습니다.")
+            
+            # 예측 결과 합치기
+            if all_predictions:
+                combined_predictions = pd.concat(all_predictions, ignore_index=True)
+                
+                combined_metrics = {}
+                if all_metrics:
+                    actual_outcome_col = f"{outcome}_actual"
+                    if actual_outcome_col in combined_predictions.columns and outcome in combined_predictions.columns:
+                        actual_y = combined_predictions[actual_outcome_col]
+                        predicted_y = combined_predictions[outcome]
+                        
+                        if pd.api.types.is_numeric_dtype(actual_y):
+                            unique_values = set(actual_y.dropna().unique())
+                            is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
+                            
+                            if is_binary:
+                                predicted_classes = (predicted_y > 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
+                                combined_metrics['accuracy'] = accuracy_score(actual_y, predicted_classes)
+                                combined_metrics['f1_score'] = f1_score(actual_y, predicted_classes, zero_division=0)
+                                try:
+                                    combined_metrics['auc'] = roc_auc_score(actual_y, predicted_y)
+                                except:
+                                    combined_metrics['auc'] = None
+                
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                excel_path = utils.save_predictions_to_excel(
+                    combined_predictions, 
+                    filename=f"predictions_{experiment_id}_combined_{timestamp}.xlsx",
+                    logger=logger
+                )
+            else:
+                combined_metrics = {}
+                excel_path = None
+            
+            base_result = all_results[0]
+            result = {
+                "status": "success",
+                "estimate": base_result.get("estimate"),
+                "validation_results": base_result.get("validation_results", {}),
+                "sensitivity_df": base_result.get("sensitivity_df"),
+                "metrics": combined_metrics,
+                "excel_path": excel_path,
+                "step_times": base_result.get("step_times", {}),
+                "train_size": sum([r.get("train_size", 0) for r in all_results]),
+                "test_size": sum([r.get("test_size", 0) for r in all_results]),
+                "job_category_results": all_results,
+                "num_job_categories": len(all_results)
+            }
+        else:
+            result = run_analysis_without_preprocessing(
+                merged_df_clean=merged_df_clean,
+                graph_file=graph_file,
+                treatment=treatment,
+                outcome=outcome,
+                estimator=estimator,
+                logger=logger,
+                experiment_id=experiment_id
+            )
+        
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        
+        metrics = result.get("metrics", {})
+        estimate = result.get("estimate")
+        validation_results = result.get("validation_results", {})
+        
+        ate_value = None
+        if estimate and hasattr(estimate, 'value'):
+            ate_value = estimate.value
+        
+        # Refutation 결과 추출
+        refutation_data = {}
+        refutation_types = ['placebo', 'unobserved', 'subset', 'dummy']
+        for ref_type in refutation_types:
+            ref_result = validation_results.get(ref_type)
+            if ref_result is not None:
+                if ref_type == 'placebo':
+                    effect_change = abs(ref_result.new_effect - ref_result.estimated_effect)
+                    refutation_data[f'{ref_type}_passed'] = effect_change < 0.01
+                elif ref_type == 'unobserved':
+                    change_rate = abs(ref_result.new_effect - ref_result.estimated_effect) / abs(ref_result.estimated_effect) if abs(ref_result.estimated_effect) > 0 else float('inf')
+                    refutation_data[f'{ref_type}_passed'] = change_rate < 0.2
+                elif ref_type == 'subset':
+                    effect_change = abs(ref_result.new_effect - ref_result.estimated_effect)
+                    change_rate = abs(ref_result.estimated_effect) > 0 and abs(effect_change / ref_result.estimated_effect) or float('inf')
+                    refutation_data[f'{ref_type}_passed'] = change_rate < 0.1
+                elif ref_type == 'dummy':
+                    refutation_data[f'{ref_type}_passed'] = abs(ref_result.new_effect) < 0.01
+                
+                p_value = calculate_refutation_pvalue(ref_result, ref_type)
+                refutation_data[f'{ref_type}_pvalue'] = p_value
+            else:
+                refutation_data[f'{ref_type}_passed'] = None
+                refutation_data[f'{ref_type}_pvalue'] = None
+        
+        return {
+            "experiment_id": experiment_id,
+            "status": "success",
+            "duration_seconds": duration,
+            "graph": graph_file,
+            "graph_name": Path(graph_file).stem,
+            "treatment": treatment,
+            "outcome": outcome,
+            "estimator": estimator,
+            "ate_value": ate_value,
+            "metrics": metrics,
+            "accuracy": metrics.get("accuracy") if metrics else None,
+            "f1_score": metrics.get("f1_score") if metrics else None,
+            "auc": metrics.get("auc") if metrics else None,
+            "excel_path": result.get("excel_path"),
+            "train_size": result.get("train_size"),
+            "test_size": result.get("test_size"),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            **refutation_data
+        }
+    except Exception as e:
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        
+        return {
+            "experiment_id": experiment_id,
+            "status": "failed",
+            "duration_seconds": duration,
+            "graph": graph_file,
+            "treatment": treatment,
+            "outcome": outcome,
+            "estimator": estimator,
+            "error": str(e),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+        }
+
+
+def run_inference(
+    merged_df_clean: pd.DataFrame,
+    graph_file: str,
+    checkpoint_dir: Path,
+    treatment: str,
+    outcome: str,
+    estimator: str,
+    logger: Optional[logging.Logger] = None,
+    experiment_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Inference 모드: checkpoint에서 모델을 로드하여 예측만 수행하는 함수
+    
+    Args:
+        merged_df_clean (pd.DataFrame): 전처리 및 정리된 데이터프레임
+        graph_file (str): 그래프 파일 경로
+        checkpoint_dir (Path): checkpoint 디렉토리 경로
+        treatment (str): 처치 변수명
+        outcome (str): 결과 변수명
+        estimator (str): 추정 방법
+        logger (Optional[logging.Logger]): 로거 객체
+        experiment_id (Optional[str]): 실험 ID (선택적)
+    
+    Returns:
+        Dict[str, Any]: 예측 결과 딕셔너리
+    """
+    from . import utils
+    try:
+        step_times = {}
+        step_start = time.time()
+        
+        if experiment_id:
+            print(f"\n{'='*80}")
+            print(f"Inference 모드 - 실험 ID: {experiment_id}")
+            print(f"그래프: {Path(graph_file).name}")
+            print(f"Treatment: {treatment}, Outcome: {outcome}, Estimator: {estimator}")
+            print(f"{'='*80}\n")
+        
+        graph_name = Path(graph_file).stem
+        
+        # 직종소분류별로 분리하여 예측
+        if "HOPE_JSCD3_NAME" in merged_df_clean.columns:
+            job_categories = merged_df_clean["HOPE_JSCD3_NAME"].dropna().unique()
+            print(f"📊 직종소분류별 Inference 실행: {len(job_categories)}개 직종소분류")
+            
+            all_predictions = []
+            all_metrics = []
+            
+            for job_category in job_categories:
+                job_df = merged_df_clean[merged_df_clean["HOPE_JSCD3_NAME"] == job_category].copy()
+                
+                if len(job_df) == 0:
+                    continue
+                
+                job_category_safe = str(job_category).replace("/", "_").replace("\\", "_").replace(" ", "_")
+                job_checkpoint_dir = checkpoint_dir / job_category_safe
+                
+                print(f"\n  🔹 직종소분류: {job_category} ({len(job_df)}건)")
+                
+                checkpoint_file = find_checkpoint(
+                    job_checkpoint_dir,
+                    graph_name,
+                    treatment,
+                    outcome,
+                    estimator,
+                    logger
+                )
+                
+                if not checkpoint_file:
+                    print(f"  ⚠️ Checkpoint를 찾을 수 없어 건너뜁니다: {job_category}")
+                    continue
+                
+                try:
+                    estimate = load_checkpoint(checkpoint_file, logger)
+                    
+                    essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+                    data_variables = set(job_df.columns)
+                    vars_to_keep = essential_vars & data_variables
+                    
+                    missing_vars = [var for var in [treatment, outcome] if var not in job_df.columns]
+                    if missing_vars:
+                        print(f"  ⚠️ 필수 변수가 없어 건너뜁니다: {missing_vars}")
+                        continue
+                    
+                    df_for_prediction = job_df[list(vars_to_keep)].copy()
+                    
+                    if outcome in df_for_prediction.columns:
+                        df_for_prediction[f"{outcome}_actual"] = df_for_prediction[outcome].copy()
+                    
+                    df_pred_clean = utils.clean_dataframe_for_causal_model(
+                        df_for_prediction,
+                        required_vars=list(essential_vars) + [f"{outcome}_actual"] if f"{outcome}_actual" in df_for_prediction.columns else list(essential_vars),
+                        logger=logger
+                    )
+                    metrics, df_with_predictions = predict_conditional_expectation(
+                        estimate, df_pred_clean, logger=logger
+                    )
+                    
+                    all_predictions.append(df_with_predictions)
+                    if metrics:
+                        all_metrics.append(metrics)
+                    
+                    print(f"  ✅ 예측 완료: {len(df_with_predictions)}건")
+                    
+                except Exception as e:
+                    print(f"  ❌ 직종소분류 '{job_category}' 예측 실패: {e}")
+                    if logger:
+                        logger.error(f"직종소분류 '{job_category}' 예측 실패: {e}")
+                    continue
+            
+            if not all_predictions:
+                raise ValueError("모든 직종소분류 예측이 실패했습니다.")
+            
+            combined_predictions = pd.concat(all_predictions, ignore_index=True)
+            
+            # 통합 메트릭 계산
+            combined_metrics = {}
+            actual_outcome_col = f"{outcome}_actual"
+            if actual_outcome_col in combined_predictions.columns and outcome in combined_predictions.columns:
+                actual_y = combined_predictions[actual_outcome_col]
+                predicted_y = combined_predictions[outcome]
+                
+                if pd.api.types.is_numeric_dtype(actual_y):
+                    unique_values = set(actual_y.dropna().unique())
+                    is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
+                    
+                    if is_binary:
+                        predicted_classes = (predicted_y > 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
+                        valid_mask = ~(pd.isna(actual_y) | pd.isna(predicted_classes))
+                        if valid_mask.sum() > 0:
+                            combined_metrics['accuracy'] = accuracy_score(actual_y[valid_mask], predicted_classes[valid_mask])
+                            combined_metrics['f1_score'] = f1_score(actual_y[valid_mask], predicted_classes[valid_mask], zero_division=0)
+                            try:
+                                combined_metrics['auc'] = roc_auc_score(actual_y[valid_mask], predicted_y[valid_mask])
+                            except:
+                                combined_metrics['auc'] = None
+            
+            # 예측 결과 저장
+            step_start = time.time()
+            if experiment_id:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"predictions_inference_{experiment_id}_combined_{timestamp}.xlsx"
+            else:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"predictions_inference_combined_{timestamp}.xlsx"
+            
+            excel_path = utils.save_predictions_to_excel(combined_predictions, filename=filename, logger=logger)
+            step_times['예측 결과 저장'] = time.time() - step_start
+            
+        else:
+            raise ValueError("HOPE_JSCD3_NAME 변수가 데이터에 없습니다. 직종소분류별 분리가 불가능합니다.")
+        
+        total_time = sum(step_times.values())
+        step_times['전체'] = total_time
+        
+        print(f"\n✅ Inference 완료! (총 소요 시간: {total_time:.2f}초)")
+        if combined_metrics:
+            print(f"   Accuracy: {combined_metrics.get('accuracy', 'N/A')}")
+            print(f"   F1 Score: {combined_metrics.get('f1_score', 'N/A')}")
+            print(f"   AUC: {combined_metrics.get('auc', 'N/A')}")
+        
+        return {
+            "status": "success",
+            "metrics": combined_metrics,
+            "excel_path": excel_path,
+            "step_times": step_times,
+            "data_size": len(combined_predictions)
+        }
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"Inference 중 오류 발생: {e}")
+        print(f"❌ Inference 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
