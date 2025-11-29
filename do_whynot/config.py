@@ -1,7 +1,7 @@
 ## run settings
 IS_TEST_MODE = True    # test mode 실행 여부
 TEST_SAMPLE_SIZE = 100   # test mode시 샘플링할 데이터 수
-DAG_INDICES_TEST = [1, 2]   # test mode시 사용할 DAG 인덱스
+DAG_INDICES_TEST = [1]   # test mode시 사용할 DAG 인덱스
 
 BATCH_SIZE = 100   # 한 batch에서 처리할 데이터 수 (Tabpfn 추정기 한계로 10000 이하 권장)
 EXCLUDE_COLS = ["SELF_INTRO_CONT", "JHNT_MBN", "JHNT_CTN"]  # label encoding에서 제외할 컬럼 리스트

@@ -440,14 +440,14 @@ def parse_license_to_lists(all_license_data: List[Dict[str, Any]]) -> pd.DataFra
 def build_pipeline_wide(logger: logging.LoggerAdapter) -> pd.DataFrame:
     logger.info("Reading raw CSV data.")
 
-    # dtype_map = {}
-    # for k in ["JHNT_MBN", "JHNT_CTN"]:
-    #     dtype_map[k] = str
+    dtype_map = {}
+    for k in ["JHNT_MBN", "JHNT_CTN"]:
+        dtype_map[k] = str
 
-    # base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
-    base = pd.read_csv(RAW_CSV, encoding="utf-8")
-    base['JHNT_MBN'] = base['JHNT_MBN'].astype(str)    
-    base['JHNT_CTN'] = base['JHNT_CTN'].astype(str)
+    base = pd.read_csv(RAW_CSV, encoding="utf-8", dtype=dtype_map)
+    # base = pd.read_csv(RAW_CSV, encoding="utf-8")
+    # base['JHNT_MBN'] = base['JHNT_MBN'].astype(str)    
+    # base['JHNT_CTN'] = base['JHNT_CTN'].astype(str)
 
     # 1. 이력서 데이터 처리
     logger.info(f"Detecting resume JSON structure based on {TOTAL_RESUME_JSON}.")
@@ -579,6 +579,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
                         mapped_cols.append(col)
                     except Exception:
                          # 변환 실패 시 object 타입 유지 (mapped_cols에 추가 안됨)
+                        logger.info(f"[FAIL] Binary Mapping failed (Y=1, N=0) for column {col}") 
                         pass
                 
     if mapped_cols:
@@ -616,6 +617,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
 
     encoding_map = {}
     for c in cat_cols:
+        df[c] = df[c].astype(str)
         # # Debug str < int error
         # col_series = df[c]
         # non_na = col_series.dropna()

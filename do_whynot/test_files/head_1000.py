@@ -8,13 +8,15 @@ def main():
 
     intermediate_path = data_dir / "intermediate_preprocessed_df.csv"
     preprocessed_path = data_dir / "preprocessed_df.csv"
-
-    if preprocessed_path.exists():
-        target_path = preprocessed_path
-        print(f"[INFO] Using file: {preprocessed_path.name}")
-    elif intermediate_path.exists():
+    
+    if intermediate_path.exists():
         target_path = intermediate_path
         print(f"[INFO] Using file: {intermediate_path.name}")
+    
+    elif preprocessed_path.exists():
+        target_path = preprocessed_path
+        print(f"[INFO] Using file: {preprocessed_path.name}")
+
     else:
         print("[ERROR] Neither CSV file was found in data directory")
         print(f"Checked : {intermediate_path} and {preprocessed_path}")
@@ -35,7 +37,7 @@ def main():
         df_sample = df.sample(n=sample_size, random_state=42).reset_index(drop=True)
         print(f"[INFO] Sampled 10000 rows")
 
-    sample_file = data_dir / "sample_1000_rows.csv"
+    sample_file = data_dir / "intermediate_sample_1000_rows.csv"
     try:
         df_sample.to_csv(sample_file, index=False, encoding='utf-8')
         print(f"[OK] Sample saved to: {sample_file}")

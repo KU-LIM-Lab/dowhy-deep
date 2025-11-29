@@ -59,11 +59,11 @@ def llm_inference(df: pd.DataFrame, logger: logging.LoggerAdapter,
     model.load_state_dict(state_dict, strict=True)
     model.to(device).eval()
 
-    if "SELF_INTRO_CONT" not in df.columns or "JHNT_MBN" not in df.columns:
-        raise ValueError(f"Columns {{SELF_INTRO_CONT}} and {{JHNT_MBN}} must exist in input CSV")
+    if "SELF_INTRO_CONT" not in df.columns or "JHNT_CTN" not in df.columns:
+        raise ValueError(f"Columns {{SELF_INTRO_CONT}} and {{JHNT_CTN}} must exist in input CSV")
 
     texts = df["SELF_INTRO_CONT"].astype(str).fillna("").tolist()
-    uuids = df["JHNT_MBN"].astype(str).tolist()
+    uuids = df["JHNT_CTN"].astype(str).tolist()
 
     # ----- inference (top-1 index return) -----
     top1_indices = []
@@ -86,7 +86,7 @@ def llm_inference(df: pd.DataFrame, logger: logging.LoggerAdapter,
 
     # ----- save -----
     out_df = pd.DataFrame({
-        "JHNT_MBN": uuids,
+        "JHNT_CTN": uuids,
         "SELF_INTRO_CONT_LABEL": top1,  # index (0~9)
     })
 

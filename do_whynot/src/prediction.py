@@ -117,8 +117,8 @@ def run_prediction_pipeline(
         except Exception as e:
             logger.warning(f"[predict] Failed to convert object column '{col}' to int: {e}")
     
-    df_copy['JHNT_MBN'] = df_copy['JHNT_MBN'].astype(str)
-    pred_result_df = df_copy[['JHNT_MBN']].copy()
+    df_copy['JHNT_CTN'] = df_copy['JHNT_CTN'].astype(str)
+    pred_result_df = df_copy[['JHNT_CTN']].copy()
 
     # 2) 각 DAG별 roles 추출 및 예측 수행
     for info in tqdm(top_5_dags_info, desc=f"Batch {batch_id+1} Prediction on Top DAGs", leave=False):

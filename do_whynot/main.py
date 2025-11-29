@@ -117,7 +117,7 @@ def fast_find_problematic_rows(df, logger, sample_limit=1000):
     
     pat_ctrl = obj_df.apply(lambda col: col.map(has_ctrl))
     suspicious_idx = (pat_double_comma_newline|pat_many_quotes|pat_ctrl).any(axis=1)
-    suspicious_rows = df[suspicious_idx]
+    suspicious_rows = sampled_df[suspicious_idx]
     logger.info(f"Suspicious candidate rows: {len(suspicious_rows)}")
 
     bad_rows = []
@@ -161,41 +161,39 @@ def main():
     main_logger = setup_logger()
     main_logger.info("Starting Data Preprocessing Pipeline from imported functions.")
 
-    # --- 1. 전처리 실행 (데이터 전체에 대해 단 1회 실행) ---
-    try:
-        # 1) 와이드 포맷 조립 (JSON 파싱 및 CSV 병합)
-        intermediate_df = build_pipeline_wide(main_logger)
-        main_logger.info(f"Wide pipeline complete. Intermediate shape: {intermediate_df.shape}")
+    # # --- 1. 전처리 실행 (데이터 전체에 대해 단 1회 실행) ---
+    # try:
+    #     # 1) 와이드 포맷 조립 (JSON 파싱 및 CSV 병합)
+    #     intermediate_df = build_pipeline_wide(main_logger)
+    #     main_logger.info(f"Wide pipeline complete. Intermediate shape: {intermediate_df.shape}")
         
-        bad_rows, bad_cells = fast_find_problematic_rows(intermediate_df, main_logger)
-
-        intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
-        intermediate_df.to_csv(intermediate_path, index=False, encoding="utf-8", quoting=csv.QUOTE_MINIMAL, escapechar="\\")
-        main_logger.info(f"[OK] Intermediate preprocessed data saved to: {intermediate_path.name}")
+    #     intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
+    #     intermediate_df.to_csv(intermediate_path, index=False, encoding="utf-8", quoting=csv.QUOTE_MINIMAL, escapechar="\\")
+    #     main_logger.info(f"[OK] Intermediate preprocessed data saved to: {intermediate_path.name}")
         
-        # 2) 후처리 (이진 매핑, 날짜 차이, 결측 컬럼 제거)
-        intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
-        intermediate_df = pd.read_csv(intermediate_path, encoding="utf-8")
-        main_logger.info(f"Intermediate data loaded. DataFrame shape: {intermediate_df.shape}")
+    #     # 2) 후처리 (이진 매핑, 날짜 차이, 결측 컬럼 제거)
+    #     intermediate_path = DATA_OUTPUT_DIR / "intermediate_preprocessed_df.csv"
+    #     intermediate_df = pd.read_csv(intermediate_path, encoding="utf-8")
+    #     main_logger.info(f"Intermediate data loaded. DataFrame shape: {intermediate_df.shape}")
 
-        final_df = postprocess(intermediate_df, main_logger, DATA_OUTPUT_DIR) 
-        main_logger.info(f"Preprocessing complete. Final DataFrame shape: {final_df.shape}")
+    #     final_df = postprocess(intermediate_df, main_logger, DATA_OUTPUT_DIR) 
+    #     main_logger.info(f"Preprocessing complete. Final DataFrame shape: {final_df.shape}")
         
-    except Exception as e:
-        main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
-        sys.exit(1)
-
-    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
-    final_df.to_csv(preprocessed_path, index=False, encoding="utf-8")
-    main_logger.info(f"[OK] Preprocessed data saved to: {preprocessed_path.name}")
-
-    try:
-        perform_eda(final_df, DATA_OUTPUT_DIR, main_logger)
-    except Exception as e:
-        main_logger.error(f"[skip] Skip EDA due to the error: {e}")
+    # except Exception as e:
+    #     main_logger.error(f"[Fatal] Preprocessing failed during execution: {e}")
+    #     sys.exit(1)
 
     # preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
-    # final_df = pd.read_csv(preprocessed_path, encoding="utf-8")
+    # final_df.to_csv(preprocessed_path, index=False, encoding="utf-8")
+    # main_logger.info(f"[OK] Preprocessed data saved to: {preprocessed_path.name}")
+
+    # try:
+    #     perform_eda(final_df, DATA_OUTPUT_DIR, main_logger)
+    # except Exception as e:
+    #     main_logger.error(f"[skip] Skip EDA due to the error: {e}")
+
+    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
+    final_df = pd.read_csv(preprocessed_path, encoding="utf-8")
     
     # --- 2. 배치 분할 및 반복 실행 ---
     if IS_TEST_MODE:
@@ -237,18 +235,18 @@ def main():
         llm_preds_df = llm_inference(batch_df, main_logger, i, IS_TEST_MODE, DATA_OUTPUT_DIR) 
         main_logger.info(f"LLM Inference for BATCH {i+1} complete. Predictions saved.")
         
-        batch_df['JHNT_MBN'] = batch_df['JHNT_MBN'].astype(str)
-        llm_preds_df['JHNT_MBN'] = llm_preds_df['JHNT_MBN'].astype(str)
+        batch_df['JHNT_CTN'] = batch_df['JHNT_CTN'].astype(str)
+        llm_preds_df['JHNT_CTN'] = llm_preds_df['JHNT_CTN'].astype(str)
 
         batch_df = pd.merge(
             batch_df, 
-            llm_preds_df[['JHNT_MBN', 'SELF_INTRO_CONT_LABEL']], 
-            on='JHNT_MBN', 
+            llm_preds_df[['JHNT_CTN', 'SELF_INTRO_CONT_LABEL']], 
+            on='JHNT_CTN', 
             how='left'
         )
         main_logger.info(f"Merged LLM predictions into batch dataframe. New shape: {batch_df.shape}")
 
-        all_llm_preds = pd.concat([all_llm_preds, llm_preds_df[['JHNT_MBN', 'SELF_INTRO_CONT_LABEL']]], ignore_index=True)
+        all_llm_preds = pd.concat([all_llm_preds, llm_preds_df[['JHNT_CTN', 'SELF_INTRO_CONT_LABEL']]], ignore_index=True)
 
         batch_results = []
 
@@ -339,10 +337,10 @@ def main():
 
     final_llm_merged_df = final_df.copy()
 
-    final_llm_merged_df['JHNT_MBN'] = final_llm_merged_df['JHNT_MBN'].astype(str)
-    all_llm_preds['JHNT_MBN'] = all_llm_preds['JHNT_MBN'].astype(str)
+    final_llm_merged_df['JHNT_CTN'] = final_llm_merged_df['JHNT_CTN'].astype(str)
+    all_llm_preds['JHNT_CTN'] = all_llm_preds['JHNT_CTN'].astype(str)
 
-    final_llm_merged_df = pd.merge(final_llm_merged_df, all_llm_preds, on='JHNT_MBN', how='left')
+    final_llm_merged_df = pd.merge(final_llm_merged_df, all_llm_preds, on='JHNT_CTN', how='left')
     final_llm_merged_file = DATA_OUTPUT_DIR / "final_df_with_llm_predictions.csv"
     main_logger.info("Final DataFrame with all LLM predictions saved to: %s", final_llm_merged_file.name)
 
@@ -380,10 +378,10 @@ def main():
     
     main_logger.info("Merging all predictions with the final preprocessed DataFrame...")
     
-    final_llm_merged_df['JHNT_MBN'] = final_llm_merged_df['JHNT_MBN'].astype(str)
-    all_final_preds['JHNT_MBN'] = all_final_preds['JHNT_MBN'].astype(str)
+    final_llm_merged_df['JHNT_CTN'] = final_llm_merged_df['JHNT_CTN'].astype(str)
+    all_final_preds['JHNT_CTN'] = all_final_preds['JHNT_CTN'].astype(str)
     
-    final_merged_with_all_preds = pd.merge(final_llm_merged_df, all_final_preds, on='JHNT_MBN', how='left')
+    final_merged_with_all_preds = pd.merge(final_llm_merged_df, all_final_preds, on='JHNT_CTN', how='left')
     
     all_final_preds_file = RESULTS_DIR / "final_df_all_predictions.csv"
     final_merged_with_all_preds.to_csv(all_final_preds_file, index=False, encoding="utf-8")
