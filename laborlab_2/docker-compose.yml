@@ -6,7 +6,7 @@ services:
     container_name: laborlab-2-analysis
     volumes:
       # 데이터 디렉토리 마운트
-      - ./data:/app/laborlab_2/data:ro
+      - ./data:/app/laborlab_2/data
       # 로그 디렉토리 마운트 (읽기/쓰기)
       - ./log:/app/laborlab_2/log
       # 설정 파일 마운트
