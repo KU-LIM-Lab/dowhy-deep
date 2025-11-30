@@ -41,7 +41,6 @@ node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,fill
 T1 [label="T1: AREA_CD", role="treatment_meta", treatment_def="거주지역코드 차이의 효과", treatment_name="AREA_CD", treatment_question="거주지역이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="AREA_CD"];
 T2 [label="T2: HPAR_CD1", role="treatment_meta", treatment_def="희망지역 선택 차이의 효과", treatment_name="HPAR_CD1", treatment_question="희망지역이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="HPAR_CD1"];
 T3 [label="T3: HPAR_CSCY_SCOR", role="treatment_meta", treatment_def="희망지역일치도점수 수준 차이의 효과", treatment_name="HPAR_CSCY_SCOR", treatment_question="거주지-희망지역 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?", treatment_var="HPAR_CSCY_SCOR"];
-T4 [label="T4: HOPE_JSCD1", role="treatment_meta", treatment_def="희망직종코드 선택 차이의 효과", treatment_name="HOPE_JSCD1", treatment_question="희망직종이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="HOPE_JSCD1"];
 T5 [label="T5: LAST_JSCD", role="treatment_meta", treatment_def="과거 취득직종 차이의 효과", treatment_name="LAST_JSCD", treatment_question="이전 취득 직종이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="LAST_JSCD"];
 }
 

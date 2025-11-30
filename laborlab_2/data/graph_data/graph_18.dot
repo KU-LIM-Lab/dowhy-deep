@@ -8,7 +8,6 @@ digraph {
     AREA_CD [label="지역코드"];
     BFR_UEPS_RECP_CT [label="이전실업급여수급건수"];
     DLY_LABR_HOPE_YN [label="일용근로희망여부"];
-    HOPE_JSCD1 [label="희망직종코드1"];
     HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
     JHNT_RQUT_CHNL_SECD [label="구직신청채널구분코드"];
     MDTN_HOPE_GRD_CD [label="알선희망수준코드"];
@@ -17,7 +16,6 @@ digraph {
     UEPS_RECP_YN [label="실업급여수급여부"];
 
     AGE -> ACCR_CD;
-    ACCR_CD -> HOPE_JSCD1;
     ACCR_CD -> HOPE_WAGE_SM_AMT;
     AGE -> BFR_UEPS_RECP_CT;
     BFR_UEPS_RECP_CT -> UEPS_RECP_YN;
@@ -36,7 +34,6 @@ digraph {
     DLY_LABR_HOPE_YN -> ACQ_180_YN;
     RQAG_HOPE_YN -> ACQ_180_YN;
     AREA_CD -> ACQ_180_YN;
-    HOPE_JSCD1 -> ACQ_180_YN;
     HOPE_WAGE_SM_AMT -> ACQ_180_YN;
     AGE -> ACQ_180_YN;
     ACCR_CD -> ACQ_180_YN;
