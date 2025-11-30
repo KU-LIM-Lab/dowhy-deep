@@ -13,7 +13,6 @@ MAJR_CD1 [label="전공코드", style="rounded,filled"];
 SFID_IEM_NUM [label="자기소개서항목개수", style="rounded,filled"];
 SFID_LTTR_NUM [label="자기소개서글자개수", style="rounded,filled"];
 SXDS_CD [label="성별코드", style="rounded,filled"];
-training_score [label="직업훈련평가점수", style="rounded,filled"];
 ACCR_CD -> ACQ_180_YN;
 ACCR_CD -> BFR_OCTR_CT;
 ACCR_CD -> MAJR_CD1;
@@ -42,5 +41,4 @@ SXDS_CD -> ACCR_STCD;
 SXDS_CD -> ACQ_180_YN;
 SXDS_CD -> AREA_CD;
 SXDS_CD -> MAJR_CD1;
-training_score -> ACQ_180_YN;
 }

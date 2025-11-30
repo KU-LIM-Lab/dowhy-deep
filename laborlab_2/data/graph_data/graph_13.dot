@@ -11,7 +11,6 @@ digraph {
     CYC1 [label="경력년수1"];
     CYC2 [label="경력년수2"];
     CYC3 [label="경력년수3"];
-    HOPE_JSCD1 [label="희망직종코드1"];
     HOPE_JSCD2 [label="희망직종코드2"];
     HOPE_JSCD3 [label="희망직종코드3"];
 
@@ -25,16 +24,13 @@ digraph {
     ACCR_CD -> CARR_MYCT1;
     ACCR_CD -> CARR_MYCT2;
     ACCR_CD -> CARR_MYCT3;
-    ACCR_CD -> HOPE_JSCD1;
     ACCR_CD -> HOPE_JSCD2;
     ACCR_CD -> HOPE_JSCD3;
     CARR_MYCT1 -> CYC1;
     CARR_MYCT2 -> CYC2;
     CARR_MYCT3 -> CYC3;
-    CARR_MYCT1 -> HOPE_JSCD1;
     CARR_MYCT2 -> HOPE_JSCD2;
     CARR_MYCT3 -> HOPE_JSCD3;
-    HOPE_JSCD1 -> ACQ_180_YN;
     HOPE_JSCD2 -> ACQ_180_YN;
     HOPE_JSCD3 -> ACQ_180_YN;
     CARR_MYCT1 -> ACQ_180_YN;

@@ -6,7 +6,6 @@ digraph {
     ACQ_180_YN [label="180일이내취업여부"];
     AGE [label="연령"];
     AREA_CD [label="지역코드"];
-    HOPE_JSCD1 [label="희망직종코드1"];
     HOPE_JSCD2 [label="희망직종코드2"];
     HOPE_JSCD3 [label="희망직종코드3"];
     HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
@@ -17,7 +16,6 @@ digraph {
 
     AGE -> ACCR_CD;
     AGE -> AREA_CD;
-    ACCR_CD -> HOPE_JSCD1;
     ACCR_CD -> HOPE_JSCD2;
     ACCR_CD -> HOPE_JSCD3;
     AREA_CD -> HPAR_CD1;
@@ -26,7 +24,6 @@ digraph {
     HPAR_CD1 -> HPAR_CSCY_SCOR;
     HPAR_CD2 -> HPAR_CSCY_SCOR;
     HPAR_CD3 -> HPAR_CSCY_SCOR;
-    HOPE_JSCD1 -> HOPE_WAGE_SM_AMT;
     HOPE_JSCD2 -> HOPE_WAGE_SM_AMT;
     HOPE_JSCD3 -> HOPE_WAGE_SM_AMT;
     AREA_CD -> HOPE_WAGE_SM_AMT;
@@ -35,7 +32,6 @@ digraph {
     HPAR_CD2 -> ACQ_180_YN;
     HPAR_CD3 -> ACQ_180_YN;
     AREA_CD -> ACQ_180_YN;
-    HOPE_JSCD1 -> ACQ_180_YN;
     HOPE_JSCD2 -> ACQ_180_YN;
     HOPE_JSCD3 -> ACQ_180_YN;
     HOPE_WAGE_SM_AMT -> ACQ_180_YN;
