@@ -188,15 +188,14 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
         if logger:
             logger.info("✅ 인과효과 추정 성공")
             logger.info(f"추정된 인과 효과 (ATE): {estimate.value:.6f}")
-            if hasattr(estimate, 'p_value') and estimate.p_value is not None:
-                logger.info(f"P-value: {estimate.p_value:.6f}")
-                significance = "유의함" if estimate.p_value <= 0.05 else "유의하지 않음"
+            p_value, ci = extract_significance(estimate)
+            if (p_value is not None) & isinstance(p_value, float):
+                logger.info(f"P-value: {p_value}")
+                significance = "유의함" if p_value <= 0.05 else "유의하지 않음"
                 logger.info(f"통계적 유의성: {significance}")
-            
-            # 신뢰구간 정보
-            if hasattr(estimate, 'confidence_intervals'):
-                logger.info(f"신뢰구간: {estimate.confidence_intervals}")
-        
+            if ci is not None:
+                logger.info(f"신뢰구간: {ci}")
+
         return estimate
         
     except Exception as e:
@@ -204,7 +203,39 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
             logger.error(f"❌ 인과효과 추정 실패: {e}")
         raise
 
-def calculate_refutation_pvalue(refutation_result, test_type="placebo"):
+def extract_significance(estimate):
+    """
+    CausalEstimate 객체에서 p-value와 confidence_intervals를 추출합니다.
+    
+    Args:
+        estimate: CausalEstimate 객체
+    
+    Returns:
+        tuple: (p_value, confidence_intervals)
+    """
+    p_value = None
+    confidence_intervals = None
+
+    try:
+        sig = estimate.test_stat_significance()
+        # test_stat_significance는 dict 또는 dict 리스트를 반환할 수 있음
+        if isinstance(sig, dict):
+            p_value = sig.get("p_value")
+        elif isinstance(sig, list) and sig:
+            first_sig = sig[0]
+            if isinstance(first_sig, dict):
+                p_value = first_sig.get("p_value")
+    except Exception:
+        pass
+    try:
+        # get_confidence_intervals는 없는 경우 AttributeError가 발생할 수 있음
+        confidence_intervals = estimate.get_confidence_intervals()
+    except Exception:
+        confidence_intervals = getattr(estimate, "confidence_intervals", None)
+
+    return p_value[0], confidence_intervals
+
+def calculate_refutation_pvalue(refutation_result, test_type="placebo", logger=None):
     """
     Refutation 테스트 결과의 p-value를 계산합니다.
     
@@ -216,6 +247,7 @@ def calculate_refutation_pvalue(refutation_result, test_type="placebo"):
         float: p-value (계산 불가능한 경우 None)
     """
     try:
+        log = logger or logging.getLogger(__name__)
         # refutation_result에서 refutation_results 속성 확인
         if hasattr(refutation_result, 'refutation_results') and refutation_result.refutation_results:
             # refutation_results는 리스트일 수 있음
@@ -247,6 +279,7 @@ def calculate_refutation_pvalue(refutation_result, test_type="placebo"):
         
         return None
     except Exception as e:
+        log.error(f"calculate_refutation_pvalue 실패: {e}")
         return None
 
 
@@ -392,14 +425,18 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
         logger.info("4️⃣ 더미 결과 테스트 실행 중...")
     
     try:
-        refute_dummy = model.refute_estimate(
+        refute_dummys = model.refute_estimate(
             identified_estimand, estimate,
             method_name="dummy_outcome_refuter",
             num_simulations=100
         )
+        refute_dummy = refute_dummys[0]
         validation_results['dummy'] = refute_dummy
         
-        p_value = calculate_refutation_pvalue(refute_dummy, "dummy")
+        # for dummy in refute_dummy:
+        #     logger.info(f"refute_dummy 결과1: {dummy}")
+        #     logger.info(f"refute_dummy 결과2: {dir(dummy)}")
+        p_value = calculate_refutation_pvalue(refute_dummy, "dummy", logger)
         # new_effect가 0에 가까우면 통과 (0.01 이하)
         status = "통과" if abs(refute_dummy.new_effect) < 0.01 else "실패"
         
@@ -1260,14 +1297,14 @@ def run_analysis_without_preprocessing(
         if is_binary:
             df_train, df_test = train_test_split(
                 df_for_analysis,
-                test_size=0.99,
+                test_size=0.8,
                 random_state=42,
                 stratify=outcome_data
             )
         else:
             df_train, df_test = train_test_split(
                 df_for_analysis,
-                test_size=0.99,
+                test_size=0.8,
                 random_state=42
             )
         
@@ -1573,6 +1610,19 @@ def run_single_experiment(
         if estimate and hasattr(estimate, 'value'):
             ate_value = estimate.value
         
+        # 신뢰구간 추출
+        ci_lower = None
+        ci_upper = None
+        if estimate:
+            p_val_tmp, ci_tmp = extract_significance(estimate)
+            if ci_tmp is not None:
+                # ci_tmp가 (lower, upper) 형태라고 가정
+                try:
+                    ci_lower = ci_tmp[0]
+                    ci_upper = ci_tmp[1] if len(ci_tmp) > 1 else None
+                except Exception:
+                    pass
+        
         # Refutation 결과 추출
         refutation_data = {}
         refutation_types = ['placebo', 'unobserved', 'subset', 'dummy']
@@ -1617,6 +1667,8 @@ def run_single_experiment(
             "test_size": result.get("test_size"),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
+            "ci_lower": ci_lower,
+            "ci_upper": ci_upper,
             **refutation_data
         }
     except Exception as e:
@@ -1714,7 +1766,9 @@ def run_inference(
                     
                     essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
                     data_variables = set(job_df.columns)
-                    vars_to_keep = essential_vars & data_variables
+                    # causal_graph = utils.create_causal_graph(graph_file)
+                    # graph_vars = set(causal_graph.nodes())
+                    vars_to_keep = essential_vars | data_variables
                     
                     missing_vars = [var for var in [treatment, outcome] if var not in job_df.columns]
                     if missing_vars:

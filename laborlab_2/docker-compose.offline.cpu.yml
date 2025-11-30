@@ -26,7 +26,7 @@ services:
     # 컨테이너 시작 시 자동으로 파이프라인 실행
     # docker-compose -f docker-compose.offline.cpu.yml up 시 자동 실행됨
     # 재실행: docker-compose -f docker-compose.offline.cpu.yml restart laborlab
-    restart: unless-stopped
+    restart: "no"
 
   ollama:
     container_name: ollama
@@ -37,5 +37,5 @@ services:
       - "11434:11434"
     # CPU 모드 (폐쇄망 환경용)
     # GPU를 사용하려면 docker-compose.offline.yml 사용
-    restart: unless-stopped
+    restart: "no"
 

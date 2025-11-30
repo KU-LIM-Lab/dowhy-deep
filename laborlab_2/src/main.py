@@ -18,6 +18,7 @@ import os
 import time
 import itertools
 from typing import Dict, Any, List, Tuple, Optional
+import numpy as np
 
 # 경고 메시지 무시
 warnings.filterwarnings("ignore")
@@ -42,6 +43,19 @@ from .estimation import (
 )
 from datetime import datetime
 import json
+
+
+def _json_default(obj):
+    """JSON 직렬화 보조: numpy/pandas 객체를 기본 타입으로 변환"""
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if hasattr(obj, "isoformat"):  # datetime, Timestamp 등
+        return obj.isoformat()
+    return str(obj)
 
 
 def preprocess(
@@ -164,6 +178,8 @@ def learning(
         print(f"   ATE 값: {result.get('ate_value', 'N/A')}")
         print(f"   F1 Score: {result.get('f1_score', 'N/A')}")
         print(f"   AUC: {result.get('auc', 'N/A')}")
+        if result.get("ci_lower") is not None or result.get("ci_upper") is not None:
+            print(f"   CI: [{result.get('ci_lower')}, {result.get('ci_upper')}]")
     else:
         print(f"❌ Learning 실패: {experiment_id}")
         if result.get("error"):
@@ -219,6 +235,7 @@ def _run_experiments_batch(
         if experiment_type == "learning":
             csv_columns = [
                 'graph_name', 'treatment', 'estimator', 'ate_value',
+                'ci_lower', 'ci_upper',
                 'placebo_passed', 'placebo_pvalue',
                 'unobserved_passed', 'unobserved_pvalue',
                 'subset_passed', 'subset_pvalue',
@@ -260,6 +277,8 @@ def _run_experiments_batch(
                     'treatment': result.get('treatment', ''),
                     'estimator': result.get('estimator', ''),
                     'ate_value': result.get('ate_value'),
+                    'ci_lower': result.get('ci_lower'),
+                    'ci_upper': result.get('ci_upper'),
                     'placebo_passed': result.get('placebo_passed'),
                     'placebo_pvalue': result.get('placebo_pvalue'),
                     'unobserved_passed': result.get('unobserved_passed'),
@@ -296,7 +315,7 @@ def _run_experiments_batch(
         # 중간 결과 저장 (JSON)
         if output_dir:
             with open(results_file, 'w', encoding='utf-8') as f:
-                json.dump(results, f, indent=2, ensure_ascii=False)
+                json.dump(results, f, indent=2, ensure_ascii=False, default=_json_default)
         
         success_count = sum(1 for r in results if r.get("status") == "success")
         failed_count = sum(1 for r in results if r.get("status") == "failed")
