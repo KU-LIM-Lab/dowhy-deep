@@ -586,29 +586,8 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
         logger.info(f"Successfully applied Binary Mapping (Y=1, N=0) to {len(mapped_cols)} columns: {', '.join(mapped_cols)}") 
     else:
         logger.info("No object columns were successfully converted by binary mapping.")
-        
-    # # ---- (4) 나머지 object 컬럼에서 'y'를 -1로 처리 ---- 
-    # y_to_neg1_count = 0
     
-    # for col in df.columns:
-    #     if df[col].dtype == object: 
-    #         mask = df[col].astype(str).str.strip() == 'y'
-    #         if mask.any():
-    #             df[col] = df[col].mask(mask, -1.0)
-    #             y_to_neg1_count += mask.sum()
-                
-    #             try:
-    #                 df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
-    #                 logger.info(f"Successfully converted {col} columns to numeric with transformation of 'y' to -1.")
-    #             except Exception:
-    #                 pass
-    
-    # if y_to_neg1_count > 0:
-    #     logger.info(f"Successfully converted {y_to_neg1_count} instances of 'y' to -1 in remaining columns (case-sensitive).")
-    # else:
-    #     logger.info("No instances of 'y' found to convert to -1 in remaining columns.")
-
-    # ---- (5) label encoding ----
+    # ---- (4) label encoding ----
     clos_ym_prefix_cols = [c for c in df.columns if c.startswith('CLOS_YM')]
     jhcr_de_prefix_cols = [c for c in df.columns if c.startswith('JHCR_DE')]
     excluded_cols = list(set(EXCLUDE_COLS + clos_ym_prefix_cols + jhcr_de_prefix_cols))
@@ -618,30 +597,7 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
     encoding_map = {}
     for c in cat_cols:
         df[c] = df[c].astype(str)
-        # # Debug str < int error
-        # col_series = df[c]
-        # non_na = col_series.dropna()
-        # unique_vals = non_na.unique()
-
-        # unique_types = {type(v).__name__ for v in unique_vals}
-        # if len(unique_types) > 1:
-        #     logger.warning(
-        #         f"[LabelEncoding][MIXED_TYPE] Column '{c}' has mixed python types: {unique_types}. "
-        #         f"Sample values (up to 10): {list(unique_vals[:10])}"
-        #     )
-
-        # try:
-        #     sorted_categories = sorted(unique_vals)
-        # except TypeError:
-        #     logger.error(
-        #         f"[LabelEncoding][TYPE_ERROR] Failed to sort unique values for column '{c}'. "
-        #         f"This usually happens when incomparable types (e.g., str vs int) are mixed.\n"
-        #         f"    Types: {unique_types}\n"
-        #         f"    Sample values (up to 20): {list(unique_vals[:20])}"
-        #     )
-
         cat_dtype = pd.Categorical(df[c], categories=sorted(df[c].dropna().unique()))
-        
         mapping = {label: code for code, label in enumerate(cat_dtype.categories)}
         encoding_map[c] = mapping
         
@@ -666,5 +622,37 @@ def postprocess(df: pd.DataFrame, logger: logging.LoggerAdapter, data_output_dir
     else:
         logger.info(f"No categorical columns (excluding {', '.join(excluded_cols)}) found for Label Encoding.")
     
+    # ---- (5) data filtering ----
+    # 자기소개서 10자 이하 행 삭제
+    if "SELF_INTRO_CONT" in df.columns:
+        df['num_self'] = df["SELF_INTRO_CONT"].astype(str).str.len()
+        rows_before = df.shape[0]
+        df = df[df['num_self'] > 10]
+        rows_after = df.shape[0]
+        logger.info(f"Data Filtering: {rows_before - rows_after} rows with SELF_INTRO_CONT (length <= 10) deleted. Current data shape: {df.shape}")
+        df = df.drop(columns=['num_self'])
+    else:
+        logger.warning("Column 'SELF_INTRO_CONT' not found. Skipping self-introduction length filtering.")
+    
+    # # 취업시즌 데이터 필터링(2-4월, 8-10월)
+    # if "JHCR_DE" in df.columns:
+    #     rows_before = df.shape[0]
+    #     # JHCR_DE를 datetime으로 변환 (오류 발생 시 NaT)
+    #     df['JHCR_DE_DT'] = pd.to_datetime(df["JHCR_DE"], errors='coerce')
+    #     # 월 추출
+    #     df['month'] = df['JHCR_DE_DT'].dt.month
+
+    #     # 필터링 조건: 2, 3, 4월 또는 8, 9, 10월
+    #     season_months = {2, 3, 4, 8, 9, 10}
+    #     df = df[df['month'].isin(season_months)]
+
+    #     rows_after = df.shape[0]
+    #     logger.info(f"Data Filtering: {rows_before - rows_after} rows outside hiring season (Feb-Apr, Aug-Oct) deleted. Current data shape: {df.shape}")
+
+    #     # 임시 컬럼 제거
+    #     df = df.drop(columns=['JHCR_DE_DT', 'month'])
+    # else:
+    #     logger.warning("Column 'JHCR_DE' not found. Skipping hiring season filtering.")
+
     logger.info("Postprocessing complete.")
     return df

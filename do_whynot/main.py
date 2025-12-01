@@ -22,7 +22,7 @@ from do_whynot.src.eda import perform_eda
 from do_whynot.src.estimation import get_treatment_type, validate_tabpfn_estimator, run_tabpfn_estimation
 from do_whynot.src.prediction import run_prediction_pipeline
 
-from do_whynot.config import IS_TEST_MODE, TEST_SAMPLE_SIZE, BATCH_SIZE, DATA_OUTPUT_DIR, DAG_INDICES_TEST, DAG_INDICES, DAG_DIR
+from do_whynot.config import IS_TEST_MODE, TEST_SAMPLE_SIZE, BATCH_SIZE, DATA_OUTPUT_DIR, DAG_INDICES_TEST, DAG_INDICES, DAG_DIR, BATCH_NUM, BATCH_NUM_FIX, START_BATCH_NUM
 
 RESULTS_DIR = None
 DATA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -161,7 +161,7 @@ def main():
     main_logger = setup_logger()
     main_logger.info("Starting Data Preprocessing Pipeline from imported functions.")
 
-    # # --- 1. 전처리 실행 (데이터 전체에 대해 단 1회 실행) ---
+    # # # --- 1. 전처리 실행 (데이터 전체에 대해 단 1회 실행) ---
     # try:
     #     # 1) 와이드 포맷 조립 (JSON 파싱 및 CSV 병합)
     #     intermediate_df = build_pipeline_wide(main_logger)
@@ -192,8 +192,9 @@ def main():
     # except Exception as e:
     #     main_logger.error(f"[skip] Skip EDA due to the error: {e}")
 
-    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_df.csv"
+    preprocessed_path = DATA_OUTPUT_DIR / "preprocessed_final_df.csv"
     final_df = pd.read_csv(preprocessed_path, encoding="utf-8")
+    main_logger.info(f"Final Data shape: {final_df.shape}")
     
     # --- 2. 배치 분할 및 반복 실행 ---
     if IS_TEST_MODE:
@@ -205,7 +206,13 @@ def main():
         main_logger.info("Data shuffled successfully before batching. Final DataFrame shape: %s", final_df.shape)
 
     total_rows = len(final_df)
-    num_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
+    num_batches_calculated = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
+
+    if BATCH_NUM_FIX:
+        num_batches = min(BATCH_NUM, num_batches_calculated)
+        main_logger.info(f"Batch Number is fixed by {num_batches}")
+    else:
+        num_batches = num_batches_calculated
 
     if IS_TEST_MODE:
         dag_indices = DAG_INDICES_TEST  
@@ -221,7 +228,35 @@ def main():
 
     all_llm_preds = pd.DataFrame()
 
-    for i in range(num_batches):
+    start_batch_index = START_BATCH_NUM - 1
+
+    if START_BATCH_NUM > 1:
+        main_logger.info(f"RESTART: Loading fixed multi-class parameters from BATCH 1 result for consistency.")
+        params_file_path = DATA_OUTPUT_DIR / "multi_class_fixed_params.csv"
+
+        if params_file_path.exists():
+            try:
+                params_df = pd.read_csv(params_file_path)
+                
+                for _, row in params_df.iterrows():
+                    # CSV 파일의 컬럼명에 따라 수정 필요
+                    dag_idx = int(row['dag_idx'])
+                    baseline = row['baseline']
+                    tx_value = row['treatment_value']
+                    
+                    multi_class_fixed_params[dag_idx] = {
+                        "baseline": baseline,
+                        "treatment_value": tx_value
+                    }
+                    main_logger.info(f"Loaded fixed parameters for DAG {dag_idx}: Base={baseline}, Tx={tx_value}")
+                    
+            except Exception as e:
+                main_logger.error(f"[FATAL] Failed to load fixed parameters from {params_file_path}: {e}")
+                sys.exit(1)
+        else:
+             main_logger.warning(f"Fixed parameter file not found at {params_file_path}. Multi-class parameters will be searched again in BATCH {START_BATCH_NUM}.")
+
+    for i in range(start_batch_index, num_batches):
         start_idx = i * BATCH_SIZE
         end_idx = min((i + 1) * BATCH_SIZE, total_rows)
         
@@ -316,6 +351,16 @@ def main():
                         "treatment_value": estimation_results["multi_class_treatment_value"]
                     }
                     main_logger.info(f"[Batch {i+1}] Multi-Class fixed parameters set for DAG {dag_idx}: Base={estimation_results['multi_class_baseline']}, Tx={estimation_results['multi_class_treatment_value']}")
+
+                    current_params = []
+                    for d, p in multi_class_fixed_params.items():
+                        current_params.append({
+                            'dag_idx': d, 
+                            'baseline': p['baseline'], 
+                            'treatment_value': p['treatment_value']
+                        })
+                    pd.DataFrame(current_params).to_csv(params_file_path, index=False)
+                    main_logger.info(f"[OK] Saved fixed multi-class parameters to {params_file_path.name}")
 
             if result_dict:
                 result_dict["batch_id"] = i + 1 
