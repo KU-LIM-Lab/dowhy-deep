@@ -1197,7 +1197,7 @@ def prepare_data_for_causal_model(
     if not graph_outcomes_map:
         all_outcomes.update(outcomes)
     
-    essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+    essential_vars = all_treatments | all_outcomes | {"JHNT_CTN", "JHNT_MBN"}
     stratification_vars = {"HOPE_JSCD1_NAME"}
     required_vars = list(all_graph_variables | essential_vars | stratification_vars)
     
@@ -1276,7 +1276,7 @@ def run_analysis_without_preprocessing(
         
         graph_variables = set(causal_graph.nodes())
         data_variables = set(merged_df_clean.columns)
-        essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        essential_vars = {treatment, outcome, "JHNT_CTN", "JHNT_MBN"}
         stratification_vars = {"HOPE_JSCD1_NAME"}
         vars_to_keep = (graph_variables | essential_vars | stratification_vars) & data_variables
         df_for_analysis = merged_df_clean[list(vars_to_keep)].copy()
@@ -1764,7 +1764,7 @@ def run_inference(
                 try:
                     estimate = load_checkpoint(checkpoint_file, logger)
                     
-                    essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+                    essential_vars = {treatment, outcome, "JHNT_CTN", "JHNT_MBN"}
                     data_variables = set(job_df.columns)
                     # causal_graph = utils.create_causal_graph(graph_file)
                     # graph_vars = set(causal_graph.nodes())
