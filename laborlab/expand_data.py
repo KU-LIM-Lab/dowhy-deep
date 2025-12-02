@@ -32,7 +32,6 @@ def expand_csv_data(input_file, output_file, target_count=50):
         base_row = df.iloc[i % original_count].copy()
         
         # 고유 ID 생성 (W10001 형식 유지)
-        base_row['SEEK_CUST_NO'] = f"W{i+1+10000:05d}"
         base_row['JHNT_MBN'] = f"W{i+1+10000:05d}"
         base_row['JHNT_CTN'] = f"C{i+1+10000:05d}"
         
@@ -124,7 +123,7 @@ def expand_resume_json(input_file, output_file, target_count=50):
         base_item = json.loads(json.dumps(data[i % original_count]))  # Deep copy
         
         # 고유 ID 생성 (W10001 형식 유지)
-        base_item['SEEK_CUST_NO'] = f"W{i+1+10000:05d}"
+        base_item['JHNT_MBN'] = f"W{i+1+10000:05d}"
         base_item['JHNT_CTN'] = f"C{i+1+10000:05d}"
         
         # ITEMS 내부의 일부 값 변형
@@ -166,7 +165,7 @@ def expand_coverletter_json(input_file, output_file, target_count=50):
         base_item = json.loads(json.dumps(data[i % original_count]))  # Deep copy
         
         # 고유 ID 생성 (W10001 형식 유지)
-        base_item['SEEK_CUST_NO'] = f"W{i+1+10000:05d}"
+        base_item['JHNT_MBN'] = f"W{i+1+10000:05d}"
         base_item['JHNT_CTN'] = f"C{i+1+10000:05d}"
         
         # SFID_NO 변형
@@ -199,7 +198,7 @@ def expand_training_json(input_file, output_file, target_count=50):
         base_item = json.loads(json.dumps(data[i % original_count]))  # Deep copy
         
         # 고유 ID 생성 (W10001 형식 유지)
-        base_item['SEEK_CUST_NO'] = f"W{i+1+10000:05d}"
+        base_item['JHNT_MBN'] = f"W{i+1+10000:05d}"
         base_item['JHNT_CTN'] = f"C{i+1+10000:05d}"
         
         # 날짜 변형
@@ -265,7 +264,7 @@ def expand_license_json(input_file, output_file, target_count=50):
         base_item = json.loads(json.dumps(data[i % original_count]))  # Deep copy
         
         # 고유 ID 생성 (W10001 형식 유지)
-        base_item['SEEK_CUST_NO'] = f"W{i+1+10000:05d}"
+        base_item['JHNT_MBN'] = f"W{i+1+10000:05d}"
         base_item['JHNT_CTN'] = f"C{i+1+10000:05d}"
         
         # LICENSES 내부의 값 변형

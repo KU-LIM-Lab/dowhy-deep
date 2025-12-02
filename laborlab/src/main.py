@@ -464,7 +464,7 @@ def run_analysis_without_preprocessing(
         data_variables = set(merged_df_clean.columns)
         
         # 필수 변수 (treatment, outcome, 병합 키)
-        essential_vars = {treatment, outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        essential_vars = {treatment, outcome, "JHNT_CTN", "JHNT_MBN"}
         
         # 유지할 변수: 그래프 변수 + 필수 변수
         vars_to_keep = (graph_variables | essential_vars) & data_variables
@@ -872,7 +872,7 @@ def main():
                 logger.warning(f"그래프에 정의된 변수 중 데이터에 없는 변수: {sorted(missing_graph_vars)}")
         
         # 그래프에 정의되지 않은 변수 제거 (필수 변수 제외)
-        essential_vars = {args.treatment, args.outcome, "SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+        essential_vars = {args.treatment, args.outcome, "JHNT_CTN", "JHNT_MBN"}
         vars_to_keep = set()
         
         # 1. 그래프에 정의된 모든 변수 추가

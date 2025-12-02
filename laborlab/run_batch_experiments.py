@@ -333,7 +333,7 @@ def run_batch_experiments(config: Dict[str, Any], base_dir: Path):
     if not graph_outcomes_map:
         all_outcomes.update(outcomes)
     
-    essential_vars = all_treatments | all_outcomes | {"SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"}
+    essential_vars = all_treatments | all_outcomes | {"JHNT_CTN", "JHNT_MBN"}
     required_vars = list(all_graph_variables | essential_vars)
     
     # 데이터 정리

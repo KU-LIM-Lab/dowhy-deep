@@ -48,7 +48,7 @@ class Preprocessor:
         self.df_list = []
         self.variable_mapping = self.load_variable_mapping()
         self.llm_scorer = LLMScorer(api_key)
-        self.hope_jscd1_map = {}  # SEEK_CUST_NO -> HOPE_JSCD1 매핑 저장
+        self.hope_jscd1_map = {}  # JHNT_MBN -> HOPE_JSCD1 매핑 저장
         self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
 
     def load_variable_mapping(self):
@@ -109,13 +109,12 @@ class Preprocessor:
         """
         # 디버깅: 원본 데이터 컬럼 확인
         print(f"[DEBUG] basic_preprocessing 시작 - 원본 데이터 컬럼 수: {len(df.columns)}")
-        print(f"[DEBUG] 원본 데이터에 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
         print(f"[DEBUG] 원본 데이터에 JHNT_CTN 존재: {'JHNT_CTN' in df.columns}")
         print(f"[DEBUG] 원본 데이터에 JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
         
 
         # 병합에 필요한 키 컬럼은 항상 유지
-        merge_keys = ["SEEK_CUST_NO", "JHNT_CTN", "JHNT_MBN"]
+        merge_keys = ["JHNT_CTN", "JHNT_MBN"]
         existing_merge_keys = [key for key in merge_keys if key in df.columns]
         print(f"[DEBUG] 발견된 병합 키: {existing_merge_keys}")
         
@@ -131,13 +130,13 @@ class Preprocessor:
         
         # 병합 키와 필터링된 변수들을 합침 (중복 제거)
         final_vars = list(set(available_vars + existing_merge_keys))
-        print(f"[DEBUG] 최종 컬럼 수: {len(final_vars)}, SEEK_CUST_NO 포함 여부: {'SEEK_CUST_NO' in final_vars}")
+        print(f"[DEBUG] 최종 컬럼 수: {len(final_vars)}, JHNT_MBN 포함 여부: {'JHNT_MBN' in final_vars}")
         df = df[final_vars]
 
         # BFR_OCTR_YN 제거, BFR_OCTR_CT만 유지
         if "BFR_OCTR_YN" in df.columns and "BFR_OCTR_CT" in df.columns:
             df = df.drop(columns=["BFR_OCTR_YN"])
-            print(f"[DEBUG] BFR_OCTR_YN 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
+            print(f"[DEBUG] BFR_OCTR_YN 제거 후 JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
 
         # 8개 예/아니오 변수 → 합쳐서 새로운 순서형 범주 변수 생성
         agree_vars = [
@@ -152,11 +151,11 @@ class Preprocessor:
             agree_count = (df[agree_vars] == "예").sum(axis=1)
             df["AGREE_LEVEL"] = agree_count.apply(lambda x: "하" if x <= 2 else ("중" if x <= 5 else "상"))
             df = df.drop(columns=agree_vars)
-            print(f"[DEBUG] agree_vars 제거 후 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
+            print(f"[DEBUG] agree_vars 제거 후 JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
 
-        print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in df.columns}")
-        if 'SEEK_CUST_NO' in df.columns:
-            print(f"[DEBUG] SEEK_CUST_NO 샘플 값: {df['SEEK_CUST_NO'].head(3).tolist()}")
+        print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
+        if 'JHNT_MBN' in df.columns:
+            print(f"[DEBUG] JHNT_MBN 샘플 값: {df['JHNT_MBN'].head(3).tolist()}")
         
         return df
 
@@ -198,7 +197,7 @@ class Preprocessor:
 
     def _process_single_resume(self, item):
         """단일 이력서 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("SEEK_CUST_NO", "")
+        seek_id = item.get("JHNT_MBN", "")
         if not seek_id:
             return None
         
@@ -213,7 +212,7 @@ class Preprocessor:
         # 기본 이력서가 없으면 빈 결과 반환
         if basic_resume is None:
             return {
-                "SEEK_CUST_NO": seek_id,
+                "JHNT_MBN": seek_id,
                 "resume_score": None,
                 "items_num": 0
             }
@@ -253,7 +252,7 @@ class Preprocessor:
         score, _ = self.llm_scorer.score("이력서", job_name, job_examples, formatting_sentence)
         
         return {
-            "SEEK_CUST_NO": seek_id,
+            "JHNT_MBN": seek_id,
             "resume_score": score,
             "items_num": items_num
         }
@@ -278,10 +277,10 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 이력서 처리 오류 (SEEK_CUST_NO: {seek_id}): {e}")
+                    seek_id = item.get("JHNT_MBN", "unknown")
+                    print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
-                        "SEEK_CUST_NO": seek_id,
+                        "JHNT_MBN": seek_id,
                         "resume_score": None,
                         "items_num": 0
                     })
@@ -305,7 +304,7 @@ class Preprocessor:
 
     def _process_single_cover_letter(self, item):
         """단일 자기소개서 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("SEEK_CUST_NO", "")
+        seek_id = item.get("JHNT_MBN", "")
         if not seek_id:
             return None
                 
@@ -338,7 +337,7 @@ class Preprocessor:
         
         # score와 오탈자 수만 반환 (그래프 변수명과 일치)
         return {
-            "SEEK_CUST_NO": seek_id,
+            "JHNT_MBN": seek_id,
             "cover_score": score,  # 그래프: cover_score
             "cover_typo_count": typo_count  # 그래프: cover_typo_count
         }
@@ -362,10 +361,10 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 자기소개서 처리 오류 (SEEK_CUST_NO: {seek_id}): {e}")
+                    seek_id = item.get("JHNT_MBN", "unknown")
+                    print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
-                        "SEEK_CUST_NO": seek_id,
+                        "JHNT_MBN": seek_id,
                         "cover_score": None,
                         "cover_typo_count": 0
                     })
@@ -389,7 +388,7 @@ class Preprocessor:
 
     def _process_single_training(self, item):
         """단일 직업훈련 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("SEEK_CUST_NO", "")
+        seek_id = item.get("JHNT_MBN", "")
         if not seek_id:
             return None
         
@@ -448,7 +447,7 @@ class Preprocessor:
         jhnt_ctn = item.get("JHNT_CTN", "")
         
         return {
-            "SEEK_CUST_NO": seek_id,
+            "JHNT_MBN": seek_id,
             "JHNT_CTN": jhnt_ctn,
             "training_score": score,
             "days_last_training_to_jobseek": elapsed_days if elapsed_days is not None else None  # 그래프: days_last_training_to_jobseek
@@ -473,10 +472,10 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 직업훈련 처리 오류 (SEEK_CUST_NO: {seek_id}): {e}")
+                    seek_id = item.get("JHNT_MBN", "unknown")
+                    print(f"⚠️ 직업훈련 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
-                        "SEEK_CUST_NO": seek_id,
+                        "JHNT_MBN": seek_id,
                         "JHNT_CTN": item.get("JHNT_CTN", ""),
                         "training_score": None,
                         "days_last_training_to_jobseek": None
@@ -501,7 +500,7 @@ class Preprocessor:
 
     def _process_single_certification(self, item):
         """단일 자격증 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("SEEK_CUST_NO", "")
+        seek_id = item.get("JHNT_MBN", "")
         if not seek_id:
             return None
         
@@ -535,7 +534,7 @@ class Preprocessor:
         
         # score만 반환 (그래프 변수명과 일치)
         return {
-            "SEEK_CUST_NO": seek_id,
+            "JHNT_MBN": seek_id,
             "JHNT_CTN": jhnt_ctn,
             "license_score": score  # 그래프: license_score
         }
@@ -559,10 +558,10 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 자격증 처리 오류 (SEEK_CUST_NO: {seek_id}): {e}")
+                    seek_id = item.get("JHNT_MBN", "unknown")
+                    print(f"⚠️ 자격증 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
-                        "SEEK_CUST_NO": seek_id,
+                        "JHNT_MBN": seek_id,
                         "JHNT_CTN": item.get("JHNT_CTN", ""),
                         "license_score": None
                     })
@@ -617,7 +616,7 @@ class Preprocessor:
     def get_merged_df(self, file_list):
         """
         파일명 리스트를 받아 각 파일을 load_and_preprocess_data로 읽고 self.df_list에 append,
-        이후 SEEK_CUST_NO 컬럼 기준으로 순차적으로 조인하여 데이터프레임 반환
+        이후 JHNT_MBN 또는 JHNT_CTN 컬럼 기준으로 순차적으로 조인하여 데이터프레임 반환
         
         첫 번째 파일(CSV)은 순차 처리하고, 나머지 4개 JSON 파일은 병렬로 처리합니다.
 
@@ -625,7 +624,7 @@ class Preprocessor:
             file_list (list): 파일명(str) 리스트
  
         Returns:
-            pd.DataFrame: SEEK_CUST_NO 또는 JHNT_CTN 기준으로 조인된 데이터프레임 -> repeat 처리 필요
+            pd.DataFrame: JHNT_MBN 또는 JHNT_CTN 기준으로 조인된 데이터프레임 -> repeat 처리 필요
         """
         self.df_list = []
         result = None
@@ -650,15 +649,15 @@ class Preprocessor:
             
             print(f"[DEBUG] 첫 번째 데이터프레임 크기: {result.shape}")
             print(f"[DEBUG] 첫 번째 데이터프레임 컬럼: {list(result.columns)}")
-            print(f"[DEBUG] 첫 번째 데이터프레임에 SEEK_CUST_NO 존재: {'SEEK_CUST_NO' in result.columns}")
+            print(f"[DEBUG] 첫 번째 데이터프레임에 JHNT_MBN 존재: {'JHNT_MBN' in result.columns}")
             print(f"[DEBUG] 첫 번째 데이터프레임에 JHNT_CTN 존재: {'JHNT_CTN' in result.columns}")
             
-            # HOPE_JSCD1 정보를 SEEK_CUST_NO 기준으로 매핑하여 저장
-            if 'HOPE_JSCD1' in df.columns and 'SEEK_CUST_NO' in df.columns:
-                self.hope_jscd1_map = df.set_index('SEEK_CUST_NO')['HOPE_JSCD1'].to_dict()
+            # HOPE_JSCD1 정보를 JHNT_MBN 기준으로 매핑하여 저장
+            if 'HOPE_JSCD1' in df.columns and 'JHNT_MBN' in df.columns:
+                self.hope_jscd1_map = df.set_index('JHNT_MBN')['HOPE_JSCD1'].to_dict()
                 print(f"[DEBUG] HOPE_JSCD1 매핑 생성 완료: {len(self.hope_jscd1_map)}개")
             else:
-                print(f"[DEBUG] 경고: HOPE_JSCD1 또는 SEEK_CUST_NO가 없어 매핑을 생성할 수 없습니다.")
+                print(f"[DEBUG] 경고: HOPE_JSCD1 또는 JHNT_MBN이 없어 매핑을 생성할 수 없습니다.")
         
         # 나머지 4개 파일을 병렬로 처리
         json_files = []
@@ -724,7 +723,7 @@ class Preprocessor:
             if json_name in ['직업훈련', '자격증']:
                 merge_key = "JHNT_CTN"
             else:
-                merge_key = "SEEK_CUST_NO"
+                merge_key = "JHNT_MBN"
             
             print(f"[DEBUG] 병합 키: {merge_key}")
             print(f"[DEBUG] result에 {merge_key} 존재: {merge_key in result.columns}")
