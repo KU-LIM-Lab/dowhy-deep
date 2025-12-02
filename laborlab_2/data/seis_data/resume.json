@@ -1,6 +1,6 @@
 [
   {
-    "SEEK_CUST_NO": "W10001",
+    "JHNT_MBN": "W10001",
     "JHNT_CTN": "C10001",
     "RESUMES": [
       {
@@ -82,7 +82,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10002",
+    "JHNT_MBN": "W10002",
     "JHNT_CTN": "C10002",
     "RESUMES": [
       {
@@ -206,7 +206,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10003",
+    "JHNT_MBN": "W10003",
     "JHNT_CTN": "C10003",
     "RESUMES": [
       {
@@ -330,7 +330,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10004",
+    "JHNT_MBN": "W10004",
     "JHNT_CTN": "C10004",
     "RESUMES": [
       {
@@ -412,7 +412,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10005",
+    "JHNT_MBN": "W10005",
     "JHNT_CTN": "C10005",
     "RESUMES": [
       {
@@ -536,7 +536,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10006",
+    "JHNT_MBN": "W10006",
     "JHNT_CTN": "C10006",
     "RESUMES": [
       {
@@ -660,7 +660,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10007",
+    "JHNT_MBN": "W10007",
     "JHNT_CTN": "C10007",
     "RESUMES": [
       {
@@ -742,7 +742,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10008",
+    "JHNT_MBN": "W10008",
     "JHNT_CTN": "C10008",
     "RESUMES": [
       {
@@ -866,7 +866,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10009",
+    "JHNT_MBN": "W10009",
     "JHNT_CTN": "C10009",
     "RESUMES": [
       {
@@ -990,7 +990,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10010",
+    "JHNT_MBN": "W10010",
     "JHNT_CTN": "C10010",
     "RESUMES": [
       {
@@ -1072,7 +1072,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10011",
+    "JHNT_MBN": "W10011",
     "JHNT_CTN": "C10011",
     "RESUMES": [
       {
@@ -1196,7 +1196,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10012",
+    "JHNT_MBN": "W10012",
     "JHNT_CTN": "C10012",
     "RESUMES": [
       {
@@ -1320,7 +1320,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10013",
+    "JHNT_MBN": "W10013",
     "JHNT_CTN": "C10013",
     "RESUMES": [
       {
@@ -1402,7 +1402,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10014",
+    "JHNT_MBN": "W10014",
     "JHNT_CTN": "C10014",
     "RESUMES": [
       {
@@ -1526,7 +1526,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10015",
+    "JHNT_MBN": "W10015",
     "JHNT_CTN": "C10015",
     "RESUMES": [
       {
@@ -1650,7 +1650,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10016",
+    "JHNT_MBN": "W10016",
     "JHNT_CTN": "C10016",
     "RESUMES": [
       {
@@ -1732,7 +1732,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10017",
+    "JHNT_MBN": "W10017",
     "JHNT_CTN": "C10017",
     "RESUMES": [
       {
@@ -1856,7 +1856,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10018",
+    "JHNT_MBN": "W10018",
     "JHNT_CTN": "C10018",
     "RESUMES": [
       {
@@ -1980,7 +1980,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10019",
+    "JHNT_MBN": "W10019",
     "JHNT_CTN": "C10019",
     "RESUMES": [
       {
@@ -2062,7 +2062,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10020",
+    "JHNT_MBN": "W10020",
     "JHNT_CTN": "C10020",
     "RESUMES": [
       {
@@ -2186,7 +2186,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10021",
+    "JHNT_MBN": "W10021",
     "JHNT_CTN": "C10021",
     "RESUMES": [
       {
@@ -2310,7 +2310,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10022",
+    "JHNT_MBN": "W10022",
     "JHNT_CTN": "C10022",
     "RESUMES": [
       {
@@ -2392,7 +2392,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10023",
+    "JHNT_MBN": "W10023",
     "JHNT_CTN": "C10023",
     "RESUMES": [
       {
@@ -2516,7 +2516,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10024",
+    "JHNT_MBN": "W10024",
     "JHNT_CTN": "C10024",
     "RESUMES": [
       {
@@ -2640,7 +2640,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10025",
+    "JHNT_MBN": "W10025",
     "JHNT_CTN": "C10025",
     "RESUMES": [
       {
@@ -2722,7 +2722,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10026",
+    "JHNT_MBN": "W10026",
     "JHNT_CTN": "C10026",
     "RESUMES": [
       {
@@ -2846,7 +2846,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10027",
+    "JHNT_MBN": "W10027",
     "JHNT_CTN": "C10027",
     "RESUMES": [
       {
@@ -2970,7 +2970,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10028",
+    "JHNT_MBN": "W10028",
     "JHNT_CTN": "C10028",
     "RESUMES": [
       {
@@ -3052,7 +3052,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10029",
+    "JHNT_MBN": "W10029",
     "JHNT_CTN": "C10029",
     "RESUMES": [
       {
@@ -3176,7 +3176,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10030",
+    "JHNT_MBN": "W10030",
     "JHNT_CTN": "C10030",
     "RESUMES": [
       {
@@ -3300,7 +3300,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10031",
+    "JHNT_MBN": "W10031",
     "JHNT_CTN": "C10031",
     "RESUMES": [
       {
@@ -3382,7 +3382,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10032",
+    "JHNT_MBN": "W10032",
     "JHNT_CTN": "C10032",
     "RESUMES": [
       {
@@ -3506,7 +3506,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10033",
+    "JHNT_MBN": "W10033",
     "JHNT_CTN": "C10033",
     "RESUMES": [
       {
@@ -3630,7 +3630,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10034",
+    "JHNT_MBN": "W10034",
     "JHNT_CTN": "C10034",
     "RESUMES": [
       {
@@ -3712,7 +3712,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10035",
+    "JHNT_MBN": "W10035",
     "JHNT_CTN": "C10035",
     "RESUMES": [
       {
@@ -3836,7 +3836,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10036",
+    "JHNT_MBN": "W10036",
     "JHNT_CTN": "C10036",
     "RESUMES": [
       {
@@ -3960,7 +3960,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10037",
+    "JHNT_MBN": "W10037",
     "JHNT_CTN": "C10037",
     "RESUMES": [
       {
@@ -4042,7 +4042,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10038",
+    "JHNT_MBN": "W10038",
     "JHNT_CTN": "C10038",
     "RESUMES": [
       {
@@ -4166,7 +4166,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10039",
+    "JHNT_MBN": "W10039",
     "JHNT_CTN": "C10039",
     "RESUMES": [
       {
@@ -4290,7 +4290,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10040",
+    "JHNT_MBN": "W10040",
     "JHNT_CTN": "C10040",
     "RESUMES": [
       {
@@ -4372,7 +4372,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10041",
+    "JHNT_MBN": "W10041",
     "JHNT_CTN": "C10041",
     "RESUMES": [
       {
@@ -4496,7 +4496,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10042",
+    "JHNT_MBN": "W10042",
     "JHNT_CTN": "C10042",
     "RESUMES": [
       {
@@ -4620,7 +4620,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10043",
+    "JHNT_MBN": "W10043",
     "JHNT_CTN": "C10043",
     "RESUMES": [
       {
@@ -4702,7 +4702,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10044",
+    "JHNT_MBN": "W10044",
     "JHNT_CTN": "C10044",
     "RESUMES": [
       {
@@ -4826,7 +4826,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10045",
+    "JHNT_MBN": "W10045",
     "JHNT_CTN": "C10045",
     "RESUMES": [
       {
@@ -4950,7 +4950,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10046",
+    "JHNT_MBN": "W10046",
     "JHNT_CTN": "C10046",
     "RESUMES": [
       {
@@ -5032,7 +5032,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10047",
+    "JHNT_MBN": "W10047",
     "JHNT_CTN": "C10047",
     "RESUMES": [
       {
@@ -5156,7 +5156,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10048",
+    "JHNT_MBN": "W10048",
     "JHNT_CTN": "C10048",
     "RESUMES": [
       {
@@ -5280,7 +5280,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10049",
+    "JHNT_MBN": "W10049",
     "JHNT_CTN": "C10049",
     "RESUMES": [
       {
@@ -5362,7 +5362,7 @@
     ]
   },
   {
-    "SEEK_CUST_NO": "W10050",
+    "JHNT_MBN": "W10050",
     "JHNT_CTN": "C10050",
     "RESUMES": [
       {
