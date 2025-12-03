@@ -33,7 +33,8 @@ from .utils import (
     load_all_data,
     preprocess_and_merge_data,
     setup_logging,
-    load_config
+    load_config,
+    impute_missing_values
 )
 from .estimation import (
     run_single_experiment,
@@ -112,6 +113,15 @@ def preprocess(
     
     preprocessing_elapsed = time.time() - preprocessing_start
     print(f"⏱️ 전처리 및 병합 완료! 소요 시간: {preprocessing_elapsed:.2f}초")
+    
+    # 결측치 보간 처리
+    print("\n" + "="*80)
+    print("4️⃣ 결측치 보간 시작")
+    print("="*80)
+    imputation_start = time.time()
+    merged_df = impute_missing_values(merged_df)
+    imputation_elapsed = time.time() - imputation_start
+    print(f"⏱️ 결측치 보간 완료! 소요 시간: {imputation_elapsed:.2f}초")
     
     # merged_df.csv를 output_dir에 저장 (쓰기 가능한 디렉토리)
     if output_dir is None:

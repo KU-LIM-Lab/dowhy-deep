@@ -457,6 +457,71 @@ def preprocess_and_merge_data(file_list: List[str], data_dir: str, limit_data: b
     return merged_df
 
 
+def impute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    결측치를 보간하는 함수
+    - 수치형 변수: 평균값으로 보간
+    - 범주형 변수: 최빈값으로 보간
+    
+    Input:
+        df (pd.DataFrame): 결측치가 포함된 데이터프레임
+    
+    Output:
+        pd.DataFrame: 결측치가 보간된 데이터프레임
+    """
+    df_imputed = df.copy()
+    
+    # 결측치 확인
+    missing_before = df_imputed.isnull().sum()
+    total_missing = missing_before.sum()
+    
+    if total_missing == 0:
+        print("✅ 결측치가 없습니다.")
+        return df_imputed
+    
+    print(f"\n📊 결측치 보간 시작")
+    print(f"   전체 결측치 개수: {total_missing}개")
+    
+    # 컬럼별로 결측치 보간
+    imputed_count = 0
+    for col in df_imputed.columns:
+        missing_count = missing_before[col]
+        if missing_count == 0:
+            continue
+        
+        # 수치형 변수인지 확인
+        is_numeric = pd.api.types.is_numeric_dtype(df_imputed[col])
+        
+        if is_numeric:
+            # 수치형 변수: 평균값으로 보간
+            mean_value = df_imputed[col].mean()
+            if pd.isna(mean_value):
+                # 평균값도 NaN인 경우 0으로 대체
+                mean_value = 0
+            df_imputed[col].fillna(mean_value, inplace=True)
+            print(f"   {col}: {missing_count}개 결측치 → 평균값({mean_value:.2f})으로 보간")
+            imputed_count += missing_count
+        else:
+            # 범주형 변수: 최빈값으로 보간
+            mode_values = df_imputed[col].mode()
+            if len(mode_values) > 0:
+                mode_value = mode_values[0]
+                df_imputed[col].fillna(mode_value, inplace=True)
+                print(f"   {col}: {missing_count}개 결측치 → 최빈값('{mode_value}')으로 보간")
+                imputed_count += missing_count
+            else:
+                # 최빈값이 없는 경우 (모든 값이 NaN인 경우) 빈 문자열로 대체
+                df_imputed[col].fillna('', inplace=True)
+                print(f"   {col}: {missing_count}개 결측치 → 빈 문자열로 보간 (최빈값 없음)")
+                imputed_count += missing_count
+    
+    # 보간 후 결측치 확인
+    missing_after = df_imputed.isnull().sum().sum()
+    print(f"\n✅ 결측치 보간 완료: {imputed_count}개 보간, 남은 결측치: {missing_after}개")
+    
+    return df_imputed
+
+
 # ============================================================================
 # 결과 저장 함수
 # ============================================================================

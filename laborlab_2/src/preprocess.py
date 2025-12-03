@@ -818,18 +818,6 @@ class Preprocessor:
                 missing_pct = (missing_count / total_rows * 100) if total_rows > 0 else 0
                 print(f"   {col}: {missing_count}개 ({missing_pct:.2f}%)")
         
-        # 결측치가 존재하는 행 제거 (제거 전후 행 개수 로깅)
-        before_dropna_count = len(result)
-        print(f"\n📊 결측치 행 제거 전: {before_dropna_count}개 행")
-        
-        # 결측치가 하나라도 있는 행 제거
-        result = result.dropna()
-        
-        after_dropna_count = len(result)
-        removed_count = before_dropna_count - after_dropna_count
-        print(f"📊 결측치 행 제거 후: {after_dropna_count}개 행")
-        print(f"📊 제거된 행 수: {removed_count}개 행 ({removed_count/before_dropna_count*100:.2f}%)")
-        
         # Logger 객체가 데이터프레임에 포함되어 있는지 검사
         import logging
         logger_columns = []

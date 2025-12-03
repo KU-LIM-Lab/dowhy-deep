@@ -7,8 +7,8 @@
   "verbose": false,
 
   "preprocess": true,
-  "learning": false,
-  "prediction": false,
+  "learning": true,
+  "prediction": true,
   "experiment": false,
   "limit_data": true,
   "limit_size": 5000,
