@@ -35,4 +35,7 @@ openpyxl>=3.1.0
 # 선택적 의존성 (LLM 점수 계산용)
 openai>=1.0.0
 ollama>=0.1.0
+
+# 비동기 처리
+asyncio>=3.4.0
 aiohttp>=3.9.0
