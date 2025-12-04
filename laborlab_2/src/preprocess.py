@@ -197,10 +197,9 @@ class Preprocessor:
                 original_count = len(data)
                 data = data[:limit_size]
                 print(f"📊 {json_name} 데이터 제한: {len(data)}개 레코드 사용 (전체 {original_count}개 중 앞 {limit_size}개)")
-            elif not limit_data and len(data) > 10000:
-                original_count = len(data)
-                data = data[:10000]
-                print(f"📊 {json_name} 데이터 제한: {len(data)}개 레코드 사용 (전체 {original_count}개 중 앞 10000개)")
+            else:
+                # limit_data가 False이면 모든 데이터 처리
+                print(f"📊 {json_name} 전체 데이터 처리: {len(data)}개 레코드")
         else:
             # 리스트가 아닌 경우 (단일 객체)는 그대로 사용 (나중에 _preprocess_* 함수에서 리스트로 변환됨)
             print(f"⚠️ {json_name} 데이터가 리스트 형태가 아닙니다. 단일 객체로 처리됩니다.")
@@ -222,7 +221,8 @@ class Preprocessor:
 
     def _process_single_resume(self, item):
         """단일 이력서 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("JHNT_MBN", "")
+        # SEEK_CUST_NO를 JHNT_MBN으로 변환
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
         if not seek_id:
             return None
         
@@ -302,7 +302,7 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "unknown")
+                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
                     print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
                         "JHNT_MBN": seek_id,
@@ -324,12 +324,25 @@ class Preprocessor:
                     cleaned_row[key] = value
             cleaned_rows.append(cleaned_row)
         
-        return pd.DataFrame(cleaned_rows)
+        df = pd.DataFrame(cleaned_rows)
+        
+        # SEEK_CUST_NO를 JHNT_MBN으로 rename (있는 경우)
+        if 'SEEK_CUST_NO' in df.columns and 'JHNT_MBN' not in df.columns:
+            df = df.rename(columns={'SEEK_CUST_NO': 'JHNT_MBN'})
+            print(f"✅ 이력서 데이터: SEEK_CUST_NO를 JHNT_MBN으로 변경")
+        elif 'SEEK_CUST_NO' in df.columns and 'JHNT_MBN' in df.columns:
+            # 둘 다 있으면 SEEK_CUST_NO의 값으로 JHNT_MBN을 채우고 SEEK_CUST_NO 제거
+            df['JHNT_MBN'] = df['JHNT_MBN'].fillna(df['SEEK_CUST_NO'])
+            df = df.drop(columns=['SEEK_CUST_NO'])
+            print(f"✅ 이력서 데이터: SEEK_CUST_NO 값을 JHNT_MBN에 병합 후 SEEK_CUST_NO 제거")
+        
+        return df
 
 
     def _process_single_cover_letter(self, item):
         """단일 자기소개서 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("JHNT_MBN", "")
+        # SEEK_CUST_NO를 JHNT_MBN으로 변환
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
         if not seek_id:
             return None
                 
@@ -386,7 +399,7 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "unknown")
+                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
                     print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
                         "JHNT_MBN": seek_id,
@@ -408,13 +421,26 @@ class Preprocessor:
                     cleaned_row[key] = value
             cleaned_rows.append(cleaned_row)
         
-        return pd.DataFrame(cleaned_rows)
+        df = pd.DataFrame(cleaned_rows)
+        
+        # SEEK_CUST_NO를 JHNT_MBN으로 rename (있는 경우)
+        if 'SEEK_CUST_NO' in df.columns and 'JHNT_MBN' not in df.columns:
+            df = df.rename(columns={'SEEK_CUST_NO': 'JHNT_MBN'})
+            print(f"✅ 자기소개서 데이터: SEEK_CUST_NO를 JHNT_MBN으로 변경")
+        elif 'SEEK_CUST_NO' in df.columns and 'JHNT_MBN' in df.columns:
+            # 둘 다 있으면 SEEK_CUST_NO의 값으로 JHNT_MBN을 채우고 SEEK_CUST_NO 제거
+            df['JHNT_MBN'] = df['JHNT_MBN'].fillna(df['SEEK_CUST_NO'])
+            df = df.drop(columns=['SEEK_CUST_NO'])
+            print(f"✅ 자기소개서 데이터: SEEK_CUST_NO 값을 JHNT_MBN에 병합 후 SEEK_CUST_NO 제거")
+        
+        return df
 
 
     def _process_single_training(self, item):
         """단일 직업훈련 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("JHNT_MBN", "")
-        if not seek_id:
+        # JHNT_CTN을 키로 사용
+        jhnt_ctn = item.get("JHNT_CTN", "")
+        if not jhnt_ctn:
             return None
         
         # 구직인증 일자 가져오기
@@ -460,6 +486,9 @@ class Preprocessor:
         
         text = "\n".join(training_texts) if training_texts else "정보 없음"
         
+        # seek_id는 HOPE_JSCD1 매핑을 위해 사용 (JHNT_MBN이 있으면 사용, 없으면 None)
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+        
         # HOPE_JSCD1 정보 가져와서 직종명으로 변환
         hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
         job_name = self.get_job_name_from_code(hope_jscd1)
@@ -468,11 +497,7 @@ class Preprocessor:
         # 점수 계산
         score, why = self.llm_scorer.score("직업훈련", job_name, job_examples, text)
         
-        # JHNT_CTN 가져오기
-        jhnt_ctn = item.get("JHNT_CTN", "")
-        
         return {
-            "JHNT_MBN": seek_id,
             "JHNT_CTN": jhnt_ctn,
             "training_score": score,
             "days_last_training_to_jobseek": elapsed_days if elapsed_days is not None else None  # 그래프: days_last_training_to_jobseek
@@ -497,11 +522,10 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "unknown")
-                    print(f"⚠️ 직업훈련 처리 오류 (JHNT_MBN: {seek_id}): {e}")
+                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
+                    print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
                     rows.append({
-                        "JHNT_MBN": seek_id,
-                        "JHNT_CTN": item.get("JHNT_CTN", ""),
+                        "JHNT_CTN": jhnt_ctn,
                         "training_score": None,
                         "days_last_training_to_jobseek": None
                     })
@@ -525,8 +549,9 @@ class Preprocessor:
 
     def _process_single_certification(self, item):
         """단일 자격증 레코드 처리 (병렬 처리용)"""
-        seek_id = item.get("JHNT_MBN", "")
-        if not seek_id:
+        # JHNT_CTN을 키로 사용
+        jhnt_ctn = item.get("JHNT_CTN", "")
+        if not jhnt_ctn:
             return None
         
         # JSON에서 자격증 데이터 추출
@@ -546,6 +571,9 @@ class Preprocessor:
         # 텍스트 생성
         text = "\n".join(formatted_texts) if formatted_texts else "정보 없음"
         
+        # seek_id는 HOPE_JSCD1 매핑을 위해 사용 (JHNT_MBN이 있으면 사용, 없으면 None)
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+        
         # HOPE_JSCD1 정보 가져와서 직종명으로 변환
         hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
         job_name = self.get_job_name_from_code(hope_jscd1)
@@ -554,12 +582,8 @@ class Preprocessor:
         # 점수 계산
         score, _ = self.llm_scorer.score("자격증", job_name, job_examples, text)
         
-        # JHNT_CTN 가져오기
-        jhnt_ctn = item.get("JHNT_CTN", "")
-        
         # score만 반환 (그래프 변수명과 일치)
         return {
-            "JHNT_MBN": seek_id,
             "JHNT_CTN": jhnt_ctn,
             "certification_score": score  # 그래프: certification_score
         }
@@ -583,11 +607,10 @@ class Preprocessor:
                         rows.append(result)
                 except Exception as e:
                     item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "unknown")
-                    print(f"⚠️ 자격증 처리 오류 (JHNT_MBN: {seek_id}): {e}")
+                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
+                    print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
                     rows.append({
-                        "JHNT_MBN": seek_id,
-                        "JHNT_CTN": item.get("JHNT_CTN", ""),
+                        "JHNT_CTN": jhnt_ctn,
                         "certification_score": None
                     })
         
@@ -818,17 +841,11 @@ class Preprocessor:
                 missing_pct = (missing_count / total_rows * 100) if total_rows > 0 else 0
                 print(f"   {col}: {missing_count}개 ({missing_pct:.2f}%)")
         
-        # 결측치가 존재하는 행 제거 (제거 전후 행 개수 로깅)
-        before_dropna_count = len(result)
-        print(f"\n📊 결측치 행 제거 전: {before_dropna_count}개 행")
-        
-        # 결측치가 하나라도 있는 행 제거
-        result = result.dropna()
-        
-        after_dropna_count = len(result)
-        removed_count = before_dropna_count - after_dropna_count
-        print(f"📊 결측치 행 제거 후: {after_dropna_count}개 행")
-        print(f"📊 제거된 행 수: {removed_count}개 행 ({removed_count/before_dropna_count*100:.2f}%)")
+        # 결측치 보간 (평균값 또는 최빈값으로)
+        from . import utils
+        print(f"\n📊 결측치 보간 시작...")
+        result = utils.impute_missing_values(result)
+        print(f"✅ 결측치 보간 완료")
         
         # Logger 객체가 데이터프레임에 포함되어 있는지 검사
         import logging

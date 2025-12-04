@@ -7,10 +7,10 @@
   "verbose": false,
 
   "preprocess": true,
-  "learning": false,
-  "prediction": false,
+  "learning": true,
+  "prediction": true,
   "experiment": false,
-  "limit_data": true,
+  "limit_data": false,
   "limit_size": 5000,
   "checkpoint_dir": "data/checkpoint",
   "job_category_file": "KSIC",
