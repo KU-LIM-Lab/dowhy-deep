@@ -28,14 +28,6 @@ import logging as dowhy_logging
 dowhy_logging.getLogger("dowhy.causal_estimator").setLevel(dowhy_logging.WARNING)
 dowhy_logging.getLogger("dowhy.causal_estimators").setLevel(dowhy_logging.WARNING)
 
-# HTTP 요청 로깅 비활성화 (urllib3, requests, ollama 등)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("requests.packages.urllib3").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-
 # 유틸리티 함수 임포트
 from .utils import (
     load_all_data,
@@ -51,8 +43,6 @@ from .estimation import (
 )
 from datetime import datetime
 import json
-import logging
-from tqdm import tqdm
 
 
 def _json_default(obj):
@@ -74,8 +64,7 @@ def preprocess(
     limit_data: bool = False,
     limit_size: int = 5000,
     job_category_file: str = "KSIC",
-    output_dir: Optional[Path] = None,
-    config: Optional[Dict[str, Any]] = None
+    output_dir: Optional[Path] = None
 ) -> pd.DataFrame:
     """
     전처리 함수 (limit_data 옵션으로 데이터 제한 가능)
@@ -112,15 +101,12 @@ def preprocess(
     print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
     preprocessing_start = time.time()
     
-    batch_size = (config or {}).get("batch_size", 20)
-    
     merged_df = preprocess_and_merge_data(
         file_list, 
         str(data_dir_path), 
         limit_data=limit_data, 
         limit_size=limit_size,
-        job_category_file=job_category_file,
-        batch_size=batch_size
+        job_category_file=job_category_file
     )
     print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
     
@@ -263,12 +249,11 @@ def _run_experiments_batch(
         
         pd.DataFrame(columns=csv_columns).to_csv(csv_file, index=False, encoding='utf-8-sig')
     
-    # 실험 실행 (tqdm으로 진행 상황 표시)
-    emoji_map = {"learning": "🎓", "prediction": "🔮"}
-    emoji = emoji_map.get(experiment_type, "🔬")
-    
-    for idx, (graph_file, treatment, outcome, estimator) in enumerate(tqdm(experiment_list, desc=f"{emoji} {experiment_type.capitalize()}", unit="실험", ncols=100), 1):
+    # 실험 실행
+    for idx, (graph_file, treatment, outcome, estimator) in enumerate(experiment_list, 1):
         experiment_id = f"exp_{idx:04d}_{Path(graph_file).stem}_{treatment}_{outcome}_{estimator}"
+        
+        print(f"\n[{idx}/{total_experiments}] {experiment_type.capitalize()} 실행 중...")
         
         # 단일 실험 실행
         result = experiment_func(
@@ -331,6 +316,10 @@ def _run_experiments_batch(
         if output_dir:
             with open(results_file, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=2, ensure_ascii=False, default=_json_default)
+        
+        success_count = sum(1 for r in results if r.get("status") == "success")
+        failed_count = sum(1 for r in results if r.get("status") == "failed")
+        print(f"\n✅ 성공: {success_count}, ❌ 실패: {failed_count}")
     
     # 최종 요약
     print(f"\n{'='*80}")
@@ -592,8 +581,7 @@ def main():
                 limit_data=limit_data,
                 limit_size=limit_size,
                 job_category_file=job_category_file,
-                output_dir=output_dir_path,
-                config=config
+                output_dir=output_dir_path
             )
             
             # 인과 모델을 위한 데이터 준비
