@@ -18,6 +18,8 @@ services:
       - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log
       - EXPERIMENT_CONFIG=/app/laborlab_2/config.json
       - OLLAMA_HOST=http://ollama:11434
+      # Ollama 동시 요청 수 제한 (서버 설정과 동일하게 유지)
+      - OLLAMA_NUM_PARALLEL=32
     depends_on: [ollama]
     working_dir: /app/laborlab_2
     # CPU 모드 (온라인 환경용)
@@ -34,6 +36,10 @@ services:
       - ./ollama_models:/root/.ollama/models
     ports:
       - "11434:11434"
+    environment:
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_NUM_PARALLEL=32
     # CPU 모드 (온라인 환경용)
     # GPU를 사용하려면 docker-compose.offline.yml 사용
     restart: unless-stopped

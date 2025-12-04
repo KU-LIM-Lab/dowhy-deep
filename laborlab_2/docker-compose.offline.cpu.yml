@@ -2,7 +2,7 @@ services:
   laborlab:
     # 폐쇄망 환경에서는 미리 로드된 이미지 사용 (CPU 모드)
     # docker load < laborlab-2-image_*.tar 로 이미지를 먼저 로드해야 함
-    image: laborlab_2-laborlab:latest
+    image: laborlab_2-laborlab:updated
     container_name: laborlab-2-analysis
     volumes:
       # 데이터 디렉토리 마운트
@@ -19,8 +19,12 @@ services:
       - EXPERIMENT_CONFIG=/app/laborlab_2/config.json
       # Docker 컨테이너의 ollama 서비스 사용
       - OLLAMA_HOST=http://ollama:11434
+      # Ollama 동시 요청 수 제한 (서버 설정과 동일하게 유지)
+      - OLLAMA_NUM_PARALLEL=32
     depends_on: [ollama]
     working_dir: /app/laborlab_2
+    # updated 이미지가 tail -f /dev/null로 커밋되어 있어 command 오버라이드 필요
+    command: ["python", "-m", "src.main", "--config", "config.json"]
     # CPU 모드 (폐쇄망 환경용)
     # GPU를 사용하려면 docker-compose.offline.yml 사용
     # 컨테이너 시작 시 자동으로 파이프라인 실행
@@ -35,6 +39,10 @@ services:
       - ./ollama_models:/root/.ollama/models
     ports:
       - "11434:11434"
+    environment:
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_NUM_PARALLEL=32
     # CPU 모드 (폐쇄망 환경용)
     # GPU를 사용하려면 docker-compose.offline.yml 사용
     restart: "no"
