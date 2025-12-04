@@ -3,6 +3,8 @@ LLM 기반 점수 계산 모듈
 """
 import json
 import os
+import asyncio
+import aiohttp
 from typing import List, Tuple
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
@@ -43,7 +45,7 @@ class LLMScorer:
     
         
     def count_typos(self, text: str) -> int:
-        """TYPO_CHECK 프롬프트를 사용한 오탈자 개수 계산"""
+        """TYPO_CHECK 프롬프트를 사용한 오탈자 개수 계산 (동기 버전)"""
         if not text or text.strip() == "":
             return 0
 
@@ -69,6 +71,35 @@ class LLMScorer:
             typo_count = int(max(0, int(data.get("typo_count", 0))))
             return typo_count
             
+        except Exception as e:
+            print(f"오탈자 개수 계산 실패: {e}")
+            return 0
+    
+    async def count_typos_async(self, text: str, session: aiohttp.ClientSession) -> int:
+        """TYPO_CHECK 프롬프트를 사용한 오탈자 개수 계산 (비동기 버전)"""
+        if not text or text.strip() == "":
+            return 0
+
+        try:
+            sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
+            user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
+            
+            # Ollama API 엔드포인트 URL 구성
+            url = f"http://{self.ollama_host}/api/chat"
+            payload = {
+                "model": "llama3.2:1b",
+                "messages": [sys_msg, user_msg],
+                "options": {"temperature": 0.1}
+            }
+            
+            async with session.post(url, json=payload) as resp:
+                resp.raise_for_status()
+                result = await resp.json()
+                content = result["message"]["content"]
+                data = json.loads(content)
+                typo_count = int(max(0, int(data.get("typo_count", 0))))
+                return typo_count
+                
         except Exception as e:
             print(f"오탈자 개수 계산 실패: {e}")
             return 0
@@ -124,6 +155,35 @@ class LLMScorer:
             return 50, f"LLM API 오류: {str(e)[:200]}"
     
     def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
-        """점수 계산 메인 메서드 - (score, rationale) 반환"""
+        """점수 계산 메인 메서드 - (score, rationale) 반환 (동기 버전)"""
         return self._score_with_llm(section, job_name, job_examples, text)
+    
+    async def score_async(self, section: str, job_name: str, job_examples: List[str], text: str, session: aiohttp.ClientSession) -> Tuple[int, str]:
+        """점수 계산 메인 메서드 - (score, rationale) 반환 (비동기 버전)"""
+        if not OLLAMA_AVAILABLE:
+            return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
+            
+        try:
+            sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
+            user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
+            
+            # Ollama API 엔드포인트 URL 구성
+            url = f"http://{self.ollama_host}/api/chat"
+            payload = {
+                "model": "llama3.2:1b",
+                "messages": [sys_msg, user_msg],
+                "options": {"temperature": 0.2}
+            }
+            
+            async with session.post(url, json=payload) as resp:
+                resp.raise_for_status()
+                result = await resp.json()
+                content = result["message"]["content"]
+                data = json.loads(content)
+                score = int(max(0, min(100, int(data.get("score", 0)))))
+                why = str(data.get("rationale", ""))[:240]
+                return score, why
+                
+        except Exception as e:
+            return 50, f"LLM API 오류: {str(e)[:200]}"
 

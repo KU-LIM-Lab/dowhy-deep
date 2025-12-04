@@ -32,7 +32,10 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 import time
+import asyncio
+import aiohttp
 from tqdm import tqdm
+from tqdm.asyncio import tqdm as atqdm
 
 from .llm_reference import (
     JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
@@ -180,9 +183,9 @@ class Preprocessor:
         
         return df
 
-    def nlp_preprocessing(self, data, json_name=None, limit_data=False, limit_size=5000):
+    async def nlp_preprocessing(self, data, json_name=None, limit_data=False, limit_size=5000):
         """
-        NLP 기반 데이터 전처리를 수행하는 함수
+        NLP 기반 데이터 전처리를 수행하는 함수 (비동기)
         
         Args:
             data: json 파일 (자기소개서, 이력서, 직업훈련, 자격증)
@@ -205,23 +208,23 @@ class Preprocessor:
             # 리스트가 아닌 경우 (단일 객체)는 그대로 사용 (나중에 _preprocess_* 함수에서 리스트로 변환됨)
             print(f"⚠️ {json_name} 데이터가 리스트 형태가 아닙니다. 단일 객체로 처리됩니다.")
         
-        # JSON 데이터 타입에 따른 특화된 전처리
+        # JSON 데이터 타입에 따른 특화된 전처리 (비동기)
         if json_name == '이력서':
-            df_processed = self._preprocess_resume(data)
+            df_processed = await self._preprocess_resume(data)
         elif json_name == '자기소개서':
-            df_processed = self._preprocess_cover_letter(data)
+            df_processed = await self._preprocess_cover_letter(data)
         elif json_name == '직업훈련':
-            df_processed = self._preprocess_training(data)
+            df_processed = await self._preprocess_training(data)
         elif json_name == '자격증':
-            df_processed = self._preprocess_certification(data)
+            df_processed = await self._preprocess_certification(data)
         else:
             raise ValueError(f"지원하지 않는 json 파일입니다. {json_name}")
         
         return df_processed
 
 
-    def _process_single_resume(self, item):
-        """단일 이력서 레코드 처리 (병렬 처리용)"""
+    async def _process_single_resume(self, item, session: aiohttp.ClientSession):
+        """단일 이력서 레코드 처리 (비동기)"""
         # SEEK_CUST_NO를 JHNT_MBN으로 변환
         seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
         if not seek_id:
@@ -274,8 +277,8 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # LLM scorer에 전달하여 점수 계산
-        score, _ = self.llm_scorer.score("이력서", job_name, job_examples, formatting_sentence)
+        # LLM scorer에 전달하여 점수 계산 (비동기)
+        score, _ = await self.llm_scorer.score_async("이력서", job_name, job_examples, formatting_sentence, session)
         
         return {
             "JHNT_MBN": seek_id,
@@ -283,29 +286,37 @@ class Preprocessor:
             "items_num": items_num
         }
     
-    def _preprocess_resume(self, data):
-        """이력서 특화 전처리 (순차 처리)"""
+    async def _preprocess_resume(self, data):
+        """이력서 특화 전처리 (비동기 병렬 처리)"""
         # 리스트인 경우 처리 (JSON 파일이 리스트 형태일 수 있음)
         if not isinstance(data, list):
             data = [data]
         
-        # 순차 처리로 각 레코드 처리
+        # 비동기 병렬 처리로 각 레코드 처리
         rows = []
         import logging
         
-        for item in tqdm(data, desc="이력서 전처리", unit="건"):
-            try:
-                result = self._process_single_resume(item)
-                if result is not None:
-                    rows.append(result)
-            except Exception as e:
-                seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
-                print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
-                rows.append({
-                    "JHNT_MBN": seek_id,
-                    "resume_score": None,
-                    "items_num": 0
-                })
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for item in data:
+                task = self._process_single_resume(item, session)
+                tasks.append(task)
+            
+            results = await atqdm.gather(*tasks, desc="이력서 전처리", unit="건")
+            
+            for idx, result in enumerate(results):
+                try:
+                    if result is not None:
+                        rows.append(result)
+                except Exception as e:
+                    item = data[idx]
+                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
+                    print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
+                    rows.append({
+                        "JHNT_MBN": seek_id,
+                        "resume_score": None,
+                        "items_num": 0
+                    })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         cleaned_rows = []
@@ -335,8 +346,8 @@ class Preprocessor:
         return df
 
 
-    def _process_single_cover_letter(self, item):
-        """단일 자기소개서 레코드 처리 (병렬 처리용)"""
+    async def _process_single_cover_letter(self, item, session: aiohttp.ClientSession):
+        """단일 자기소개서 레코드 처리 (비동기)"""
         # SEEK_CUST_NO를 JHNT_MBN으로 변환
         seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
         if not seek_id:
@@ -361,9 +372,11 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산과 오탈자 수 계산을 순차로 실행
-        score, _ = self.llm_scorer.score("자기소개서", job_name, job_examples, full_text)
-        typo_count = self.llm_scorer.count_typos(full_text)
+        # 점수 계산과 오탈자 수 계산을 비동기로 병렬 실행
+        score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
+        typo_task = self.llm_scorer.count_typos_async(full_text, session)
+        score, _ = await score_task
+        typo_count = await typo_task
         
         # score와 오탈자 수만 반환 (그래프 변수명과 일치)
         return {
@@ -372,28 +385,36 @@ class Preprocessor:
             "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
         }
     
-    def _preprocess_cover_letter(self, data):
-        """자기소개서 특화 전처리 (순차 처리)"""
+    async def _preprocess_cover_letter(self, data):
+        """자기소개서 특화 전처리 (비동기 병렬 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 순차 처리로 각 레코드 처리
+        # 비동기 병렬 처리로 각 레코드 처리
         rows = []
         import logging
         
-        for item in tqdm(data, desc="자기소개서 전처리", unit="건"):
-            try:
-                result = self._process_single_cover_letter(item)
-                if result is not None:
-                    rows.append(result)
-            except Exception as e:
-                seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
-                print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
-                rows.append({
-                    "JHNT_MBN": seek_id,
-                    "cove_letter_score": None,
-                    "cover_letter_typo_count": 0
-                })
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for item in data:
+                task = self._process_single_cover_letter(item, session)
+                tasks.append(task)
+            
+            results = await atqdm.gather(*tasks, desc="자기소개서 전처리", unit="건")
+            
+            for idx, result in enumerate(results):
+                try:
+                    if result is not None:
+                        rows.append(result)
+                except Exception as e:
+                    item = data[idx]
+                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
+                    print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
+                    rows.append({
+                        "JHNT_MBN": seek_id,
+                        "cove_letter_score": None,
+                        "cover_letter_typo_count": 0
+                    })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         cleaned_rows = []
@@ -423,8 +444,8 @@ class Preprocessor:
         return df
 
 
-    def _process_single_training(self, item):
-        """단일 직업훈련 레코드 처리 (병렬 처리용)"""
+    async def _process_single_training(self, item, session: aiohttp.ClientSession):
+        """단일 직업훈련 레코드 처리 (비동기)"""
         # JHNT_CTN을 키로 사용
         jhnt_ctn = item.get("JHNT_CTN", "")
         if not jhnt_ctn:
@@ -481,8 +502,8 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산
-        score, why = self.llm_scorer.score("직업훈련", job_name, job_examples, text)
+        # 점수 계산 (비동기)
+        score, why = await self.llm_scorer.score_async("직업훈련", job_name, job_examples, text, session)
         
         return {
             "JHNT_CTN": jhnt_ctn,
@@ -490,28 +511,36 @@ class Preprocessor:
             "days_last_training_to_jobseek": elapsed_days if elapsed_days is not None else None  # 그래프: days_last_training_to_jobseek
         }
     
-    def _preprocess_training(self, data):
-        """직업훈련 특화 전처리 (순차 처리)"""
+    async def _preprocess_training(self, data):
+        """직업훈련 특화 전처리 (비동기 병렬 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 순차 처리로 각 레코드 처리
+        # 비동기 병렬 처리로 각 레코드 처리
         rows = []
         import logging
         
-        for item in tqdm(data, desc="직업훈련 전처리", unit="건"):
-            try:
-                result = self._process_single_training(item)
-                if result is not None:
-                    rows.append(result)
-            except Exception as e:
-                jhnt_ctn = item.get("JHNT_CTN", "unknown")
-                print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
-                rows.append({
-                    "JHNT_CTN": jhnt_ctn,
-                    "training_score": None,
-                    "days_last_training_to_jobseek": None
-                })
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for item in data:
+                task = self._process_single_training(item, session)
+                tasks.append(task)
+            
+            results = await atqdm.gather(*tasks, desc="직업훈련 전처리", unit="건")
+            
+            for idx, result in enumerate(results):
+                try:
+                    if result is not None:
+                        rows.append(result)
+                except Exception as e:
+                    item = data[idx]
+                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
+                    print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
+                    rows.append({
+                        "JHNT_CTN": jhnt_ctn,
+                        "training_score": None,
+                        "days_last_training_to_jobseek": None
+                    })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         cleaned_rows = []
@@ -529,8 +558,8 @@ class Preprocessor:
         return pd.DataFrame(cleaned_rows)
 
 
-    def _process_single_certification(self, item):
-        """단일 자격증 레코드 처리 (병렬 처리용)"""
+    async def _process_single_certification(self, item, session: aiohttp.ClientSession):
+        """단일 자격증 레코드 처리 (비동기)"""
         # JHNT_CTN을 키로 사용
         jhnt_ctn = item.get("JHNT_CTN", "")
         if not jhnt_ctn:
@@ -561,8 +590,8 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산
-        score, _ = self.llm_scorer.score("자격증", job_name, job_examples, text)
+        # 점수 계산 (비동기)
+        score, _ = await self.llm_scorer.score_async("자격증", job_name, job_examples, text, session)
         
         # score만 반환 (그래프 변수명과 일치)
         return {
@@ -570,27 +599,35 @@ class Preprocessor:
             "certification_score": score  # 그래프: certification_score
         }
     
-    def _preprocess_certification(self, data):
-        """자격증 특화 전처리 (순차 처리)"""
+    async def _preprocess_certification(self, data):
+        """자격증 특화 전처리 (비동기 병렬 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 순차 처리로 각 레코드 처리
+        # 비동기 병렬 처리로 각 레코드 처리
         rows = []
         import logging
         
-        for item in tqdm(data, desc="자격증 전처리", unit="건"):
-            try:
-                result = self._process_single_certification(item)
-                if result is not None:
-                    rows.append(result)
-            except Exception as e:
-                jhnt_ctn = item.get("JHNT_CTN", "unknown")
-                print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
-                rows.append({
-                    "JHNT_CTN": jhnt_ctn,
-                    "certification_score": None
-                })
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for item in data:
+                task = self._process_single_certification(item, session)
+                tasks.append(task)
+            
+            results = await atqdm.gather(*tasks, desc="자격증 전처리", unit="건")
+            
+            for idx, result in enumerate(results):
+                try:
+                    if result is not None:
+                        rows.append(result)
+                except Exception as e:
+                    item = data[idx]
+                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
+                    print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
+                    rows.append({
+                        "JHNT_CTN": jhnt_ctn,
+                        "certification_score": None
+                    })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         cleaned_rows = []
@@ -642,15 +679,15 @@ class Preprocessor:
         elif data_file.endswith('.json'):
             with open(data_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # JSON 파일의 경우 json_name을 데이터 타입으로 사용
-                data_processed = self.nlp_preprocessing(data, json_name=json_name, limit_data=limit_data, limit_size=limit_size)
+                # JSON 파일의 경우 json_name을 데이터 타입으로 사용 (비동기)
+                data_processed = asyncio.run(self.nlp_preprocessing(data, json_name=json_name, limit_data=limit_data, limit_size=limit_size))
         else:
             raise ValueError("지원하지 않는 파일 형식입니다. CSV, Excel 또는 JSON 파일을 사용하세요.")
         
         return data_processed
 
 
-    def get_merged_df(self, file_list, limit_data=False, limit_size=5000):
+    async def get_merged_df(self, file_list, limit_data=False, limit_size=5000):
         """
         파일명 리스트를 받아 각 파일을 load_and_preprocess_data로 읽고 self.df_list에 append,
         이후 JHNT_MBN 또는 JHNT_CTN 컬럼 기준으로 순차적으로 조인하여 데이터프레임 반환
@@ -692,25 +729,18 @@ class Preprocessor:
             else:
                 print(f"[DEBUG] 경고: HOPE_JSCD1 또는 JHNT_MBN이 없어 매핑을 생성할 수 없습니다.")
         
-        # 나머지 4개 파일을 병렬로 처리
-        json_files = []
-        for idx, file in enumerate(file_list[1:], start=0):
-            if idx >= len(self.json_names):
-                raise IndexError(f"JSON 파일 수({len(file_list)-1})가 json_names 길이({len(self.json_names)})를 초과합니다. file: {file}")
-            current_json_name = self.json_names[idx]
-            json_files.append((file, current_json_name, idx))
-        
-        # 병렬 처리로 4개 파일 동시 처리
-        processed_dfs = {}
-        max_workers = min(len(json_files), 4)  # 최대 4개 스레드 (4개 파일)
-        
-        def process_json_file(file_info):
-            """단일 JSON 파일 처리 함수 (병렬 처리용)"""
+        # 나머지 4개 파일을 비동기 병렬로 처리
+        async def process_json_file_async(file_info):
+            """단일 JSON 파일 처리 함수 (비동기)"""
             file, json_name, idx = file_info
             try:
                 file_start_time = time.time()
                 print(f"[DEBUG] {idx+1}번째 파일 처리 시작: {file}, 타입: {json_name}")
-                df = self.load_and_preprocess_data(file, json_name=json_name, limit_data=limit_data, limit_size=limit_size)
+                # JSON 파일 로드
+                with open(file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                # 비동기 전처리
+                df = await self.nlp_preprocessing(data, json_name=json_name, limit_data=limit_data, limit_size=limit_size)
                 file_elapsed = time.time() - file_start_time
                 print(f"[DEBUG] {json_name} 데이터프레임 크기: {df.shape}")
                 print(f"[DEBUG] {json_name} 데이터프레임 컬럼: {list(df.columns)}")
@@ -720,19 +750,22 @@ class Preprocessor:
                 print(f"⚠️ {json_name} 파일 처리 오류: {e}")
                 raise
         
+        json_files = []
+        for idx, file in enumerate(file_list[1:], start=0):
+            if idx >= len(self.json_names):
+                raise IndexError(f"JSON 파일 수({len(file_list)-1})가 json_names 길이({len(self.json_names)})를 초과합니다. file: {file}")
+            current_json_name = self.json_names[idx]
+            json_files.append((file, current_json_name, idx))
+        
+        # 비동기 병렬 처리로 4개 파일 동시 처리
+        tasks = [process_json_file_async(file_info) for file_info in json_files]
+        results = await asyncio.gather(*tasks)
+        
+        processed_dfs = {}
         json_file_times = {}
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(process_json_file, file_info): file_info for file_info in json_files}
-            
-            for future in as_completed(futures):
-                try:
-                    json_name, df, idx, file_elapsed = future.result()
-                    processed_dfs[idx] = (json_name, df)
-                    json_file_times[json_name] = file_elapsed
-                except Exception as e:
-                    file_info = futures[future]
-                    print(f"⚠️ 파일 처리 실패: {file_info[0]}, 오류: {e}")
-                    raise
+        for json_name, df, idx, file_elapsed in results:
+            processed_dfs[idx] = (json_name, df)
+            json_file_times[json_name] = file_elapsed
         
         # JSON 파일 처리 시간 요약 출력
         if json_file_times:

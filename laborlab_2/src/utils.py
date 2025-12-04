@@ -507,10 +507,11 @@ def preprocess_and_merge_data(file_list: List[str], data_dir: str, limit_data: b
     Output:
         pd.DataFrame: 병합된 데이터프레임
     """
+    import asyncio
     from . import preprocess
     preprocessor = preprocess.Preprocessor([], job_category_file=job_category_file)
     absolute_file_list = [str(Path(f).resolve()) for f in file_list]
-    merged_df = preprocessor.get_merged_df(absolute_file_list, limit_data=limit_data, limit_size=limit_size)
+    merged_df = asyncio.run(preprocessor.get_merged_df(absolute_file_list, limit_data=limit_data, limit_size=limit_size))
     print(f"✅ 모든 데이터 전처리 및 병합 완료")
     return merged_df
 
