@@ -13,7 +13,7 @@
   "limit_data": false,
   "limit_size": 5000,
   "checkpoint_dir": "data/checkpoint",
-  "job_category_file": "KSIC",
+  "job_category_file": "KECO",
 
   "experiment_list": [
     ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "linear_regression"],
