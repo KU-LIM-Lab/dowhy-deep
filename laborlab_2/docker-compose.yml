@@ -39,7 +39,8 @@ services:
     environment:
       - OLLAMA_FLASH_ATTENTION=1
       - OLLAMA_MAX_LOADED_MODELS=1
-      - OLLAMA_NUM_PARALLEL=32
+      - OLLAMA_NUM_PARALLEL=64
+      - OLLAMA_MAX_QUEUE=100000
     # CPU 모드 (온라인 환경용)
     # GPU를 사용하려면 docker-compose.offline.yml 사용
     restart: unless-stopped

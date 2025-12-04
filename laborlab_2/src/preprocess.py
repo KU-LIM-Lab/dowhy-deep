@@ -46,7 +46,7 @@ from .llm_scorer import LLMScorer
 
 
 class Preprocessor:
-    def __init__(self, df_list, job_category_file="KSIC", max_concurrent_requests=None):
+    def __init__(self, df_list, job_category_file="KSIC"):
         self.json_names = JSON_NAMES
         self.sheet_name = '구직인증 관련 데이터'
         self.df_list = []
@@ -55,13 +55,6 @@ class Preprocessor:
         self.hope_jscd1_map = {}  # JHNT_MBN -> HOPE_JSCD1 매핑 저장
         self.job_category_file = job_category_file  # 직종 소분류 파일명 (KECO, KSCO, KSIC)
         self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
-        
-        # 동시 요청 수 제한 설정 (OLLAMA_NUM_PARALLEL 환경변수 또는 기본값 사용)
-        if max_concurrent_requests is None:
-            max_concurrent_requests = int(os.getenv("OLLAMA_NUM_PARALLEL", "32"))
-        self.max_concurrent_requests = max_concurrent_requests
-        self.semaphore = asyncio.Semaphore(max_concurrent_requests)
-        print(f"🔧 Ollama 동시 요청 수 제한: {max_concurrent_requests}개")
 
     def load_variable_mapping(self):
         # variable_mapping.json은 data 폴더에 있음
@@ -232,68 +225,66 @@ class Preprocessor:
 
     async def _process_single_resume(self, item, session: aiohttp.ClientSession):
         """단일 이력서 레코드 처리 (비동기)"""
-        # Semaphore를 사용하여 동시 요청 수 제한
-        async with self.semaphore:
-            # SEEK_CUST_NO를 JHNT_MBN으로 변환
-            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
-            if not seek_id:
-                return None
-            
-            # BASIC_RESUME_YN == "Y"인 resume 찾기
-            resumes = item.get("RESUMES", [])
-            basic_resume = None
-            for resume in resumes:
-                if str(resume.get("BASIC_RESUME_YN", "")).upper() == "Y":
-                    basic_resume = resume
-                    break
-            
-            # 기본 이력서가 없으면 빈 결과 반환
-            if basic_resume is None:
-                return {
-                    "JHNT_MBN": seek_id,
-                    "resume_score": None,
-                    "items_num": 0
-                }
-            
-            # ITEMS 가져오기
-            items = basic_resume.get("ITEMS", [])
-            items_num = len(items)
-            
-            # variable_mapping에서 resume 섹션 가져오기
-            resume_mapping = self.variable_mapping.get("resume", {})
-            
-            # ITEMS를 포매팅
-            formatting_sentence = ""
-            for item_data in items:
-                for key, value in item_data.items():
-                    # variable_mapping에서 한글 변수명 찾기
-                    if key in resume_mapping:
-                        korean_key = resume_mapping[key].get("변수명", key)
-                    else:
-                        korean_key = key
-                    
-                    # value가 None이면 빈 문자열로 처리
-                    value_str = str(value) if value is not None else ""
-                    formatting_sentence += f"{korean_key}: {value_str}\n"
-                formatting_sentence += "\n"
-            
-            # 포매팅된 텍스트가 비어있으면 기본값 설정
-            if not formatting_sentence.strip():
-                formatting_sentence = "정보 없음"
-            
-            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
-            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
-            job_name = self.get_job_name_from_code(hope_jscd1)
-            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
-            
-            # LLM scorer에 전달하여 점수 계산 (비동기)
-            score, _ = await self.llm_scorer.score_async("이력서", job_name, job_examples, formatting_sentence, session)
-            
+        # SEEK_CUST_NO를 JHNT_MBN으로 변환
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+        if not seek_id:
+            return None
+        
+        # BASIC_RESUME_YN == "Y"인 resume 찾기
+        resumes = item.get("RESUMES", [])
+        basic_resume = None
+        for resume in resumes:
+            if str(resume.get("BASIC_RESUME_YN", "")).upper() == "Y":
+                basic_resume = resume
+                break
+        
+        # 기본 이력서가 없으면 빈 결과 반환
+        if basic_resume is None:
             return {
                 "JHNT_MBN": seek_id,
-                "resume_score": score,
-                "items_num": items_num
+                "resume_score": None,
+                "items_num": 0
             }
+        
+        # ITEMS 가져오기
+        items = basic_resume.get("ITEMS", [])
+        items_num = len(items)
+        
+        # variable_mapping에서 resume 섹션 가져오기
+        resume_mapping = self.variable_mapping.get("resume", {})
+        
+        # ITEMS를 포매팅
+        formatting_sentence = ""
+        for item_data in items:
+            for key, value in item_data.items():
+                # variable_mapping에서 한글 변수명 찾기
+                if key in resume_mapping:
+                    korean_key = resume_mapping[key].get("변수명", key)
+                else:
+                    korean_key = key
+                
+                # value가 None이면 빈 문자열로 처리
+                value_str = str(value) if value is not None else ""
+                formatting_sentence += f"{korean_key}: {value_str}\n"
+            formatting_sentence += "\n"
+        
+        # 포매팅된 텍스트가 비어있으면 기본값 설정
+        if not formatting_sentence.strip():
+            formatting_sentence = "정보 없음"
+        
+        # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+        hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+        job_name = self.get_job_name_from_code(hope_jscd1)
+        job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
+        
+        # LLM scorer에 전달하여 점수 계산 (비동기)
+        score, _ = await self.llm_scorer.score_async("이력서", job_name, job_examples, formatting_sentence, session)
+        
+        return {
+            "JHNT_MBN": seek_id,
+            "resume_score": score,
+            "items_num": items_num
+        }
     
     async def _preprocess_resume(self, data):
         """이력서 특화 전처리 (비동기 병렬 처리)"""
@@ -357,44 +348,42 @@ class Preprocessor:
 
     async def _process_single_cover_letter(self, item, session: aiohttp.ClientSession):
         """단일 자기소개서 레코드 처리 (비동기)"""
-        # Semaphore를 사용하여 동시 요청 수 제한
-        async with self.semaphore:
-            # SEEK_CUST_NO를 JHNT_MBN으로 변환
-            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
-            if not seek_id:
-                return None
-                    
-            # 자기소개서 데이터 추출 (BASS_SFID_YN == "Y"인 항목만)
-            texts = []
-            items = []
-            for c in item.get("COVERLETTERS", []):
-                if str(c.get("BASS_SFID_YN", "")).upper() == "Y":
-                    items = c.get("ITEMS", []) or []
-                    for it in items:
-                        t = it.get("SELF_INTRO_CONT", "")
-                        if t:
-                            texts.append(t.strip())
-                    break
-            
-            full_text = "\n\n".join(texts) if texts else "정보 없음"
-            
-            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
-            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
-            job_name = self.get_job_name_from_code(hope_jscd1)
-            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
-            
-            # 점수 계산과 오탈자 수 계산을 비동기로 병렬 실행
-            score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
-            typo_task = self.llm_scorer.count_typos_async(full_text, session)
-            score, _ = await score_task
-            typo_count = await typo_task
-            
-            # score와 오탈자 수만 반환 (그래프 변수명과 일치)
-            return {
-                "JHNT_MBN": seek_id,
-                "cover_letter_score": score,  # 그래프: cover_letter_score
-                "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
-            }
+        # SEEK_CUST_NO를 JHNT_MBN으로 변환
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+        if not seek_id:
+            return None
+                
+        # 자기소개서 데이터 추출 (BASS_SFID_YN == "Y"인 항목만)
+        texts = []
+        items = []
+        for c in item.get("COVERLETTERS", []):
+            if str(c.get("BASS_SFID_YN", "")).upper() == "Y":
+                items = c.get("ITEMS", []) or []
+                for it in items:
+                    t = it.get("SELF_INTRO_CONT", "")
+                    if t:
+                        texts.append(t.strip())
+                break
+        
+        full_text = "\n\n".join(texts) if texts else "정보 없음"
+        
+        # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+        hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+        job_name = self.get_job_name_from_code(hope_jscd1)
+        job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
+        
+        # 점수 계산과 오탈자 수 계산을 비동기로 병렬 실행
+        score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
+        typo_task = self.llm_scorer.count_typos_async(full_text, session)
+        score, _ = await score_task
+        typo_count = await typo_task
+        
+        # score와 오탈자 수만 반환 (그래프 변수명과 일치)
+        return {
+            "JHNT_MBN": seek_id,
+            "cover_letter_score": score,  # 그래프: cover_letter_score
+            "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
+        }
     
     async def _preprocess_cover_letter(self, data):
         """자기소개서 특화 전처리 (비동기 병렬 처리)"""
@@ -457,72 +446,70 @@ class Preprocessor:
 
     async def _process_single_training(self, item, session: aiohttp.ClientSession):
         """단일 직업훈련 레코드 처리 (비동기)"""
-        # Semaphore를 사용하여 동시 요청 수 제한
-        async with self.semaphore:
-            # JHNT_CTN을 키로 사용
-            jhnt_ctn = item.get("JHNT_CTN", "")
-            if not jhnt_ctn:
-                return None
-            
-            # 구직인증 일자 가져오기
-            jhcr_de = item.get("JHCR_DE", "")  # 구직인증 일자
-            
-            # TRAININGS에서 훈련 데이터 추출
-            trainings = item.get("TRAININGS", [])
-            
-            # TRAININGS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
-            training_end_dates = []
-            for tr in trainings:
-                trng_ende = tr.get("TRNG_ENDE", "").strip()
-                if trng_ende:
-                    try:
-                        # 날짜 문자열을 datetime 객체로 변환
-                        date_obj = datetime.strptime(trng_ende, DEFAULT_DATE_FORMAT)
-                        training_end_dates.append(date_obj)
-                    except:
-                        pass
-            
-            # 경과일 계산: JHCR_DE - 최근 TRNG_ENDE (일수 차이)
-            elapsed_days = None
-            if jhcr_de and training_end_dates:
+        # JHNT_CTN을 키로 사용
+        jhnt_ctn = item.get("JHNT_CTN", "")
+        if not jhnt_ctn:
+            return None
+        
+        # 구직인증 일자 가져오기
+        jhcr_de = item.get("JHCR_DE", "")  # 구직인증 일자
+        
+        # TRAININGS에서 훈련 데이터 추출
+        trainings = item.get("TRAININGS", [])
+        
+        # TRAININGS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
+        training_end_dates = []
+        for tr in trainings:
+            trng_ende = tr.get("TRNG_ENDE", "").strip()
+            if trng_ende:
                 try:
-                    # 구직인증 일자를 datetime 객체로 변환
-                    jhcr_date = datetime.strptime(jhcr_de, DEFAULT_DATE_FORMAT)
-                    # 가장 최근 훈련 종료일 (최대값)
-                    latest_end_date = max(training_end_dates)
-                    # 일수 차이 계산
-                    elapsed_days = (jhcr_date - latest_end_date).days
-                    elapsed_days = elapsed_days if elapsed_days >= 0 else None
+                    # 날짜 문자열을 datetime 객체로 변환
+                    date_obj = datetime.strptime(trng_ende, DEFAULT_DATE_FORMAT)
+                    training_end_dates.append(date_obj)
                 except:
-                    elapsed_days = None
-            
-            # 텍스트 포맷팅: {TRNG_CRSN}: ({TRNG_BGDE} ~ {TRNG_ENDE})
-            training_texts = []
-            for tr in trainings:
-                trng_crsn = tr.get("TRNG_CRSN", "").strip()  # 훈련 과정명
-                trng_bgde = tr.get("TRNG_BGDE", "").strip()  # 훈련 시작일
-                trng_ende = tr.get("TRNG_ENDE", "").strip()  # 훈련 종료일
-                if trng_crsn and trng_bgde and trng_ende:
-                    training_texts.append(f"{trng_crsn}: ({trng_bgde} ~ {trng_ende})")
-            
-            text = "\n".join(training_texts) if training_texts else "정보 없음"
-            
-            # seek_id는 HOPE_JSCD1 매핑을 위해 사용 (JHNT_MBN이 있으면 사용, 없으면 None)
-            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
-            
-            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
-            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
-            job_name = self.get_job_name_from_code(hope_jscd1)
-            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
-            
-            # 점수 계산 (비동기)
-            score, why = await self.llm_scorer.score_async("직업훈련", job_name, job_examples, text, session)
-            
-            return {
-                "JHNT_CTN": jhnt_ctn,
-                "training_score": score,
-                "days_last_training_to_jobseek": elapsed_days if elapsed_days is not None else None  # 그래프: days_last_training_to_jobseek
-            }
+                    pass
+        
+        # 경과일 계산: JHCR_DE - 최근 TRNG_ENDE (일수 차이)
+        elapsed_days = None
+        if jhcr_de and training_end_dates:
+            try:
+                # 구직인증 일자를 datetime 객체로 변환
+                jhcr_date = datetime.strptime(jhcr_de, DEFAULT_DATE_FORMAT)
+                # 가장 최근 훈련 종료일 (최대값)
+                latest_end_date = max(training_end_dates)
+                # 일수 차이 계산
+                elapsed_days = (jhcr_date - latest_end_date).days
+                elapsed_days = elapsed_days if elapsed_days >= 0 else None
+            except:
+                elapsed_days = None
+        
+        # 텍스트 포맷팅: {TRNG_CRSN}: ({TRNG_BGDE} ~ {TRNG_ENDE})
+        training_texts = []
+        for tr in trainings:
+            trng_crsn = tr.get("TRNG_CRSN", "").strip()  # 훈련 과정명
+            trng_bgde = tr.get("TRNG_BGDE", "").strip()  # 훈련 시작일
+            trng_ende = tr.get("TRNG_ENDE", "").strip()  # 훈련 종료일
+            if trng_crsn and trng_bgde and trng_ende:
+                training_texts.append(f"{trng_crsn}: ({trng_bgde} ~ {trng_ende})")
+        
+        text = "\n".join(training_texts) if training_texts else "정보 없음"
+        
+        # seek_id는 HOPE_JSCD1 매핑을 위해 사용 (JHNT_MBN이 있으면 사용, 없으면 None)
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+        
+        # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+        hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+        job_name = self.get_job_name_from_code(hope_jscd1)
+        job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
+        
+        # 점수 계산 (비동기)
+        score, why = await self.llm_scorer.score_async("직업훈련", job_name, job_examples, text, session)
+        
+        return {
+            "JHNT_CTN": jhnt_ctn,
+            "training_score": score,
+            "days_last_training_to_jobseek": elapsed_days if elapsed_days is not None else None  # 그래프: days_last_training_to_jobseek
+        }
     
     async def _preprocess_training(self, data):
         """직업훈련 특화 전처리 (비동기 병렬 처리)"""
@@ -573,46 +560,44 @@ class Preprocessor:
 
     async def _process_single_certification(self, item, session: aiohttp.ClientSession):
         """단일 자격증 레코드 처리 (비동기)"""
-        # Semaphore를 사용하여 동시 요청 수 제한
-        async with self.semaphore:
-            # JHNT_CTN을 키로 사용
-            jhnt_ctn = item.get("JHNT_CTN", "")
-            if not jhnt_ctn:
-                return None
+        # JHNT_CTN을 키로 사용
+        jhnt_ctn = item.get("JHNT_CTN", "")
+        if not jhnt_ctn:
+            return None
+        
+        # JSON에서 자격증 데이터 추출
+        licenses = item.get("LICENSES", [])
+        
+        # 자격증 포맷팅: 자격증1: 전기기능사/국가기술자격 형식
+        formatted_texts = []
+        for idx, lic in enumerate(licenses, start=1):
+            qulf_itnm = lic.get("QULF_ITNM", "").strip()  # 자격증명
+            qulf_lcns_lcfn = lic.get("QULF_LCNS_LCFN", "").strip()  # 자격증 분류
             
-            # JSON에서 자격증 데이터 추출
-            licenses = item.get("LICENSES", [])
-            
-            # 자격증 포맷팅: 자격증1: 전기기능사/국가기술자격 형식
-            formatted_texts = []
-            for idx, lic in enumerate(licenses, start=1):
-                qulf_itnm = lic.get("QULF_ITNM", "").strip()  # 자격증명
-                qulf_lcns_lcfn = lic.get("QULF_LCNS_LCFN", "").strip()  # 자격증 분류
-                
-                if qulf_itnm and qulf_lcns_lcfn:
-                    formatted_texts.append(f"자격증{idx}: {qulf_itnm}/{qulf_lcns_lcfn}")
-                elif qulf_itnm:
-                    formatted_texts.append(f"자격증{idx}: {qulf_itnm}")
-            
-            # 텍스트 생성
-            text = "\n".join(formatted_texts) if formatted_texts else "정보 없음"
-            
-            # seek_id는 HOPE_JSCD1 매핑을 위해 사용 (JHNT_MBN이 있으면 사용, 없으면 None)
-            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
-            
-            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
-            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
-            job_name = self.get_job_name_from_code(hope_jscd1)
-            job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
-            
-            # 점수 계산 (비동기)
-            score, _ = await self.llm_scorer.score_async("자격증", job_name, job_examples, text, session)
-            
-            # score만 반환 (그래프 변수명과 일치)
-            return {
-                "JHNT_CTN": jhnt_ctn,
-                "certification_score": score  # 그래프: certification_score
-            }
+            if qulf_itnm and qulf_lcns_lcfn:
+                formatted_texts.append(f"자격증{idx}: {qulf_itnm}/{qulf_lcns_lcfn}")
+            elif qulf_itnm:
+                formatted_texts.append(f"자격증{idx}: {qulf_itnm}")
+        
+        # 텍스트 생성
+        text = "\n".join(formatted_texts) if formatted_texts else "정보 없음"
+        
+        # seek_id는 HOPE_JSCD1 매핑을 위해 사용 (JHNT_MBN이 있으면 사용, 없으면 None)
+        seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+        
+        # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+        hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+        job_name = self.get_job_name_from_code(hope_jscd1)
+        job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
+        
+        # 점수 계산 (비동기)
+        score, _ = await self.llm_scorer.score_async("자격증", job_name, job_examples, text, session)
+        
+        # score만 반환 (그래프 변수명과 일치)
+        return {
+            "JHNT_CTN": jhnt_ctn,
+            "certification_score": score  # 그래프: certification_score
+        }
     
     async def _preprocess_certification(self, data):
         """자격증 특화 전처리 (비동기 병렬 처리)"""
