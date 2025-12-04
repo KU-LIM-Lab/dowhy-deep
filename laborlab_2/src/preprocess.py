@@ -32,6 +32,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 import time
+from tqdm import tqdm
 
 from .llm_reference import (
     JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
@@ -283,35 +284,30 @@ class Preprocessor:
         }
     
     def _preprocess_resume(self, data):
-        """이력서 특화 전처리 (병렬 처리)"""
+        """이력서 특화 전처리 (순차 처리)"""
         # 리스트인 경우 처리 (JSON 파일이 리스트 형태일 수 있음)
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
+        # 순차 처리로 각 레코드 처리
         rows = []
+        import logging
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_resume, item): item for item in data}
-            
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
-                    rows.append({
-                        "JHNT_MBN": seek_id,
-                        "resume_score": None,
-                        "items_num": 0
-                    })
+        for item in tqdm(data, desc="이력서 전처리", unit="건"):
+            try:
+                result = self._process_single_resume(item)
+                if result is not None:
+                    rows.append(result)
+            except Exception as e:
+                seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
+                print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
+                rows.append({
+                    "JHNT_MBN": seek_id,
+                    "resume_score": None,
+                    "items_num": 0
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
-        import logging
         cleaned_rows = []
         for row_idx, row in enumerate(rows):
             cleaned_row = {}
@@ -365,13 +361,9 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산과 오탈자 수 계산을 병렬로 실행
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            score_future = executor.submit(self.llm_scorer.score, "자기소개서", job_name, job_examples, full_text)
-            typo_future = executor.submit(self.llm_scorer.count_typos, full_text)
-            
-            score, _ = score_future.result()
-            typo_count = typo_future.result()
+        # 점수 계산과 오탈자 수 계산을 순차로 실행
+        score, _ = self.llm_scorer.score("자기소개서", job_name, job_examples, full_text)
+        typo_count = self.llm_scorer.count_typos(full_text)
         
         # score와 오탈자 수만 반환 (그래프 변수명과 일치)
         return {
@@ -381,34 +373,29 @@ class Preprocessor:
         }
     
     def _preprocess_cover_letter(self, data):
-        """자기소개서 특화 전처리 (병렬 처리)"""
+        """자기소개서 특화 전처리 (순차 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
+        # 순차 처리로 각 레코드 처리
         rows = []
+        import logging
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_cover_letter, item): item for item in data}
-            
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
-                    rows.append({
-                        "JHNT_MBN": seek_id,
-                        "cove_letter_score": None,
-                        "cover_letter_typo_count": 0
-                    })
+        for item in tqdm(data, desc="자기소개서 전처리", unit="건"):
+            try:
+                result = self._process_single_cover_letter(item)
+                if result is not None:
+                    rows.append(result)
+            except Exception as e:
+                seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
+                print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
+                rows.append({
+                    "JHNT_MBN": seek_id,
+                    "cove_letter_score": None,
+                    "cover_letter_typo_count": 0
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
-        import logging
         cleaned_rows = []
         for row_idx, row in enumerate(rows):
             cleaned_row = {}
@@ -504,34 +491,29 @@ class Preprocessor:
         }
     
     def _preprocess_training(self, data):
-        """직업훈련 특화 전처리 (병렬 처리)"""
+        """직업훈련 특화 전처리 (순차 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
+        # 순차 처리로 각 레코드 처리
         rows = []
+        import logging
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_training, item): item for item in data}
-            
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
-                    print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
-                    rows.append({
-                        "JHNT_CTN": jhnt_ctn,
-                        "training_score": None,
-                        "days_last_training_to_jobseek": None
-                    })
+        for item in tqdm(data, desc="직업훈련 전처리", unit="건"):
+            try:
+                result = self._process_single_training(item)
+                if result is not None:
+                    rows.append(result)
+            except Exception as e:
+                jhnt_ctn = item.get("JHNT_CTN", "unknown")
+                print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
+                rows.append({
+                    "JHNT_CTN": jhnt_ctn,
+                    "training_score": None,
+                    "days_last_training_to_jobseek": None
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
-        import logging
         cleaned_rows = []
         for row_idx, row in enumerate(rows):
             cleaned_row = {}
@@ -589,33 +571,28 @@ class Preprocessor:
         }
     
     def _preprocess_certification(self, data):
-        """자격증 특화 전처리 (병렬 처리)"""
+        """자격증 특화 전처리 (순차 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
+        # 순차 처리로 각 레코드 처리
         rows = []
+        import logging
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_certification, item): item for item in data}
-            
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
-                    print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
-                    rows.append({
-                        "JHNT_CTN": jhnt_ctn,
-                        "certification_score": None
-                    })
+        for item in tqdm(data, desc="자격증 전처리", unit="건"):
+            try:
+                result = self._process_single_certification(item)
+                if result is not None:
+                    rows.append(result)
+            except Exception as e:
+                jhnt_ctn = item.get("JHNT_CTN", "unknown")
+                print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
+                rows.append({
+                    "JHNT_CTN": jhnt_ctn,
+                    "certification_score": None
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
-        import logging
         cleaned_rows = []
         for row_idx, row in enumerate(rows):
             cleaned_row = {}
@@ -771,7 +748,9 @@ class Preprocessor:
         
         # 처리된 데이터프레임들을 순서대로 병합
         merge_start_time = time.time()
-        for idx in sorted(processed_dfs.keys()):
+        import logging
+        
+        for idx in tqdm(sorted(processed_dfs.keys()), desc="데이터 병합", unit="파일"):
             json_name, df = processed_dfs[idx]
             self.df_list.append(df)
             
@@ -796,7 +775,6 @@ class Preprocessor:
             print(f"[DEBUG] 병합 전 result 크기: {result.shape}, {json_name} 크기: {df.shape}")
             
             # 병합 전에 Logger 객체가 있는지 확인
-            import logging
             for col in df.columns:
                 if df[col].dtype == 'object' and len(df) > 0:
                     non_null_values = df[col].dropna()
