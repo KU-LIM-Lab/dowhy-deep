@@ -3,7 +3,16 @@ LLM 기반 점수 계산 모듈
 """
 import json
 import os
-from typing import List, Tuple
+import logging
+from typing import List, Tuple, Dict, Any
+
+# HTTP 요청 로깅 비활성화
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("requests.packages.urllib3").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
 try:
@@ -126,4 +135,96 @@ class LLMScorer:
     def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
         """점수 계산 메인 메서드 - (score, rationale) 반환"""
         return self._score_with_llm(section, job_name, job_examples, text)
+    
+    def score_batch(self, requests: List[Dict[str, Any]], batch_size: int = 20, desc: str = "점수 계산") -> List[Tuple[int, str]]:
+        """
+        배치 단위로 점수 계산
+        
+        Args:
+            requests: [{"section": str, "job_name": str, "job_examples": List[str], "text": str}, ...]
+            batch_size: 배치 크기 (기본값: 20)
+            desc: tqdm 진행 표시 설명 (기본값: "점수 계산")
+        
+        Returns:
+            List[Tuple[int, str]]: [(score, rationale), ...] 리스트
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from tqdm import tqdm
+        
+        results = [None] * len(requests)
+        total_batches = (len(requests) + batch_size - 1) // batch_size
+        
+        # 배치 단위로 처리
+        with tqdm(total=len(requests), desc=desc, unit="건", ncols=100) as pbar:
+            for batch_start in range(0, len(requests), batch_size):
+                batch_end = min(batch_start + batch_size, len(requests))
+                batch_requests = requests[batch_start:batch_end]
+                batch_indices = list(range(batch_start, batch_end))
+                
+                # 배치 내에서 병렬 처리
+                with ThreadPoolExecutor(max_workers=min(batch_size, len(batch_requests))) as executor:
+                    futures = {
+                        executor.submit(
+                            self._score_with_llm,
+                            req["section"],
+                            req["job_name"],
+                            req["job_examples"],
+                            req["text"]
+                        ): idx for idx, req in zip(batch_indices, batch_requests)
+                    }
+                    
+                    for future in as_completed(futures):
+                        idx = futures[future]
+                        try:
+                            results[idx] = future.result()
+                        except Exception as e:
+                            # 오류 발생 시 기본값 반환
+                            results[idx] = (50, f"LLM API 오류: {str(e)[:200]}")
+                        finally:
+                            pbar.update(1)
+        
+        return results
+    
+    def count_typos_batch(self, texts: List[str], batch_size: int = 20, desc: str = "오탈자 계산") -> List[int]:
+        """
+        배치 단위로 오탈자 개수 계산
+        
+        Args:
+            texts: 텍스트 리스트
+            batch_size: 배치 크기 (기본값: 20)
+            desc: tqdm 진행 표시 설명 (기본값: "오탈자 계산")
+        
+        Returns:
+            List[int]: 오탈자 개수 리스트
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from tqdm import tqdm
+        
+        results = [0] * len(texts)
+        
+        # 배치 단위로 처리
+        with tqdm(total=len(texts), desc=desc, unit="건", ncols=100) as pbar:
+            for batch_start in range(0, len(texts), batch_size):
+                batch_end = min(batch_start + batch_size, len(texts))
+                batch_texts = texts[batch_start:batch_end]
+                batch_indices = list(range(batch_start, batch_end))
+                
+                # 배치 내에서 병렬 처리
+                with ThreadPoolExecutor(max_workers=min(batch_size, len(batch_texts))) as executor:
+                    futures = {
+                        executor.submit(self.count_typos, text): idx 
+                        for idx, text in zip(batch_indices, batch_texts)
+                    }
+                    
+                    for future in as_completed(futures):
+                        idx = futures[future]
+                        try:
+                            results[idx] = future.result()
+                        except Exception as e:
+                            # 오류 발생 시 기본값 반환
+                            results[idx] = 0
+                        finally:
+                            pbar.update(1)
+        
+        return results
 

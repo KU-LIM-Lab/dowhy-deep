@@ -42,7 +42,7 @@ from .llm_scorer import LLMScorer
 
 
 class Preprocessor:
-    def __init__(self, df_list, job_category_file="KSIC"):
+    def __init__(self, df_list, job_category_file="KSIC", batch_size=20):
         self.json_names = JSON_NAMES
         self.sheet_name = '구직인증 관련 데이터'
         self.df_list = []
@@ -51,6 +51,7 @@ class Preprocessor:
         self.hope_jscd1_map = {}  # JHNT_MBN -> HOPE_JSCD1 매핑 저장
         self.job_category_file = job_category_file  # 직종 소분류 파일명 (KECO, KSCO, KSIC)
         self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
+        self.batch_size = batch_size  # 배치 크기
 
     def load_variable_mapping(self):
         # variable_mapping.json은 data 폴더에 있음
@@ -283,32 +284,98 @@ class Preprocessor:
         }
     
     def _preprocess_resume(self, data):
-        """이력서 특화 전처리 (병렬 처리)"""
+        """이력서 특화 전처리 (배치 처리)"""
         # 리스트인 경우 처리 (JSON 파일이 리스트 형태일 수 있음)
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
-        rows = []
+        # 배치 단위로 처리하기 위해 모든 요청 정보 수집
+        requests = []
+        item_indices = []
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_resume, item): item for item in data}
+        for idx, item in enumerate(data):
+            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+            if not seek_id:
+                continue
             
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
-                    rows.append({
-                        "JHNT_MBN": seek_id,
-                        "resume_score": None,
-                        "items_num": 0
-                    })
+            # BASIC_RESUME_YN == "Y"인 resume 찾기
+            resumes = item.get("RESUMES", [])
+            basic_resume = None
+            for resume in resumes:
+                if str(resume.get("BASIC_RESUME_YN", "")).upper() == "Y":
+                    basic_resume = resume
+                    break
+            
+            if basic_resume is None:
+                continue
+            
+            # ITEMS 가져오기
+            items = basic_resume.get("ITEMS", [])
+            items_num = len(items)
+            
+            # variable_mapping에서 resume 섹션 가져오기
+            resume_mapping = self.variable_mapping.get("resume", {})
+            
+            # ITEMS를 포매팅
+            formatting_sentence = ""
+            for item_data in items:
+                for key, value in item_data.items():
+                    # variable_mapping에서 한글 변수명 찾기
+                    if key in resume_mapping:
+                        korean_key = resume_mapping[key].get("변수명", key)
+                    else:
+                        korean_key = key
+                    
+                    # value가 None이면 빈 문자열로 처리
+                    value_str = str(value) if value is not None else ""
+                    formatting_sentence += f"{korean_key}: {value_str}\n"
+                formatting_sentence += "\n"
+            
+            # 포매팅된 텍스트가 비어있으면 기본값 설정
+            if not formatting_sentence.strip():
+                formatting_sentence = "정보 없음"
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []
+            
+            requests.append({
+                "section": "이력서",
+                "job_name": job_name,
+                "job_examples": job_examples,
+                "text": formatting_sentence,
+                "seek_id": seek_id,
+                "items_num": items_num
+            })
+            item_indices.append(idx)
+        
+        # 배치 단위로 점수 계산
+        if requests:
+            scores = self.llm_scorer.score_batch(requests, batch_size=self.batch_size, desc="이력서 점수 계산")
+        else:
+            scores = []
+        
+        # 결과 수집
+        rows = []
+        for req, score_result, idx in zip(requests, scores, item_indices):
+            score, _ = score_result
+            rows.append({
+                "JHNT_MBN": req["seek_id"],
+                "resume_score": score,
+                "items_num": req["items_num"]
+            })
+        
+        # 처리되지 않은 항목들에 대해 기본값 추가
+        processed_seek_ids = {req["seek_id"] for req in requests}
+        for item in data:
+            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+            if seek_id and seek_id not in processed_seek_ids:
+                rows.append({
+                    "JHNT_MBN": seek_id,
+                    "resume_score": None,
+                    "items_num": 0
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         import logging
@@ -381,31 +448,76 @@ class Preprocessor:
         }
     
     def _preprocess_cover_letter(self, data):
-        """자기소개서 특화 전처리 (병렬 처리)"""
+        """자기소개서 특화 전처리 (배치 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
-        rows = []
+        # 배치 단위로 처리하기 위해 모든 요청 정보 수집
+        score_requests = []
+        typo_texts = []
+        item_indices = []
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_cover_letter, item): item for item in data}
+        for idx, item in enumerate(data):
+            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+            if not seek_id:
+                continue
             
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
-                    print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
-                    rows.append({
-                        "JHNT_MBN": seek_id,
-                        "cove_letter_score": None,
-                        "cover_letter_typo_count": 0
-                    })
+            # 자기소개서 데이터 추출 (BASS_SFID_YN == "Y"인 항목만)
+            texts = []
+            items = []
+            for c in item.get("COVERLETTERS", []):
+                if str(c.get("BASS_SFID_YN", "")).upper() == "Y":
+                    items = c.get("ITEMS", []) or []
+                    for it in items:
+                        t = it.get("SELF_INTRO_CONT", "")
+                        if t:
+                            texts.append(t.strip())
+                    break
+            
+            full_text = "\n\n".join(texts) if texts else "정보 없음"
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []
+            
+            score_requests.append({
+                "section": "자기소개서",
+                "job_name": job_name,
+                "job_examples": job_examples,
+                "text": full_text,
+                "seek_id": seek_id
+            })
+            typo_texts.append(full_text)
+            item_indices.append(idx)
+        
+        # 배치 단위로 점수 계산 및 오탈자 개수 계산
+        scores = []
+        typo_counts = []
+        if score_requests:
+            scores = self.llm_scorer.score_batch(score_requests, batch_size=self.batch_size, desc="자기소개서 점수 계산")
+            typo_counts = self.llm_scorer.count_typos_batch(typo_texts, batch_size=self.batch_size, desc="자기소개서 오탈자 계산")
+        
+        # 결과 수집
+        rows = []
+        for req, score_result, typo_count, idx in zip(score_requests, scores, typo_counts, item_indices):
+            score, _ = score_result
+            rows.append({
+                "JHNT_MBN": req["seek_id"],
+                "cover_letter_score": score,
+                "cover_letter_typo_count": typo_count
+            })
+        
+        # 처리되지 않은 항목들에 대해 기본값 추가
+        processed_seek_ids = {req["seek_id"] for req in score_requests}
+        for item in data:
+            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+            if seek_id and seek_id not in processed_seek_ids:
+                rows.append({
+                    "JHNT_MBN": seek_id,
+                    "cover_letter_score": None,
+                    "cover_letter_typo_count": 0
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         import logging
@@ -504,31 +616,102 @@ class Preprocessor:
         }
     
     def _preprocess_training(self, data):
-        """직업훈련 특화 전처리 (병렬 처리)"""
+        """직업훈련 특화 전처리 (배치 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
-        rows = []
+        # 배치 단위로 처리하기 위해 모든 요청 정보 수집
+        requests = []
+        item_data_list = []
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_training, item): item for item in data}
+        for item in data:
+            jhnt_ctn = item.get("JHNT_CTN", "")
+            if not jhnt_ctn:
+                continue
             
-            for future in as_completed(futures):
+            # 구직인증 일자 가져오기
+            jhcr_de = item.get("JHCR_DE", "")
+            
+            # TRAININGS에서 훈련 데이터 추출
+            trainings = item.get("TRAININGS", [])
+            
+            # TRAININGS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
+            training_end_dates = []
+            for tr in trainings:
+                trng_ende = tr.get("TRNG_ENDE", "").strip()
+                if trng_ende:
+                    try:
+                        date_obj = datetime.strptime(trng_ende, DEFAULT_DATE_FORMAT)
+                        training_end_dates.append(date_obj)
+                    except:
+                        pass
+            
+            # 경과일 계산: JHCR_DE - 최근 TRNG_ENDE (일수 차이)
+            elapsed_days = None
+            if jhcr_de and training_end_dates:
                 try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
-                    print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
-                    rows.append({
-                        "JHNT_CTN": jhnt_ctn,
-                        "training_score": None,
-                        "days_last_training_to_jobseek": None
-                    })
+                    jhcr_date = datetime.strptime(jhcr_de, DEFAULT_DATE_FORMAT)
+                    latest_end_date = max(training_end_dates)
+                    elapsed_days = (jhcr_date - latest_end_date).days
+                    elapsed_days = elapsed_days if elapsed_days >= 0 else None
+                except:
+                    elapsed_days = None
+            
+            # 텍스트 포맷팅: {TRNG_CRSN}: ({TRNG_BGDE} ~ {TRNG_ENDE})
+            training_texts = []
+            for tr in trainings:
+                trng_crsn = tr.get("TRNG_CRSN", "").strip()
+                trng_bgde = tr.get("TRNG_BGDE", "").strip()
+                trng_ende = tr.get("TRNG_ENDE", "").strip()
+                if trng_crsn and trng_bgde and trng_ende:
+                    training_texts.append(f"{trng_crsn}: ({trng_bgde} ~ {trng_ende})")
+            
+            text = "\n".join(training_texts) if training_texts else "정보 없음"
+            
+            # seek_id는 HOPE_JSCD1 매핑을 위해 사용
+            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []
+            
+            requests.append({
+                "section": "직업훈련",
+                "job_name": job_name,
+                "job_examples": job_examples,
+                "text": text,
+                "jhnt_ctn": jhnt_ctn,
+                "elapsed_days": elapsed_days
+            })
+            item_data_list.append(item)
+        
+        # 배치 단위로 점수 계산
+        if requests:
+            scores = self.llm_scorer.score_batch(requests, batch_size=self.batch_size, desc="직업훈련 점수 계산")
+        else:
+            scores = []
+        
+        # 결과 수집
+        rows = []
+        for req, score_result in zip(requests, scores):
+            score, _ = score_result
+            rows.append({
+                "JHNT_CTN": req["jhnt_ctn"],
+                "training_score": score,
+                "days_last_training_to_jobseek": req["elapsed_days"]
+            })
+        
+        # 처리되지 않은 항목들에 대해 기본값 추가
+        processed_jhnt_ctns = {req["jhnt_ctn"] for req in requests}
+        for item in data:
+            jhnt_ctn = item.get("JHNT_CTN", "")
+            if jhnt_ctn and jhnt_ctn not in processed_jhnt_ctns:
+                rows.append({
+                    "JHNT_CTN": jhnt_ctn,
+                    "training_score": None,
+                    "days_last_training_to_jobseek": None
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         import logging
@@ -589,30 +772,75 @@ class Preprocessor:
         }
     
     def _preprocess_certification(self, data):
-        """자격증 특화 전처리 (병렬 처리)"""
+        """자격증 특화 전처리 (배치 처리)"""
         if not isinstance(data, list):
             data = [data]
         
-        # 병렬 처리로 각 레코드 처리
-        max_workers = min(len(data), 10)  # 최대 10개 스레드
-        rows = []
+        # 배치 단위로 처리하기 위해 모든 요청 정보 수집
+        requests = []
         
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._process_single_certification, item): item for item in data}
+        for item in data:
+            jhnt_ctn = item.get("JHNT_CTN", "")
+            if not jhnt_ctn:
+                continue
             
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        rows.append(result)
-                except Exception as e:
-                    item = futures[future]
-                    jhnt_ctn = item.get("JHNT_CTN", "unknown")
-                    print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
-                    rows.append({
-                        "JHNT_CTN": jhnt_ctn,
-                        "certification_score": None
-                    })
+            # JSON에서 자격증 데이터 추출
+            licenses = item.get("LICENSES", [])
+            
+            # 자격증 포맷팅: 자격증1: 전기기능사/국가기술자격 형식
+            formatted_texts = []
+            for idx, lic in enumerate(licenses, start=1):
+                qulf_itnm = lic.get("QULF_ITNM", "").strip()
+                qulf_lcns_lcfn = lic.get("QULF_LCNS_LCFN", "").strip()
+                
+                if qulf_itnm and qulf_lcns_lcfn:
+                    formatted_texts.append(f"자격증{idx}: {qulf_itnm}/{qulf_lcns_lcfn}")
+                elif qulf_itnm:
+                    formatted_texts.append(f"자격증{idx}: {qulf_itnm}")
+            
+            # 텍스트 생성
+            text = "\n".join(formatted_texts) if formatted_texts else "정보 없음"
+            
+            # seek_id는 HOPE_JSCD1 매핑을 위해 사용
+            seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "")
+            
+            # HOPE_JSCD1 정보 가져와서 직종명으로 변환
+            hope_jscd1 = self.hope_jscd1_map.get(seek_id, "")
+            job_name = self.get_job_name_from_code(hope_jscd1)
+            job_examples = []
+            
+            requests.append({
+                "section": "자격증",
+                "job_name": job_name,
+                "job_examples": job_examples,
+                "text": text,
+                "jhnt_ctn": jhnt_ctn
+            })
+        
+        # 배치 단위로 점수 계산
+        if requests:
+            scores = self.llm_scorer.score_batch(requests, batch_size=self.batch_size, desc="자격증 점수 계산")
+        else:
+            scores = []
+        
+        # 결과 수집
+        rows = []
+        for req, score_result in zip(requests, scores):
+            score, _ = score_result
+            rows.append({
+                "JHNT_CTN": req["jhnt_ctn"],
+                "certification_score": score
+            })
+        
+        # 처리되지 않은 항목들에 대해 기본값 추가
+        processed_jhnt_ctns = {req["jhnt_ctn"] for req in requests}
+        for item in data:
+            jhnt_ctn = item.get("JHNT_CTN", "")
+            if jhnt_ctn and jhnt_ctn not in processed_jhnt_ctns:
+                rows.append({
+                    "JHNT_CTN": jhnt_ctn,
+                    "certification_score": None
+                })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
         import logging
