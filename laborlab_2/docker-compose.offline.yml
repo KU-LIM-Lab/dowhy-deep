@@ -46,6 +46,10 @@ services:
       - ./ollama_models:/root/.ollama/models
     ports:
       - "11434:11434"
+    environment:
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_MAX_LOADED_MODELS=20
+      - OLLAMA_NUM_PARALLEL=4
     # GPU 지원 (폐쇄망 환경용 - NVIDIA Container Toolkit 필요)
     # CPU 모드를 사용하려면 docker-compose.offline.cpu.yml 사용
     deploy:
