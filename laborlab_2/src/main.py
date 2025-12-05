@@ -64,6 +64,7 @@ def preprocess(
     limit_data: bool = False,
     limit_size: int = 5000,
     job_category_file: str = "KSIC",
+    top_job_categories: int = 5,
     output_dir: Optional[Path] = None
 ) -> pd.DataFrame:
     """
@@ -75,6 +76,7 @@ def preprocess(
         limit_data: 데이터 제한 여부 (기본값: False)
         limit_size: 제한할 데이터 크기 (기본값: 5000)
         job_category_file: 직종 소분류 파일명 (KECO, KSCO, KSIC 중 선택, 기본값: KSIC)
+        top_job_categories: 상위 직종 소분류 개수 (기본값: 5, -1이면 전체 사용)
     
     Returns:
         merged_df: 전처리 및 병합된 데이터프레임
@@ -98,6 +100,10 @@ def preprocess(
     print("="*80)
     
     print(f"📋 사용할 직종 소분류 파일: job_subcategories_{job_category_file}.csv")
+    if top_job_categories == -1:
+        print(f"📊 직종 소분류 필터링: 전체 사용")
+    else:
+        print(f"📊 직종 소분류 필터링: 상위 {top_job_categories}개만 사용")
     print("⚡ JSON 파일 4개(이력서, 자기소개서, 직업훈련, 자격증) 병렬 처리 시작")
     preprocessing_start = time.time()
     
@@ -106,7 +112,8 @@ def preprocess(
         str(data_dir_path), 
         limit_data=limit_data, 
         limit_size=limit_size,
-        job_category_file=job_category_file
+        job_category_file=job_category_file,
+        top_job_categories=top_job_categories
     )
     print(f"✅ 최종 병합 데이터: {len(merged_df)}건, {len(merged_df.columns)}개 변수")
     
@@ -507,6 +514,7 @@ def main():
     limit_size = config.get("limit_size", 5000)
     checkpoint_dir = config.get("checkpoint_dir", "data/checkpoint")
     job_category_file = config.get("job_category_file", "KSIC")
+    top_job_categories = config.get("top_job_categories", 5)
     
     # 새로운 설정 변수
     do_preprocess = config.get("preprocess", True)
@@ -581,6 +589,7 @@ def main():
                 limit_data=limit_data,
                 limit_size=limit_size,
                 job_category_file=job_category_file,
+                top_job_categories=top_job_categories,
                 output_dir=output_dir_path
             )
             

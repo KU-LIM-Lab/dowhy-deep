@@ -46,7 +46,7 @@ from .llm_scorer import LLMScorer
 
 
 class Preprocessor:
-    def __init__(self, df_list, job_category_file="KSIC", max_concurrent_requests=None):
+    def __init__(self, df_list, job_category_file="KSIC", max_concurrent_requests=None, top_job_categories=5):
         self.json_names = JSON_NAMES
         self.sheet_name = '구직인증 관련 데이터'
         self.df_list = []
@@ -55,6 +55,7 @@ class Preprocessor:
         self.hope_jscd1_map = {}  # JHNT_MBN -> HOPE_JSCD1 매핑 저장
         self.job_category_file = job_category_file  # 직종 소분류 파일명 (KECO, KSCO, KSIC)
         self.job_code_to_name = self.load_job_mapping()  # 소분류코드 -> 소분류명 매핑
+        self.top_job_categories = top_job_categories  # 상위 직종 소분류 개수 (-1이면 전체 사용)
         
         # 동시 요청 수 제한 설정 (OLLAMA_NUM_PARALLEL 환경변수 또는 기본값 사용)
         if max_concurrent_requests is None:
@@ -708,6 +709,7 @@ class Preprocessor:
         이후 JHNT_MBN 또는 JHNT_CTN 컬럼 기준으로 순차적으로 조인하여 데이터프레임 반환
         
         첫 번째 파일(CSV)은 순차 처리하고, 나머지 4개 JSON 파일은 병렬로 처리합니다.
+        CSV를 먼저 로드하여 상위 직종 소분류를 필터링하고, 해당하는 JHNT_MBN/JHNT_CTN만 사용합니다.
 
         Args:
             file_list (list): 파일명(str) 리스트
@@ -720,12 +722,55 @@ class Preprocessor:
         self.df_list = []
         result = None
         
-        # 첫 번째 파일(정형 데이터 CSV) 먼저 처리 - HOPE_JSCD1(희망 직종 코드) 정보 저장
+        # 필터링된 JHNT_MBN, JHNT_CTN 집합 (초기값은 None - 필터링 안 함)
+        filtered_jhnt_mbn_set = None
+        filtered_jhnt_ctn_set = None
+        
+        # 첫 번째 파일(정형 데이터 CSV) 먼저 처리 - HOPE_JSCD1(희망 직종 코드) 정보 저장 및 필터링
         if file_list:
             # 첫 번째 파일은 정형 데이터이므로 json_name=None
             csv_start_time = time.time()
             print(f"[DEBUG] 첫 번째 파일 처리 시작: {file_list[0]}, 타입: 정형 데이터 (CSV)")
             df = self.load_and_preprocess_data(file_list[0], json_name=None, limit_data=limit_data, limit_size=limit_size)
+            
+            # 상위 직종 소분류 필터링 (top_job_categories가 -1이 아니고 HOPE_JSCD1이 있는 경우)
+            if self.top_job_categories != -1 and 'HOPE_JSCD1' in df.columns:
+                print(f"\n📊 직종 소분류 필터링 시작 (상위 {self.top_job_categories}개)")
+                print("="*60)
+                
+                # HOPE_JSCD1 빈도수 계산 (결측치 제외)
+                job_counts = df['HOPE_JSCD1'].value_counts()
+                print(f"전체 직종 소분류 수: {len(job_counts)}개")
+                
+                # 상위 N개 선택
+                top_jobs = job_counts.head(self.top_job_categories)
+                top_job_codes = set(top_jobs.index.tolist())
+                
+                print(f"\n상위 {self.top_job_categories}개 직종 소분류:")
+                for idx, (job_code, count) in enumerate(top_jobs.items(), 1):
+                    job_name = self.get_job_name_from_code(job_code)
+                    print(f"  {idx}. {job_code} ({job_name}): {count}건")
+                
+                # 필터링된 데이터프레임 생성
+                original_count = len(df)
+                df = df[df['HOPE_JSCD1'].isin(top_job_codes)].copy()
+                filtered_count = len(df)
+                
+                print(f"\n필터링 결과: {original_count}건 → {filtered_count}건 ({filtered_count/original_count*100:.1f}%)")
+                print("="*60)
+                
+                # 필터링된 JHNT_MBN, JHNT_CTN 추출
+                if 'JHNT_MBN' in df.columns:
+                    filtered_jhnt_mbn_set = set(df['JHNT_MBN'].dropna().unique())
+                    print(f"필터링된 JHNT_MBN 수: {len(filtered_jhnt_mbn_set)}개")
+                if 'JHNT_CTN' in df.columns:
+                    filtered_jhnt_ctn_set = set(df['JHNT_CTN'].dropna().unique())
+                    print(f"필터링된 JHNT_CTN 수: {len(filtered_jhnt_ctn_set)}개")
+            else:
+                if self.top_job_categories == -1:
+                    print("📊 직종 소분류 필터링 비활성화 (전체 사용)")
+                else:
+                    print("⚠️ HOPE_JSCD1 컬럼이 없어 직종 소분류 필터링을 건너뜁니다.")
             
             csv_elapsed = time.time() - csv_start_time
             print(f"⏱️ 정형 데이터(CSV) 처리 소요 시간: {csv_elapsed:.2f}초")
@@ -754,6 +799,33 @@ class Preprocessor:
                 # JSON 파일 로드
                 with open(file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
+                
+                # 필터링된 키값만 사용 (필터링이 활성화된 경우)
+                if isinstance(data, list):
+                    original_count = len(data)
+                    filtered_data = data
+                    
+                    # 이력서와 자기소개서는 JHNT_MBN 또는 SEEK_CUST_NO로 필터링
+                    if json_name in ['이력서', '자기소개서']:
+                        if filtered_jhnt_mbn_set is not None:
+                            filtered_data = [
+                                item for item in data
+                                if item.get('JHNT_MBN', '') in filtered_jhnt_mbn_set or 
+                                   item.get('SEEK_CUST_NO', '') in filtered_jhnt_mbn_set
+                            ]
+                            print(f"  [{json_name}] 필터링: {original_count}건 → {len(filtered_data)}건 (JHNT_MBN/SEEK_CUST_NO 기준)")
+                    
+                    # 직업훈련과 자격증은 JHNT_CTN으로 필터링
+                    elif json_name in ['직업훈련', '자격증']:
+                        if filtered_jhnt_ctn_set is not None:
+                            filtered_data = [
+                                item for item in data
+                                if item.get('JHNT_CTN', '') in filtered_jhnt_ctn_set
+                            ]
+                            print(f"  [{json_name}] 필터링: {original_count}건 → {len(filtered_data)}건 (JHNT_CTN 기준)")
+                    
+                    data = filtered_data
+                
                 # 비동기 전처리
                 df = await self.nlp_preprocessing(data, json_name=json_name, limit_data=limit_data, limit_size=limit_size)
                 file_elapsed = time.time() - file_start_time

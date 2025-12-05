@@ -493,7 +493,7 @@ def clean_dataframe_for_causal_model(df: pd.DataFrame, required_vars: Optional[L
     return df_clean
 
 
-def preprocess_and_merge_data(file_list: List[str], data_dir: str, limit_data: bool = False, limit_size: int = 5000, job_category_file: str = "KSIC") -> pd.DataFrame:
+def preprocess_and_merge_data(file_list: List[str], data_dir: str, limit_data: bool = False, limit_size: int = 5000, job_category_file: str = "KSIC", top_job_categories: int = 5) -> pd.DataFrame:
     """
     Preprocessor 클래스를 사용하여 모든 데이터를 전처리하고 병합하는 함수
     
@@ -503,13 +503,14 @@ def preprocess_and_merge_data(file_list: List[str], data_dir: str, limit_data: b
         limit_data (bool): 테스트 모드로 데이터 제한 여부
         limit_size (int): 제한할 데이터 크기
         job_category_file (str): 직종 소분류 파일명 (KECO, KSCO, KSIC 중 선택, 기본값: KSIC)
+        top_job_categories (int): 상위 직종 소분류 개수 (기본값: 5, -1이면 전체 사용)
     
     Output:
         pd.DataFrame: 병합된 데이터프레임
     """
     import asyncio
     from . import preprocess
-    preprocessor = preprocess.Preprocessor([], job_category_file=job_category_file)
+    preprocessor = preprocess.Preprocessor([], job_category_file=job_category_file, top_job_categories=top_job_categories)
     absolute_file_list = [str(Path(f).resolve()) for f in file_list]
     merged_df = asyncio.run(preprocessor.get_merged_df(absolute_file_list, limit_data=limit_data, limit_size=limit_size))
     print(f"✅ 모든 데이터 전처리 및 병합 완료")
