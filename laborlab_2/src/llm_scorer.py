@@ -90,7 +90,8 @@ class LLMScorer:
             payload = {
                 "model": "llama3.2:1b",
                 "messages": [sys_msg, user_msg],
-                "options": {"temperature": 0.1}
+                "options": {"temperature": 0.1},
+                "stream": False
             }
             
             async with session.post(url, json=payload) as resp:
@@ -174,7 +175,8 @@ class LLMScorer:
             payload = {
                 "model": "llama3.2:1b",
                 "messages": [sys_msg, user_msg],
-                "options": {"temperature": 0.2}
+                "options": {"temperature": 0.2},
+                "stream": False
             }
             
             async with session.post(url, json=payload) as resp:
