@@ -24,7 +24,7 @@ services:
       # Docker 컨테이너의 ollama 서비스 사용
       - OLLAMA_HOST=http://ollama:11434
       # Ollama 동시 요청 수 제한 (서버 설정과 동일하게 유지)
-      - OLLAMA_NUM_PARALLEL=32
+      - OLLAMA_NUM_PARALLEL=16
     depends_on: [ollama]
     working_dir: /app/laborlab_2
     # updated 이미지가 tail -f /dev/null로 커밋되어 있어 command 오버라이드 필요
