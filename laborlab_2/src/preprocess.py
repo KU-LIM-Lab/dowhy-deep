@@ -186,8 +186,12 @@ class Preprocessor:
             print(f"[DEBUG] HOPE_JSCD1_NAME 변수 추가 완료: {df['HOPE_JSCD1_NAME'].nunique()}개 고유값")
 
         print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
+        
+        # JHNT_MBN과 JHNT_CTN을 문자열로 통일
         if 'JHNT_MBN' in df.columns:
-            print(f"[DEBUG] JHNT_MBN 샘플 값: {df['JHNT_MBN'].head(3).tolist()}")
+            df['JHNT_MBN'] = df['JHNT_MBN'].astype(str)
+        if 'JHNT_CTN' in df.columns:
+            df['JHNT_CTN'] = df['JHNT_CTN'].astype(str)
         
         return df
 
@@ -289,7 +293,7 @@ class Preprocessor:
         score, _ = await self.llm_scorer.score_async("이력서", job_name, job_examples, formatting_sentence, session)
         
         return {
-            "JHNT_MBN": seek_id,
+            "JHNT_MBN": str(seek_id),  # 문자열로 변환
             "resume_score": score,
             "items_num": items_num
         }
@@ -321,7 +325,7 @@ class Preprocessor:
                     seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
                     print(f"⚠️ 이력서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
-                        "JHNT_MBN": seek_id,
+                        "JHNT_MBN": str(seek_id),  # 문자열로 변환
                         "resume_score": None,
                         "items_num": 0
                     })
@@ -350,6 +354,10 @@ class Preprocessor:
             df['JHNT_MBN'] = df['JHNT_MBN'].fillna(df['SEEK_CUST_NO'])
             df = df.drop(columns=['SEEK_CUST_NO'])
             print(f"✅ 이력서 데이터: SEEK_CUST_NO 값을 JHNT_MBN에 병합 후 SEEK_CUST_NO 제거")
+        
+        # JHNT_MBN을 문자열로 통일
+        if 'JHNT_MBN' in df.columns:
+            df['JHNT_MBN'] = df['JHNT_MBN'].astype(str)
         
         return df
 
@@ -388,7 +396,7 @@ class Preprocessor:
         
         # score와 오탈자 수만 반환 (그래프 변수명과 일치)
         return {
-            "JHNT_MBN": seek_id,
+            "JHNT_MBN": str(seek_id),  # 문자열로 변환
             "cover_letter_score": score,  # 그래프: cover_letter_score
             "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
         }
@@ -419,7 +427,7 @@ class Preprocessor:
                     seek_id = item.get("JHNT_MBN", "") or item.get("SEEK_CUST_NO", "unknown")
                     print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
-                        "JHNT_MBN": seek_id,
+                        "JHNT_MBN": str(seek_id),  # 문자열로 변환
                         "cove_letter_score": None,
                         "cover_letter_typo_count": 0
                     })
@@ -448,6 +456,10 @@ class Preprocessor:
             df['JHNT_MBN'] = df['JHNT_MBN'].fillna(df['SEEK_CUST_NO'])
             df = df.drop(columns=['SEEK_CUST_NO'])
             print(f"✅ 자기소개서 데이터: SEEK_CUST_NO 값을 JHNT_MBN에 병합 후 SEEK_CUST_NO 제거")
+        
+        # JHNT_MBN을 문자열로 통일
+        if 'JHNT_MBN' in df.columns:
+            df['JHNT_MBN'] = df['JHNT_MBN'].astype(str)
         
         return df
 
@@ -514,7 +526,7 @@ class Preprocessor:
         score, why = await self.llm_scorer.score_async("직업훈련", job_name, job_examples, text, session)
         
         return {
-            "JHNT_CTN": jhnt_ctn,
+            "JHNT_CTN": str(jhnt_ctn),  # 문자열로 변환
             "training_score": score,
             "days_last_training_to_jobseek": elapsed_days if elapsed_days is not None else None  # 그래프: days_last_training_to_jobseek
         }
@@ -545,7 +557,7 @@ class Preprocessor:
                     jhnt_ctn = item.get("JHNT_CTN", "unknown")
                     print(f"⚠️ 직업훈련 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
                     rows.append({
-                        "JHNT_CTN": jhnt_ctn,
+                        "JHNT_CTN": str(jhnt_ctn),  # 문자열로 변환
                         "training_score": None,
                         "days_last_training_to_jobseek": None
                     })
@@ -603,7 +615,7 @@ class Preprocessor:
         
         # score만 반환 (그래프 변수명과 일치)
         return {
-            "JHNT_CTN": jhnt_ctn,
+            "JHNT_CTN": str(jhnt_ctn),  # 문자열로 변환
             "certification_score": score  # 그래프: certification_score
         }
     
@@ -633,7 +645,7 @@ class Preprocessor:
                     jhnt_ctn = item.get("JHNT_CTN", "unknown")
                     print(f"⚠️ 자격증 처리 오류 (JHNT_CTN: {jhnt_ctn}): {e}")
                     rows.append({
-                        "JHNT_CTN": jhnt_ctn,
+                        "JHNT_CTN": str(jhnt_ctn),  # 문자열로 변환
                         "certification_score": None
                     })
         
@@ -885,6 +897,12 @@ class Preprocessor:
                 raise KeyError(f"병합 키 '{merge_key}'가 {json_name} 데이터프레임에 없습니다. 파일: {file_list[idx+1]}, 사용 가능한 컬럼: {list(df.columns)}")
             
             print(f"[DEBUG] 병합 전 result 크기: {result.shape}, {json_name} 크기: {df.shape}")
+            
+            # 병합 키를 문자열로 통일 (타입 불일치 방지)
+            if merge_key in result.columns:
+                result[merge_key] = result[merge_key].astype(str)
+            if merge_key in df.columns:
+                df[merge_key] = df[merge_key].astype(str)
             
             # 병합 전에 Logger 객체가 있는지 확인
             for col in df.columns:
