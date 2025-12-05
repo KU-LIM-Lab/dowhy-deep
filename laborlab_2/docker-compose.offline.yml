@@ -55,6 +55,7 @@ services:
       - OLLAMA_MAX_LOADED_MODELS=1
       - OLLAMA_GPU_LAYERS=17
       - OLLAMA_NUM_PARALLEL=16
+      - OLLAMA_CONTEXT_LENGTH=1024
       - OLLAMA_MAX_QUEUE=100000
     # GPU 지원 (폐쇄망 환경용 - NVIDIA Container Toolkit 필요)
     # CPU 모드를 사용하려면 docker-compose.offline.cpu.yml 사용
