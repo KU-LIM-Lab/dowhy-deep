@@ -821,6 +821,11 @@ class Preprocessor:
                     # 이력서와 자기소개서는 JHNT_MBN 또는 SEEK_CUST_NO로 필터링
                     if json_name in ['이력서', '자기소개서']:
                         if filtered_jhnt_mbn_set is not None:
+                            # 디버깅 로그
+                            print(f"  [{json_name}] filtered_jhnt_mbn_set 길이: {len(filtered_jhnt_mbn_set)}, 처음 5개: {list(filtered_jhnt_mbn_set)[:5]}")
+                            print(f"  [{json_name}] data 처음 5개 JHNT_MBN: {[item.get('JHNT_MBN', '') for item in data[:5]]}")
+                            print(f"  [{json_name}] data 처음 5개 SEEK_CUST_NO: {[item.get('SEEK_CUST_NO', '') for item in data[:5]]}")
+                            
                             filtered_data = [
                                 item for item in data
                                 if item.get('JHNT_MBN', '') in filtered_jhnt_mbn_set or 
