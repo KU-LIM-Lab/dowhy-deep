@@ -806,6 +806,15 @@ class Preprocessor:
                 
                 # 필터링된 키값만 사용 (필터링이 활성화된 경우)
                 if isinstance(data, list):
+                    # 먼저 키값들을 문자열로 통일
+                    for item in data:
+                        if "JHNT_MBN" in item:
+                            item["JHNT_MBN"] = str(item["JHNT_MBN"])
+                        if "JHNT_CTN" in item:
+                            item["JHNT_CTN"] = str(item["JHNT_CTN"])
+                        if "SEEK_CUST_NO" in item:
+                            item["SEEK_CUST_NO"] = str(item["SEEK_CUST_NO"])
+                    
                     original_count = len(data)
                     filtered_data = data
                     
