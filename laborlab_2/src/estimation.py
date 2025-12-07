@@ -821,6 +821,10 @@ def save_checkpoint(estimate, checkpoint_dir, experiment_id, graph_name=None, lo
     metadata_file = checkpoint_path / metadata_filename
     
     try:
+        # pickle 불가능한 BootstrapEstimates 제거
+        if hasattr(estimate.estimator, '_bootstrap_estimates'):
+            estimate.estimator._bootstrap_estimates = None
+
         # CausalEstimate 객체 저장
         with open(checkpoint_file, 'wb') as f:
             pickle.dump(estimate, f)
