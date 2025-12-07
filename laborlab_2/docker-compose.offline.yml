@@ -17,6 +17,8 @@ services:
       - ./config.json:/app/laborlab_2/config.json:ro
       # 소스 코드 마운트 (코드 수정 시 재빌드 불필요)
       - ./src:/app/laborlab_2/src
+      - ./scripts:/app/laborlab_2/scripts
+
     environment:
       - PYTHONPATH=/app
       - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log
