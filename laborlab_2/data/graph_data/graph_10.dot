@@ -1,45 +1,58 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname="Helvetica", shape=box, style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부"];
-IPS_IRDS_NMPR [label="피보험자증감인원수"];
-JBHT_NMPR [label="구직자인원수"];
-RCIT_NMPR [label="모집인원수"];
-JO_DRNG_RATE [label="구인배수비율"];
-CRQF_CT [label="자격증건수"];
-AREA_CD [label="지역코드"];
-HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
-ACCR_CD [label="학력코드"];
-CARR_MYCT1 [label="경력월수1"];
-AREA_CD -> IPS_IRDS_NMPR;
-AREA_CD -> JBHT_NMPR;
-AREA_CD -> RCIT_NMPR;
-AREA_CD -> JO_DRNG_RATE;
-IPS_IRDS_NMPR -> HOPE_WAGE_SM_AMT;
-RCIT_NMPR -> HOPE_WAGE_SM_AMT;
-JO_DRNG_RATE -> HOPE_WAGE_SM_AMT;
-ACCR_CD -> CARR_MYCT1;
-ACCR_CD -> CRQF_CT;
-CARR_MYCT1 -> CRQF_CT;
-IPS_IRDS_NMPR -> ACQ_180_YN;
-JBHT_NMPR -> ACQ_180_YN;
-RCIT_NMPR -> ACQ_180_YN;
-JO_DRNG_RATE -> ACQ_180_YN;
-CRQF_CT -> ACQ_180_YN;
-CARR_MYCT1 -> ACQ_180_YN;
-ACCR_CD -> ACQ_180_YN;
-AREA_CD -> ACQ_180_YN;
-HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-subgraph cluster_treatments {
-color="#CCCCCC";
-label="Treatments (outcome: ACQ_180_YN)";
-style=dashed;
-node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,filled"];
-T1 [label="T1: IPS_IRDS_NMPR", role="treatment_meta", treatment_def="피보험자증감인원수 수준 차이의 효과", treatment_name="IPS_IRDS_NMPR", treatment_question="피보험자 증가가 많은 직종·지역과 적은 직종·지역의 구직자 6개월 내 취업 확률 차이?", treatment_var="IPS_IRDS_NMPR"];
-T2 [label="T2: JBHT_NMPR", role="treatment_meta", treatment_def="구직자인원수 수준 차이의 효과", treatment_name="JBHT_NMPR", treatment_question="구직자가 많은 시장과 적은 시장에서 구직하는 사람의 6개월 내 취업 확률 차이?", treatment_var="JBHT_NMPR"];
-T3 [label="T3: RCIT_NMPR", role="treatment_meta", treatment_def="모집인원수 수준 차이의 효과", treatment_name="RCIT_NMPR", treatment_question="모집인원이 많은 직종·지역과 적은 직종·지역의 구직자 6개월 내 취업 확률 차이?", treatment_var="RCIT_NMPR"];
-T4 [label="T4: JO_DRNG_RATE", role="treatment_meta", treatment_def="구인배수비율 수준 차이의 효과", treatment_name="JO_DRNG_RATE", treatment_question="구인배수비율이 높은 시장과 낮은 시장의 구직자 6개월 내 취업 확률 차이?", treatment_var="JO_DRNG_RATE"];
-T5 [label="T5: CRQF_CT", role="treatment_meta", treatment_def="자격증건수 수준 차이의 효과", treatment_name="CRQF_CT", treatment_question="자격증을 많이 보유한 사람과 적게 보유한 사람의 6개월 내 취업 확률 차이?", treatment_var="CRQF_CT"];
-}
-
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box,
+		style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[label="T1: IPS_IRDS_NMPR",
+			role=treatment_meta,
+			treatment_def="피보험자증감인원수 수준 차이의 효과",
+			treatment_name=IPS_IRDS_NMPR,
+			treatment_question="피보험자 증가가 많은 직종·지역과 적은 직종·지역의 구직자 6개월 내 취업 확률 차이?",
+			treatment_var=IPS_IRDS_NMPR];
+		T2	[label="T2: JBHT_NMPR",
+			role=treatment_meta,
+			treatment_def="구직자인원수 수준 차이의 효과",
+			treatment_name=JBHT_NMPR,
+			treatment_question="구직자가 많은 시장과 적은 시장에서 구직하는 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=JBHT_NMPR];
+		T3	[label="T3: RCIT_NMPR",
+			role=treatment_meta,
+			treatment_def="모집인원수 수준 차이의 효과",
+			treatment_name=RCIT_NMPR,
+			treatment_question="모집인원이 많은 직종·지역과 적은 직종·지역의 구직자 6개월 내 취업 확률 차이?",
+			treatment_var=RCIT_NMPR];
+	}
+	ACQ_180_YN	[label="180일이내취업여부"];
+	IPS_IRDS_NMPR	[label=피보험자증감인원수];
+	IPS_IRDS_NMPR -> ACQ_180_YN;
+	HOPE_WAGE_SM_AMT	[label=희망임금합계금액];
+	IPS_IRDS_NMPR -> HOPE_WAGE_SM_AMT;
+	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	JBHT_NMPR	[label=구직자인원수];
+	JBHT_NMPR -> ACQ_180_YN;
+	RCIT_NMPR	[label=모집인원수];
+	RCIT_NMPR -> ACQ_180_YN;
+	RCIT_NMPR -> HOPE_WAGE_SM_AMT;
+	AREA_CD	[label=지역코드];
+	AREA_CD -> ACQ_180_YN;
+	AREA_CD -> IPS_IRDS_NMPR;
+	AREA_CD -> JBHT_NMPR;
+	AREA_CD -> RCIT_NMPR;
+	ACCR_CD	[label=학력코드];
+	ACCR_CD -> ACQ_180_YN;
+	CARR_MYCT1	[label=경력월수1];
+	ACCR_CD -> CARR_MYCT1;
+	CARR_MYCT1 -> ACQ_180_YN;
 }

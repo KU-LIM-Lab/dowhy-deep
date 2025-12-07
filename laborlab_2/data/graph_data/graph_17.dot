@@ -1,106 +1,100 @@
 digraph {
-    rankdir=LR;
-    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
-
-    ACCR_CD [label="학력코드"];
-    ACQ_180_YN [label="180일이내취업여부"];
-    AGE [label="연령"];
-    AREA_CD [label="지역코드"];
-    EMAIL_OTPB_YN [label="이메일공개여부"];
-    IDIF_AOFR_YN [label="개인정보제공동의여부"];
-    INFO_OTPB_GRAD_CD [label="정보공개등급코드"];
-    JHNT_RQUT_CHNL_SECD [label="구직신청채널구분코드"];
-    MPNO_OTPB_YN [label="휴대전화번호공개여부"];
-    SAEIL_CNTC_AGRE_YN [label="여성새로일하기센터연계동의여부"];
-    SHRS_IDIF_AOFR_YN [label="대체인력개인정보제공동의여부"];
-    SULC_IDIF_AOFR_YN [label="서울시개인정보제공동의여부"];
-    SXDS_CD [label="성별코드"];
-    UEPS_RECP_YN [label="실업급여수급여부"];
-
-    AGE -> ACCR_CD;
-    AGE -> IDIF_AOFR_YN;
-    AGE -> SHRS_IDIF_AOFR_YN;
-    AGE -> SULC_IDIF_AOFR_YN;
-    AGE -> SAEIL_CNTC_AGRE_YN;
-    AGE -> UEPS_RECP_YN;
-    AGE -> INFO_OTPB_GRAD_CD;
-    SXDS_CD -> IDIF_AOFR_YN;
-    SXDS_CD -> SHRS_IDIF_AOFR_YN;
-    SXDS_CD -> SULC_IDIF_AOFR_YN;
-    SXDS_CD -> SAEIL_CNTC_AGRE_YN;
-    ACCR_CD -> INFO_OTPB_GRAD_CD;
-    ACCR_CD -> IDIF_AOFR_YN;
-    INFO_OTPB_GRAD_CD -> EMAIL_OTPB_YN;
-    INFO_OTPB_GRAD_CD -> MPNO_OTPB_YN;
-    EMAIL_OTPB_YN -> JHNT_RQUT_CHNL_SECD;
-    MPNO_OTPB_YN -> JHNT_RQUT_CHNL_SECD;
-    IDIF_AOFR_YN -> JHNT_RQUT_CHNL_SECD;
-    SHRS_IDIF_AOFR_YN -> JHNT_RQUT_CHNL_SECD;
-    SULC_IDIF_AOFR_YN -> JHNT_RQUT_CHNL_SECD;
-    SAEIL_CNTC_AGRE_YN -> JHNT_RQUT_CHNL_SECD;
-    UEPS_RECP_YN -> ACQ_180_YN;
-    IDIF_AOFR_YN -> ACQ_180_YN;
-    SHRS_IDIF_AOFR_YN -> ACQ_180_YN;
-    SULC_IDIF_AOFR_YN -> ACQ_180_YN;
-    SAEIL_CNTC_AGRE_YN -> ACQ_180_YN;
-    INFO_OTPB_GRAD_CD -> ACQ_180_YN;
-    JHNT_RQUT_CHNL_SECD -> ACQ_180_YN;
-    AGE -> ACQ_180_YN;
-    SXDS_CD -> ACQ_180_YN;
-    ACCR_CD -> ACQ_180_YN;
-    AREA_CD -> ACQ_180_YN;
-
-    // Treatments
-    subgraph cluster_treatments {
-        label="Treatments (outcome: ACQ_180_YN)";
-        style=dashed;
-        color="#CCCCCC";
-        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
-
-        T1 [
-            label="T1: IDIF_AOFR_YN",
-            role="treatment_meta",
-            treatment_var="IDIF_AOFR_YN",
-            treatment_name="IDIF_AOFR_YN",
-            treatment_def="개인정보제공동의여부(IDIF_AOFR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="개인정보제공동의여부(IDIF_AOFR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T2 [
-            label="T2: SHRS_IDIF_AOFR_YN",
-            role="treatment_meta",
-            treatment_var="SHRS_IDIF_AOFR_YN",
-            treatment_name="SHRS_IDIF_AOFR_YN",
-            treatment_def="대체인력개인정보제공동의여부(SHRS_IDIF_AOFR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="대체인력개인정보제공동의여부(SHRS_IDIF_AOFR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T3 [
-            label="T3: SULC_IDIF_AOFR_YN",
-            role="treatment_meta",
-            treatment_var="SULC_IDIF_AOFR_YN",
-            treatment_name="SULC_IDIF_AOFR_YN",
-            treatment_def="서울시개인정보제공동의여부(SULC_IDIF_AOFR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="서울시개인정보제공동의여부(SULC_IDIF_AOFR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T4 [
-            label="T4: SAEIL_CNTC_AGRE_YN",
-            role="treatment_meta",
-            treatment_var="SAEIL_CNTC_AGRE_YN",
-            treatment_name="SAEIL_CNTC_AGRE_YN",
-            treatment_def="여성새로일하기센터연계동의여부(SAEIL_CNTC_AGRE_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="여성새로일하기센터연계동의여부(SAEIL_CNTC_AGRE_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T5 [
-            label="T5: UEPS_RECP_YN",
-            role="treatment_meta",
-            treatment_var="UEPS_RECP_YN",
-            treatment_name="UEPS_RECP_YN",
-            treatment_def="실업급여수급여부(UEPS_RECP_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="실업급여수급여부(UEPS_RECP_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-    }
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box,
+		style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[label="T1: IDIF_AOFR_YN",
+			role=treatment_meta,
+			treatment_def="개인정보제공동의여부(IDIF_AOFR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=IDIF_AOFR_YN,
+			treatment_question="개인정보제공동의여부(IDIF_AOFR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?",
+			treatment_var=IDIF_AOFR_YN];
+		T2	[label="T2: SHRS_IDIF_AOFR_YN",
+			role=treatment_meta,
+			treatment_def="대체인력개인정보제공동의여부(SHRS_IDIF_AOFR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 \
+인과효과",
+			treatment_name=SHRS_IDIF_AOFR_YN,
+			treatment_question="대체인력개인정보제공동의여부(SHRS_IDIF_AOFR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 \
+다른가?",
+			treatment_var=SHRS_IDIF_AOFR_YN];
+		T3	[label="T3: SULC_IDIF_AOFR_YN",
+			role=treatment_meta,
+			treatment_def="서울시개인정보제공동의여부(SULC_IDIF_AOFR_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=SULC_IDIF_AOFR_YN,
+			treatment_question="서울시개인정보제공동의여부(SULC_IDIF_AOFR_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 \
+다른가?",
+			treatment_var=SULC_IDIF_AOFR_YN];
+		T4	[label="T4: SAEIL_CNTC_AGRE_YN",
+			role=treatment_meta,
+			treatment_def="여성새로일하기센터연계동의여부(SAEIL_CNTC_AGRE_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 \
+인과효과",
+			treatment_name=SAEIL_CNTC_AGRE_YN,
+			treatment_question="여성새로일하기센터연계동의여부(SAEIL_CNTC_AGRE_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 \
+얼마나 다른가?",
+			treatment_var=SAEIL_CNTC_AGRE_YN];
+		T5	[label="T5: UEPS_RECP_YN",
+			role=treatment_meta,
+			treatment_def="실업급여수급여부(UEPS_RECP_YN) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=UEPS_RECP_YN,
+			treatment_question="실업급여수급여부(UEPS_RECP_YN) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?",
+			treatment_var=UEPS_RECP_YN];
+	}
+	ACCR_CD	[label=학력코드];
+	ACQ_180_YN	[label="180일이내취업여부"];
+	ACCR_CD -> ACQ_180_YN;
+	IDIF_AOFR_YN	[label=개인정보제공동의여부];
+	ACCR_CD -> IDIF_AOFR_YN;
+	INFO_OTPB_GRAD_CD	[label=정보공개등급코드];
+	ACCR_CD -> INFO_OTPB_GRAD_CD;
+	IDIF_AOFR_YN -> ACQ_180_YN;
+	JHNT_RQUT_CHNL_SECD	[label=구직신청채널구분코드];
+	IDIF_AOFR_YN -> JHNT_RQUT_CHNL_SECD;
+	INFO_OTPB_GRAD_CD -> ACQ_180_YN;
+	EMAIL_OTPB_YN	[label=이메일공개여부];
+	INFO_OTPB_GRAD_CD -> EMAIL_OTPB_YN;
+	MPNO_OTPB_YN	[label=휴대전화번호공개여부];
+	INFO_OTPB_GRAD_CD -> MPNO_OTPB_YN;
+	AGE	[label=연령];
+	AGE -> ACCR_CD;
+	AGE -> ACQ_180_YN;
+	AGE -> IDIF_AOFR_YN;
+	AGE -> INFO_OTPB_GRAD_CD;
+	SAEIL_CNTC_AGRE_YN	[label=여성새로일하기센터연계동의여부];
+	AGE -> SAEIL_CNTC_AGRE_YN;
+	SHRS_IDIF_AOFR_YN	[label=대체인력개인정보제공동의여부];
+	AGE -> SHRS_IDIF_AOFR_YN;
+	SULC_IDIF_AOFR_YN	[label=서울시개인정보제공동의여부];
+	AGE -> SULC_IDIF_AOFR_YN;
+	UEPS_RECP_YN	[label=실업급여수급여부];
+	AGE -> UEPS_RECP_YN;
+	SAEIL_CNTC_AGRE_YN -> ACQ_180_YN;
+	SAEIL_CNTC_AGRE_YN -> JHNT_RQUT_CHNL_SECD;
+	SHRS_IDIF_AOFR_YN -> ACQ_180_YN;
+	SHRS_IDIF_AOFR_YN -> JHNT_RQUT_CHNL_SECD;
+	SULC_IDIF_AOFR_YN -> ACQ_180_YN;
+	SULC_IDIF_AOFR_YN -> JHNT_RQUT_CHNL_SECD;
+	UEPS_RECP_YN -> ACQ_180_YN;
+	AREA_CD	[label=지역코드];
+	AREA_CD -> ACQ_180_YN;
+	EMAIL_OTPB_YN -> JHNT_RQUT_CHNL_SECD;
+	JHNT_RQUT_CHNL_SECD -> ACQ_180_YN;
+	MPNO_OTPB_YN -> JHNT_RQUT_CHNL_SECD;
+	SXDS_CD	[label=성별코드];
+	SXDS_CD -> ACQ_180_YN;
+	SXDS_CD -> IDIF_AOFR_YN;
+	SXDS_CD -> SAEIL_CNTC_AGRE_YN;
+	SXDS_CD -> SHRS_IDIF_AOFR_YN;
+	SXDS_CD -> SULC_IDIF_AOFR_YN;
 }
