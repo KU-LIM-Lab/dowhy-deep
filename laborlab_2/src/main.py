@@ -143,7 +143,8 @@ def learning(
     outcome: str,
     estimator: str = "tabpfn",
     experiment_id: Optional[str] = None,
-    logger: Optional[Any] = None
+    logger: Optional[Any] = None,
+    training_size: int = 5000
 ) -> Dict[str, Any]:
     """
     단일 실험에 대한 learning 함수
@@ -157,6 +158,7 @@ def learning(
         estimator: 추정 방법 (기본값: tabpfn)
         experiment_id: 실험 ID (선택적)
         logger: 로거 객체 (선택적)
+        training_size: Train set 크기 (기본값: 5000)
     
     Returns:
         실험 결과 딕셔너리
@@ -177,7 +179,8 @@ def learning(
         outcome=outcome,
         estimator=estimator,
         experiment_id=experiment_id,
-        logger=logger
+        logger=logger,
+        training_size=training_size
     )
     
     if result["status"] == "success":
@@ -349,7 +352,8 @@ def learning_experiments(
     merged_df_clean: pd.DataFrame,
     experiment_list: List[Tuple[str, str, str, str]],
     logger: Optional[Any] = None,
-    output_dir: Optional[Path] = None
+    output_dir: Optional[Path] = None,
+    training_size: int = 5000
 ) -> List[Dict[str, Any]]:
     """
     experiment_list의 모든 조합에 대해 learning 실행
@@ -369,7 +373,8 @@ def learning_experiments(
         experiment_type="learning",
         merged_df_clean=merged_df_clean,
         logger=logger,
-        output_dir=output_dir
+        output_dir=output_dir,
+        training_size=training_size
     )
 
 
@@ -512,6 +517,7 @@ def main():
     output_dir = config.get("output_dir", "log")
     limit_data = config.get("limit_data", False)
     limit_size = config.get("limit_size", 5000)
+    training_size = config.get("training_size", 5000)
     checkpoint_dir = config.get("checkpoint_dir", "data/checkpoint")
     job_category_file = config.get("job_category_file", "KSIC")
     top_job_categories = config.get("top_job_categories", 5)
@@ -635,7 +641,8 @@ def main():
                 merged_df_clean=merged_df_clean,
                 experiment_list=experiment_list,
                 logger=logger,
-                output_dir=output_dir_path
+                output_dir=output_dir_path,
+                training_size=training_size
             )
         else:
             # 단일 실험 실행 (config에서 첫 번째 실험 조합 사용)
@@ -647,7 +654,8 @@ def main():
                     treatment=treatment,
                     outcome=outcome,
                     estimator=estimator,
-                    logger=logger
+                    logger=logger,
+                    training_size=training_size
                 )
             else:
                 print("❌ 실행할 실험이 없습니다.")

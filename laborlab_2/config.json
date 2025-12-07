@@ -12,6 +12,7 @@
   "experiment": false,
   "limit_data": false,
   "limit_size": 5000,
+  "training_size": 5000,
   "checkpoint_dir": "data/checkpoint",
   "job_category_file": "KECO",
   "top_job_categories": 5,
