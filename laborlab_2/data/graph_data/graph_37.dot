@@ -1,44 +1,59 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname=Helvetica, shape=box];
-ACCR_CD [label="학력코드", style="rounded,filled"];
-ACCR_STCD [label="학력상태코드", style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부", style="rounded,filled"];
-ACQ_DT [label="취업까지소요기간", style="rounded,filled"];
-AGE [label="연령", style="rounded,filled"];
-AREA_CD [label="지역코드", style="rounded,filled"];
-BFR_OCTR_CT [label="이전직업훈련건수", style="rounded,filled"];
-BFR_WTM6_JHCR_CT [label="이전 6개월이내구직인증건수", style="rounded,filled"];
-MAJR_CD1 [label="전공코드", style="rounded,filled"];
-SFID_IEM_NUM [label="자기소개서항목개수", style="rounded,filled"];
-SFID_LTTR_NUM [label="자기소개서글자개수", style="rounded,filled"];
-SXDS_CD [label="성별코드", style="rounded,filled"];
-ACCR_CD -> ACQ_180_YN;
-ACCR_CD -> BFR_OCTR_CT;
-ACCR_CD -> MAJR_CD1;
-ACCR_CD -> SFID_IEM_NUM;
-ACCR_CD -> SFID_LTTR_NUM;
-ACCR_STCD -> ACQ_180_YN;
-ACCR_STCD -> BFR_OCTR_CT;
-ACQ_DT -> ACQ_180_YN;
-AGE -> ACCR_CD;
-AGE -> ACCR_STCD;
-AGE -> ACQ_180_YN;
-AGE -> AREA_CD;
-AGE -> BFR_OCTR_CT;
-AGE -> BFR_WTM6_JHCR_CT;
-AGE -> MAJR_CD1;
-AREA_CD -> ACQ_180_YN;
-BFR_OCTR_CT -> ACQ_180_YN;
-BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
-BFR_WTM6_JHCR_CT -> ACQ_180_YN;
-MAJR_CD1 -> ACQ_180_YN;
-MAJR_CD1 -> BFR_OCTR_CT;
-SFID_IEM_NUM -> ACQ_180_YN;
-SFID_LTTR_NUM -> ACQ_180_YN;
-SXDS_CD -> ACCR_CD;
-SXDS_CD -> ACCR_STCD;
-SXDS_CD -> ACQ_180_YN;
-SXDS_CD -> AREA_CD;
-SXDS_CD -> MAJR_CD1;
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box
+	];
+	ACCR_CD	[label=학력코드,
+		style="rounded,filled"];
+	ACQ_180_YN	[label="180일이내취업여부",
+		style="rounded,filled"];
+	ACCR_CD -> ACQ_180_YN;
+	BFR_OCTR_CT	[label=이전직업훈련건수,
+		style="rounded,filled"];
+	ACCR_CD -> BFR_OCTR_CT;
+	MAJR_CD1	[label=전공코드,
+		style="rounded,filled"];
+	ACCR_CD -> MAJR_CD1;
+	SFID_IEM_NUM	[label=자기소개서항목개수,
+		style="rounded,filled"];
+	ACCR_CD -> SFID_IEM_NUM;
+	SFID_LTTR_NUM	[label=자기소개서글자개수,
+		style="rounded,filled"];
+	ACCR_CD -> SFID_LTTR_NUM;
+	BFR_OCTR_CT -> ACQ_180_YN;
+	BFR_WTM6_JHCR_CT	[label="이전 6개월이내구직인증건수",
+		style="rounded,filled"];
+	BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
+	MAJR_CD1 -> ACQ_180_YN;
+	MAJR_CD1 -> BFR_OCTR_CT;
+	SFID_IEM_NUM -> ACQ_180_YN;
+	SFID_LTTR_NUM -> ACQ_180_YN;
+	ACCR_STCD	[label=학력상태코드,
+		style="rounded,filled"];
+	ACCR_STCD -> ACQ_180_YN;
+	ACCR_STCD -> BFR_OCTR_CT;
+	ACQ_DT	[label=취업까지소요기간,
+		style="rounded,filled"];
+	ACQ_DT -> ACQ_180_YN;
+	AGE	[label=연령,
+		style="rounded,filled"];
+	AGE -> ACCR_CD;
+	AGE -> ACQ_180_YN;
+	AGE -> BFR_OCTR_CT;
+	AGE -> MAJR_CD1;
+	AGE -> ACCR_STCD;
+	AREA_CD	[label=지역코드,
+		style="rounded,filled"];
+	AGE -> AREA_CD;
+	AGE -> BFR_WTM6_JHCR_CT;
+	AREA_CD -> ACQ_180_YN;
+	BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+	SXDS_CD	[label=성별코드,
+		style="rounded,filled"];
+	SXDS_CD -> ACCR_CD;
+	SXDS_CD -> ACQ_180_YN;
+	SXDS_CD -> MAJR_CD1;
+	SXDS_CD -> ACCR_STCD;
+	SXDS_CD -> AREA_CD;
 }

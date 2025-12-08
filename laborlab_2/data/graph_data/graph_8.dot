@@ -1,44 +1,74 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname="Helvetica", shape=box, style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부"];
-ACCR_CD [label="학력코드"];
-ACCR_STCD [label="학력상태코드"];
-MAJR_CD1 [label="전공코드1"];
-AGE [label="연령"];
-SXDS_CD [label="성별코드"];
-CARR_MYCT1 [label="경력월수1"];
-HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
-CRQF_CT [label="자격증건수"];
-SXDS_CD -> ACCR_CD;
-SXDS_CD -> MAJR_CD1;
-AGE -> ACCR_CD;
-AGE -> ACCR_STCD;
-AGE -> CARR_MYCT1;
-ACCR_CD -> MAJR_CD1;
-ACCR_CD -> CARR_MYCT1;
-ACCR_CD -> HOPE_WAGE_SM_AMT;
-ACCR_CD -> CRQF_CT;
-MAJR_CD1 -> CARR_MYCT1;
-CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
-CARR_MYCT1 -> ACQ_180_YN;
-CRQF_CT -> ACQ_180_YN;
-HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-ACCR_CD -> ACQ_180_YN;
-ACCR_STCD -> ACQ_180_YN;
-MAJR_CD1 -> ACQ_180_YN;
-AGE -> ACQ_180_YN;
-SXDS_CD -> ACQ_180_YN;
-subgraph cluster_treatments {
-color="#CCCCCC";
-label="Treatments (outcome: ACQ_180_YN)";
-style=dashed;
-node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,filled"];
-T1 [label="T1: ACCR_CD", role="treatment_meta", treatment_def="학력코드 수준 차이의 효과", treatment_name="ACCR_CD", treatment_question="최종학력이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="ACCR_CD"];
-T2 [label="T2: ACCR_STCD", role="treatment_meta", treatment_def="학력상태(재학·졸업 등) 차이의 효과", treatment_name="ACCR_STCD", treatment_question="재학/졸업 상태가 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="ACCR_STCD"];
-T3 [label="T3: MAJR_CD1", role="treatment_meta", treatment_def="전공코드 차이의 효과", treatment_name="MAJR_CD1", treatment_question="전공이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="MAJR_CD1"];
-T4 [label="T4: AGE", role="treatment_meta", treatment_def="연령 수준 차이의 효과", treatment_name="AGE", treatment_question="연령이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="AGE"];
-T5 [label="T5: SXDS_CD", role="treatment_meta", treatment_def="성별코드 차이의 효과", treatment_name="SXDS_CD", treatment_question="성별이 다른 구직자 간 6개월 내 취업 확률 차이?", treatment_var="SXDS_CD"];
-}
-
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box,
+		style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[label="T1: ACCR_CD",
+			role=treatment_meta,
+			treatment_def="학력코드 수준 차이의 효과",
+			treatment_name=ACCR_CD,
+			treatment_question="최종학력이 다른 구직자 간 6개월 내 취업 확률 차이?",
+			treatment_var=ACCR_CD];
+		T2	[label="T2: ACCR_STCD",
+			role=treatment_meta,
+			treatment_def="학력상태(재학·졸업 등) 차이의 효과",
+			treatment_name=ACCR_STCD,
+			treatment_question="재학/졸업 상태가 다른 구직자 간 6개월 내 취업 확률 차이?",
+			treatment_var=ACCR_STCD];
+		T3	[label="T3: MAJR_CD1",
+			role=treatment_meta,
+			treatment_def="전공코드 차이의 효과",
+			treatment_name=MAJR_CD1,
+			treatment_question="전공이 다른 구직자 간 6개월 내 취업 확률 차이?",
+			treatment_var=MAJR_CD1];
+		T4	[label="T4: AGE",
+			role=treatment_meta,
+			treatment_def="연령 수준 차이의 효과",
+			treatment_name=AGE,
+			treatment_question="연령이 다른 구직자 간 6개월 내 취업 확률 차이?",
+			treatment_var=AGE];
+		T5	[label="T5: SXDS_CD",
+			role=treatment_meta,
+			treatment_def="성별코드 차이의 효과",
+			treatment_name=SXDS_CD,
+			treatment_question="성별이 다른 구직자 간 6개월 내 취업 확률 차이?",
+			treatment_var=SXDS_CD];
+	}
+	ACQ_180_YN	[label="180일이내취업여부"];
+	ACCR_CD	[label=학력코드];
+	ACCR_CD -> ACQ_180_YN;
+	MAJR_CD1	[label=전공코드1];
+	ACCR_CD -> MAJR_CD1;
+	CARR_MYCT1	[label=경력월수1];
+	ACCR_CD -> CARR_MYCT1;
+	HOPE_WAGE_SM_AMT	[label=희망임금합계금액];
+	ACCR_CD -> HOPE_WAGE_SM_AMT;
+	MAJR_CD1 -> ACQ_180_YN;
+	MAJR_CD1 -> CARR_MYCT1;
+	CARR_MYCT1 -> ACQ_180_YN;
+	CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	ACCR_STCD	[label=학력상태코드];
+	ACCR_STCD -> ACQ_180_YN;
+	AGE	[label=연령];
+	AGE -> ACQ_180_YN;
+	AGE -> ACCR_CD;
+	AGE -> CARR_MYCT1;
+	AGE -> ACCR_STCD;
+	SXDS_CD	[label=성별코드];
+	SXDS_CD -> ACQ_180_YN;
+	SXDS_CD -> ACCR_CD;
+	SXDS_CD -> MAJR_CD1;
 }

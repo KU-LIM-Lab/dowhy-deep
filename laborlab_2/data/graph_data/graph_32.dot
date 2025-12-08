@@ -1,90 +1,95 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname=Helvetica, shape=box];
-ACCR_CD [label="학력코드", style="rounded,filled"];
-ACCR_STCD [label="학력상태코드", style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부", style="rounded,filled"];
-AGE [label="연령", style="rounded,filled"];
-AREA_CD [label="지역코드", style="rounded,filled"];
-BFR_OCTR_CT [label="이전직업훈련건수", style="rounded,filled"];
-BFR_WTM6_JHCR_CT [label="이전 6개월이내구직인증건수", style="rounded,filled"];
-COMM_WAGE_TYCD [label="상용임금유형코드", style="rounded,filled"];
-CRQF_CT [label="자격증건수", style="rounded,filled"];
-HPAR_CSCY_SCOR [label="희망지역일치도점수", style="rounded,filled"];
-IPS_IRDS_NMPR [label="피보험자증감인원수", style="rounded,filled"];
-JBHT_NMPR [label="구직자인원수", style="rounded,filled"];
-JO_DRNG_RATE [label="구인배수비율", style="rounded,filled"];
-KECO_CD1 [label="KECO코드1", style="rounded,filled"];
-MAJR_CD1 [label="전공코드", style="rounded,filled"];
-MATCH_L_YN [label="직종대분류일치여부", style="rounded,filled"];
-MATCH_M_YN [label="직종중분류일치여부", style="rounded,filled"];
-MATCH_S_YN [label="직종소분류일치여부", style="rounded,filled"];
-RCIT_NMPR [label="모집인원수", style="rounded,filled"];
-SXDS_CD [label="성별코드", style="rounded,filled"];
-ACCR_CD -> ACQ_180_YN;
-ACCR_CD -> BFR_OCTR_CT;
-ACCR_CD -> CRQF_CT;
-ACCR_CD -> MAJR_CD1;
-ACCR_STCD -> ACQ_180_YN;
-ACCR_STCD -> BFR_OCTR_CT;
-ACCR_STCD -> CRQF_CT;
-AGE -> ACCR_CD;
-AGE -> ACCR_STCD;
-AGE -> ACQ_180_YN;
-AGE -> AREA_CD;
-AGE -> BFR_OCTR_CT;
-AGE -> BFR_WTM6_JHCR_CT;
-AGE -> CRQF_CT;
-AGE -> MAJR_CD1;
-AREA_CD -> ACQ_180_YN;
-AREA_CD -> HPAR_CSCY_SCOR;
-AREA_CD -> IPS_IRDS_NMPR;
-AREA_CD -> JBHT_NMPR;
-AREA_CD -> JO_DRNG_RATE;
-AREA_CD -> RCIT_NMPR;
-BFR_OCTR_CT -> ACQ_180_YN;
-BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
-BFR_OCTR_CT -> CRQF_CT;
-BFR_OCTR_CT -> KECO_CD1;
-BFR_OCTR_CT -> MATCH_L_YN;
-BFR_OCTR_CT -> MATCH_M_YN;
-BFR_OCTR_CT -> MATCH_S_YN;
-BFR_WTM6_JHCR_CT -> ACQ_180_YN;
-COMM_WAGE_TYCD -> ACQ_180_YN;
-CRQF_CT -> ACQ_180_YN;
-CRQF_CT -> MATCH_L_YN;
-CRQF_CT -> MATCH_M_YN;
-CRQF_CT -> MATCH_S_YN;
-HPAR_CSCY_SCOR -> ACQ_180_YN;
-HPAR_CSCY_SCOR -> MATCH_L_YN;
-HPAR_CSCY_SCOR -> MATCH_M_YN;
-HPAR_CSCY_SCOR -> MATCH_S_YN;
-IPS_IRDS_NMPR -> ACQ_180_YN;
-IPS_IRDS_NMPR -> MATCH_L_YN;
-IPS_IRDS_NMPR -> MATCH_M_YN;
-IPS_IRDS_NMPR -> MATCH_S_YN;
-JBHT_NMPR -> ACQ_180_YN;
-JBHT_NMPR -> MATCH_L_YN;
-JBHT_NMPR -> MATCH_M_YN;
-JBHT_NMPR -> MATCH_S_YN;
-JO_DRNG_RATE -> ACQ_180_YN;
-JO_DRNG_RATE -> MATCH_L_YN;
-JO_DRNG_RATE -> MATCH_M_YN;
-JO_DRNG_RATE -> MATCH_S_YN;
-KECO_CD1 -> ACQ_180_YN;
-MAJR_CD1 -> ACQ_180_YN;
-MAJR_CD1 -> BFR_OCTR_CT;
-MAJR_CD1 -> CRQF_CT;
-MATCH_L_YN -> ACQ_180_YN;
-MATCH_M_YN -> ACQ_180_YN;
-MATCH_S_YN -> ACQ_180_YN;
-RCIT_NMPR -> ACQ_180_YN;
-RCIT_NMPR -> MATCH_L_YN;
-RCIT_NMPR -> MATCH_M_YN;
-RCIT_NMPR -> MATCH_S_YN;
-SXDS_CD -> ACCR_CD;
-SXDS_CD -> ACCR_STCD;
-SXDS_CD -> ACQ_180_YN;
-SXDS_CD -> AREA_CD;
-SXDS_CD -> MAJR_CD1;
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box
+	];
+	ACCR_CD	[label=학력코드,
+		style="rounded,filled"];
+	ACQ_180_YN	[label="180일이내취업여부",
+		style="rounded,filled"];
+	ACCR_CD -> ACQ_180_YN;
+	BFR_OCTR_CT	[label=이전직업훈련건수,
+		style="rounded,filled"];
+	ACCR_CD -> BFR_OCTR_CT;
+	MAJR_CD1	[label=전공코드,
+		style="rounded,filled"];
+	ACCR_CD -> MAJR_CD1;
+	BFR_OCTR_CT -> ACQ_180_YN;
+	BFR_WTM6_JHCR_CT	[label="이전 6개월이내구직인증건수",
+		style="rounded,filled"];
+	BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
+	KECO_CD1	[label=KECO코드1,
+		style="rounded,filled"];
+	BFR_OCTR_CT -> KECO_CD1;
+	MATCH_L_YN	[label=직종대분류일치여부,
+		style="rounded,filled"];
+	BFR_OCTR_CT -> MATCH_L_YN;
+	MATCH_M_YN	[label=직종중분류일치여부,
+		style="rounded,filled"];
+	BFR_OCTR_CT -> MATCH_M_YN;
+	MATCH_S_YN	[label=직종소분류일치여부,
+		style="rounded,filled"];
+	BFR_OCTR_CT -> MATCH_S_YN;
+	MAJR_CD1 -> ACQ_180_YN;
+	MAJR_CD1 -> BFR_OCTR_CT;
+	ACCR_STCD	[label=학력상태코드,
+		style="rounded,filled"];
+	ACCR_STCD -> ACQ_180_YN;
+	ACCR_STCD -> BFR_OCTR_CT;
+	AGE	[label=연령,
+		style="rounded,filled"];
+	AGE -> ACCR_CD;
+	AGE -> ACQ_180_YN;
+	AGE -> BFR_OCTR_CT;
+	AGE -> MAJR_CD1;
+	AGE -> ACCR_STCD;
+	AREA_CD	[label=지역코드,
+		style="rounded,filled"];
+	AGE -> AREA_CD;
+	AGE -> BFR_WTM6_JHCR_CT;
+	AREA_CD -> ACQ_180_YN;
+	HPAR_CSCY_SCOR	[label=희망지역일치도점수,
+		style="rounded,filled"];
+	AREA_CD -> HPAR_CSCY_SCOR;
+	IPS_IRDS_NMPR	[label=피보험자증감인원수,
+		style="rounded,filled"];
+	AREA_CD -> IPS_IRDS_NMPR;
+	JBHT_NMPR	[label=구직자인원수,
+		style="rounded,filled"];
+	AREA_CD -> JBHT_NMPR;
+	RCIT_NMPR	[label=모집인원수,
+		style="rounded,filled"];
+	AREA_CD -> RCIT_NMPR;
+	BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+	HPAR_CSCY_SCOR -> ACQ_180_YN;
+	HPAR_CSCY_SCOR -> MATCH_L_YN;
+	HPAR_CSCY_SCOR -> MATCH_M_YN;
+	HPAR_CSCY_SCOR -> MATCH_S_YN;
+	IPS_IRDS_NMPR -> ACQ_180_YN;
+	IPS_IRDS_NMPR -> MATCH_L_YN;
+	IPS_IRDS_NMPR -> MATCH_M_YN;
+	IPS_IRDS_NMPR -> MATCH_S_YN;
+	JBHT_NMPR -> ACQ_180_YN;
+	JBHT_NMPR -> MATCH_L_YN;
+	JBHT_NMPR -> MATCH_M_YN;
+	JBHT_NMPR -> MATCH_S_YN;
+	RCIT_NMPR -> ACQ_180_YN;
+	RCIT_NMPR -> MATCH_L_YN;
+	RCIT_NMPR -> MATCH_M_YN;
+	RCIT_NMPR -> MATCH_S_YN;
+	KECO_CD1 -> ACQ_180_YN;
+	MATCH_L_YN -> ACQ_180_YN;
+	MATCH_M_YN -> ACQ_180_YN;
+	MATCH_S_YN -> ACQ_180_YN;
+	COMM_WAGE_TYCD	[label=상용임금유형코드,
+		style="rounded,filled"];
+	COMM_WAGE_TYCD -> ACQ_180_YN;
+	SXDS_CD	[label=성별코드,
+		style="rounded,filled"];
+	SXDS_CD -> ACCR_CD;
+	SXDS_CD -> ACQ_180_YN;
+	SXDS_CD -> MAJR_CD1;
+	SXDS_CD -> ACCR_STCD;
+	SXDS_CD -> AREA_CD;
 }

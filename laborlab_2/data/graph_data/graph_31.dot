@@ -1,117 +1,122 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname=Helvetica, shape=box];
-ACCR_CD [label="학력코드", style="rounded,filled"];
-ACCR_STCD [label="학력상태코드", style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부", style="rounded,filled"];
-AGE [label="연령", style="rounded,filled"];
-AREA_CD [label="지역코드", style="rounded,filled"];
-BFR_OCTR_CT [label="이전직업훈련건수", style="rounded,filled"];
-CARR_MYCT1 [label="경력월수1", style="rounded,filled"];
-CARR_MYCT2 [label="경력월수2", style="rounded,filled"];
-CARR_MYCT3 [label="경력월수3", style="rounded,filled"];
-COMM_WAGE_TYCD [label="상용임금유형코드", style="rounded,filled"];
-CRQF_CT [label="자격증건수", style="rounded,filled"];
-CYC1 [label="경력년수1", style="rounded,filled"];
-CYC2 [label="경력년수2", style="rounded,filled"];
-CYC3 [label="경력년수3", style="rounded,filled"];
-EMPN_DE [label="고용보험채용일자", style="rounded,filled"];
-FRFT_AFTR_JHNT_REQR_DYCT [label="상실이후구직인증소요일수", style="rounded,filled"];
-HOPE_WAGE_SM_AMT [label="희망임금합계금액", style="rounded,filled"];
-JO_DRNG_RATE [label="구인배수비율", style="rounded,filled"];
-LAST_FRFT_DE [label="고용보험상실일자", style="rounded,filled"];
-MAJR_CD1 [label="전공코드", style="rounded,filled"];
-SXDS_CD [label="성별코드", style="rounded,filled"];
-ACCR_CD -> ACQ_180_YN;
-ACCR_CD -> BFR_OCTR_CT;
-ACCR_CD -> CARR_MYCT1;
-ACCR_CD -> CARR_MYCT2;
-ACCR_CD -> CARR_MYCT3;
-ACCR_CD -> CRQF_CT;
-ACCR_CD -> CYC1;
-ACCR_CD -> CYC2;
-ACCR_CD -> CYC3;
-ACCR_CD -> HOPE_WAGE_SM_AMT;
-ACCR_CD -> MAJR_CD1;
-ACCR_STCD -> ACQ_180_YN;
-ACCR_STCD -> BFR_OCTR_CT;
-ACCR_STCD -> CARR_MYCT1;
-ACCR_STCD -> CARR_MYCT2;
-ACCR_STCD -> CARR_MYCT3;
-ACCR_STCD -> CRQF_CT;
-ACCR_STCD -> CYC1;
-ACCR_STCD -> CYC2;
-ACCR_STCD -> CYC3;
-ACCR_STCD -> HOPE_WAGE_SM_AMT;
-AGE -> ACCR_CD;
-AGE -> ACCR_STCD;
-AGE -> ACQ_180_YN;
-AGE -> AREA_CD;
-AGE -> BFR_OCTR_CT;
-AGE -> CARR_MYCT1;
-AGE -> CARR_MYCT2;
-AGE -> CARR_MYCT3;
-AGE -> CRQF_CT;
-AGE -> CYC1;
-AGE -> CYC2;
-AGE -> CYC3;
-AGE -> HOPE_WAGE_SM_AMT;
-AGE -> MAJR_CD1;
-AREA_CD -> ACQ_180_YN;
-AREA_CD -> JO_DRNG_RATE;
-BFR_OCTR_CT -> ACQ_180_YN;
-BFR_OCTR_CT -> CARR_MYCT2;
-BFR_OCTR_CT -> CARR_MYCT3;
-BFR_OCTR_CT -> CRQF_CT;
-CARR_MYCT1 -> ACQ_180_YN;
-CARR_MYCT1 -> BFR_OCTR_CT;
-CARR_MYCT1 -> CRQF_CT;
-CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
-CARR_MYCT2 -> ACQ_180_YN;
-CARR_MYCT2 -> CRQF_CT;
-CARR_MYCT2 -> HOPE_WAGE_SM_AMT;
-CARR_MYCT3 -> ACQ_180_YN;
-CARR_MYCT3 -> CRQF_CT;
-CARR_MYCT3 -> HOPE_WAGE_SM_AMT;
-COMM_WAGE_TYCD -> ACQ_180_YN;
-CRQF_CT -> ACQ_180_YN;
-CYC1 -> ACQ_180_YN;
-CYC1 -> CRQF_CT;
-CYC1 -> HOPE_WAGE_SM_AMT;
-CYC2 -> ACQ_180_YN;
-CYC2 -> CRQF_CT;
-CYC2 -> HOPE_WAGE_SM_AMT;
-CYC3 -> ACQ_180_YN;
-CYC3 -> CRQF_CT;
-CYC3 -> HOPE_WAGE_SM_AMT;
-EMPN_DE -> ACQ_180_YN;
-FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
-HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
-JO_DRNG_RATE -> ACQ_180_YN;
-JO_DRNG_RATE -> HOPE_WAGE_SM_AMT;
-LAST_FRFT_DE -> ACQ_180_YN;
-LAST_FRFT_DE -> FRFT_AFTR_JHNT_REQR_DYCT;
-MAJR_CD1 -> ACQ_180_YN;
-MAJR_CD1 -> BFR_OCTR_CT;
-MAJR_CD1 -> CARR_MYCT1;
-MAJR_CD1 -> CARR_MYCT2;
-MAJR_CD1 -> CARR_MYCT3;
-MAJR_CD1 -> CRQF_CT;
-MAJR_CD1 -> CYC1;
-MAJR_CD1 -> CYC2;
-MAJR_CD1 -> CYC3;
-MAJR_CD1 -> HOPE_WAGE_SM_AMT;
-SXDS_CD -> ACCR_CD;
-SXDS_CD -> ACCR_STCD;
-SXDS_CD -> ACQ_180_YN;
-SXDS_CD -> AREA_CD;
-SXDS_CD -> CARR_MYCT1;
-SXDS_CD -> CARR_MYCT2;
-SXDS_CD -> CARR_MYCT3;
-SXDS_CD -> CYC1;
-SXDS_CD -> CYC2;
-SXDS_CD -> CYC3;
-SXDS_CD -> HOPE_WAGE_SM_AMT;
-SXDS_CD -> MAJR_CD1;
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box
+	];
+	ACCR_CD	[label=학력코드,
+		style="rounded,filled"];
+	ACQ_180_YN	[label="180일이내취업여부",
+		style="rounded,filled"];
+	ACCR_CD -> ACQ_180_YN;
+	BFR_OCTR_CT	[label=이전직업훈련건수,
+		style="rounded,filled"];
+	ACCR_CD -> BFR_OCTR_CT;
+	CARR_MYCT1	[label=경력월수1,
+		style="rounded,filled"];
+	ACCR_CD -> CARR_MYCT1;
+	CARR_MYCT2	[label=경력월수2,
+		style="rounded,filled"];
+	ACCR_CD -> CARR_MYCT2;
+	CARR_MYCT3	[label=경력월수3,
+		style="rounded,filled"];
+	ACCR_CD -> CARR_MYCT3;
+	CYC1	[label=경력년수1,
+		style="rounded,filled"];
+	ACCR_CD -> CYC1;
+	CYC2	[label=경력년수2,
+		style="rounded,filled"];
+	ACCR_CD -> CYC2;
+	CYC3	[label=경력년수3,
+		style="rounded,filled"];
+	ACCR_CD -> CYC3;
+	HOPE_WAGE_SM_AMT	[label=희망임금합계금액,
+		style="rounded,filled"];
+	ACCR_CD -> HOPE_WAGE_SM_AMT;
+	MAJR_CD1	[label=전공코드,
+		style="rounded,filled"];
+	ACCR_CD -> MAJR_CD1;
+	BFR_OCTR_CT -> ACQ_180_YN;
+	BFR_OCTR_CT -> CARR_MYCT2;
+	BFR_OCTR_CT -> CARR_MYCT3;
+	CARR_MYCT1 -> ACQ_180_YN;
+	CARR_MYCT1 -> BFR_OCTR_CT;
+	CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+	CARR_MYCT2 -> ACQ_180_YN;
+	CARR_MYCT2 -> HOPE_WAGE_SM_AMT;
+	CARR_MYCT3 -> ACQ_180_YN;
+	CARR_MYCT3 -> HOPE_WAGE_SM_AMT;
+	CYC1 -> ACQ_180_YN;
+	CYC1 -> HOPE_WAGE_SM_AMT;
+	CYC2 -> ACQ_180_YN;
+	CYC2 -> HOPE_WAGE_SM_AMT;
+	CYC3 -> ACQ_180_YN;
+	CYC3 -> HOPE_WAGE_SM_AMT;
+	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	COMM_WAGE_TYCD	[label=상용임금유형코드,
+		style="rounded,filled"];
+	HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
+	MAJR_CD1 -> ACQ_180_YN;
+	MAJR_CD1 -> BFR_OCTR_CT;
+	MAJR_CD1 -> CARR_MYCT1;
+	MAJR_CD1 -> CARR_MYCT2;
+	MAJR_CD1 -> CARR_MYCT3;
+	MAJR_CD1 -> CYC1;
+	MAJR_CD1 -> CYC2;
+	MAJR_CD1 -> CYC3;
+	MAJR_CD1 -> HOPE_WAGE_SM_AMT;
+	ACCR_STCD	[label=학력상태코드,
+		style="rounded,filled"];
+	ACCR_STCD -> ACQ_180_YN;
+	ACCR_STCD -> BFR_OCTR_CT;
+	ACCR_STCD -> CARR_MYCT1;
+	ACCR_STCD -> CARR_MYCT2;
+	ACCR_STCD -> CARR_MYCT3;
+	ACCR_STCD -> CYC1;
+	ACCR_STCD -> CYC2;
+	ACCR_STCD -> CYC3;
+	ACCR_STCD -> HOPE_WAGE_SM_AMT;
+	AGE	[label=연령,
+		style="rounded,filled"];
+	AGE -> ACCR_CD;
+	AGE -> ACQ_180_YN;
+	AGE -> BFR_OCTR_CT;
+	AGE -> CARR_MYCT1;
+	AGE -> CARR_MYCT2;
+	AGE -> CARR_MYCT3;
+	AGE -> CYC1;
+	AGE -> CYC2;
+	AGE -> CYC3;
+	AGE -> HOPE_WAGE_SM_AMT;
+	AGE -> MAJR_CD1;
+	AGE -> ACCR_STCD;
+	AREA_CD	[label=지역코드,
+		style="rounded,filled"];
+	AGE -> AREA_CD;
+	AREA_CD -> ACQ_180_YN;
+	COMM_WAGE_TYCD -> ACQ_180_YN;
+	EMPN_DE	[label=고용보험채용일자,
+		style="rounded,filled"];
+	EMPN_DE -> ACQ_180_YN;
+	FRFT_AFTR_JHNT_REQR_DYCT	[label=상실이후구직인증소요일수,
+		style="rounded,filled"];
+	FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
+	LAST_FRFT_DE	[label=고용보험상실일자,
+		style="rounded,filled"];
+	LAST_FRFT_DE -> ACQ_180_YN;
+	LAST_FRFT_DE -> FRFT_AFTR_JHNT_REQR_DYCT;
+	SXDS_CD	[label=성별코드,
+		style="rounded,filled"];
+	SXDS_CD -> ACCR_CD;
+	SXDS_CD -> ACQ_180_YN;
+	SXDS_CD -> CARR_MYCT1;
+	SXDS_CD -> CARR_MYCT2;
+	SXDS_CD -> CARR_MYCT3;
+	SXDS_CD -> CYC1;
+	SXDS_CD -> CYC2;
+	SXDS_CD -> CYC3;
+	SXDS_CD -> HOPE_WAGE_SM_AMT;
+	SXDS_CD -> MAJR_CD1;
+	SXDS_CD -> ACCR_STCD;
+	SXDS_CD -> AREA_CD;
 }

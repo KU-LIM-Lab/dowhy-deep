@@ -1236,7 +1236,8 @@ def run_analysis_without_preprocessing(
     estimator: str,
     logger: Optional[logging.Logger] = None,
     experiment_id: Optional[str] = None,
-    job_category: Optional[str] = None
+    job_category: Optional[str] = None,
+    training_size: int = 5000
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -1251,6 +1252,7 @@ def run_analysis_without_preprocessing(
         logger (Optional[logging.Logger]): 로거 객체
         experiment_id (Optional[str]): 실험 ID (선택적)
         job_category (Optional[str]): 직종소분류명 (checkpoint 저장 경로에 사용)
+        training_size (int): Train set 크기 (기본값: 5000)
     
     Returns:
         Dict[str, Any]: 분석 결과 딕셔너리
@@ -1291,27 +1293,52 @@ def run_analysis_without_preprocessing(
         
         step_times['데이터 필터링'] = time.time() - step_start
         
-        # 3. Train/Test Split
-        print("3️⃣ Train/Test Split 중 (1:99)...")
+        # 3. Train/Test Split (고정 개수 샘플링)
+        print(f"3️⃣ Train/Test Split 중...")
         step_start = time.time()
         
+        total_size = len(df_for_analysis)
         outcome_data = df_for_analysis[outcome]
         is_binary = outcome_data.nunique() <= 2 and outcome_data.dtype in ['int64', 'int32', 'bool']
         
-        if is_binary:
-            df_train, df_test = train_test_split(
-                df_for_analysis,
-                test_size=0.8,
-                random_state=42,
-                stratify=outcome_data
-            )
+        # 데이터가 training_size보다 작거나 같은 경우 8:2 비율로 split
+        if total_size <= training_size:
+            print(f"⚠️ 전체 데이터({total_size}건)가 training_size({training_size}건)보다 작거나 같습니다. 8:2 비율로 split합니다.")
+            if is_binary:
+                # Binary outcome인 경우 stratify 사용
+                df_train, df_test = train_test_split(
+                    df_for_analysis,
+                    test_size=0.2,
+                    random_state=42,
+                    stratify=outcome_data
+                )
+            else:
+                # 연속형 outcome인 경우 stratify 없이 split
+                df_train, df_test = train_test_split(
+                    df_for_analysis,
+                    test_size=0.2,
+                    random_state=42
+                )
         else:
-            df_train, df_test = train_test_split(
-                df_for_analysis,
-                test_size=0.8,
-                random_state=42
-            )
+            # training_size만큼 샘플링하여 train set 생성, 나머지는 test set
+            print(f"📊 Train: {training_size}개, Test: 나머지 ({total_size - training_size}개)")
+            if is_binary:
+                # Binary outcome인 경우 stratify 사용
+                df_train, df_test = train_test_split(
+                    df_for_analysis,
+                    train_size=training_size,
+                    random_state=42,
+                    stratify=outcome_data
+                )
+            else:
+                # 연속형 outcome인 경우 stratify 없이 샘플링
+                df_train, df_test = train_test_split(
+                    df_for_analysis,
+                    train_size=training_size,
+                    random_state=42
+                )
         
+        print(f"✅ Train set: {len(df_train)}건, Test set: {len(df_test)}건")
         step_times['Train/Test Split'] = time.time() - step_start
         
         # 4. 인과모델 생성
@@ -1468,7 +1495,8 @@ def run_single_experiment(
     estimator: str,
     experiment_id: str,
     logger: Optional[logging.Logger] = None,
-    split_by_job_category: bool = True
+    split_by_job_category: bool = True,
+    training_size: int = 5000
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -1481,6 +1509,8 @@ def run_single_experiment(
         estimator (str): 추정 방법
         experiment_id (str): 실험 ID
         logger (Optional[logging.Logger]): 로거 객체
+        split_by_job_category (bool): 직종소분류별로 분리하여 실험 실행 여부
+        training_size (int): Train set 크기 (기본값: 5000)
     
     Returns:
         Dict[str, Any]: 실험 결과 딕셔너리
@@ -1520,7 +1550,8 @@ def run_single_experiment(
                         estimator=estimator,
                         logger=logger,
                         experiment_id=job_experiment_id,
-                        job_category=job_category
+                        job_category=job_category,
+                        training_size=training_size
                     )
                     
                     all_results.append(job_result)
@@ -1600,7 +1631,8 @@ def run_single_experiment(
                 outcome=outcome,
                 estimator=estimator,
                 logger=logger,
-                experiment_id=experiment_id
+                experiment_id=experiment_id,
+                training_size=training_size
             )
         
         end_time = datetime.now()

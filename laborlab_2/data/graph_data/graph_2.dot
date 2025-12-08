@@ -1,56 +1,89 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname="Helvetica", shape=box, style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부"];
-BFR_OCTR_CT [label="이전직업훈련건수"];
-BFR_WTM6_JHCR_CT [label="이전6개월이내구직인증건수"];
-BFR_EJAP_CT [label="이전이메일입사지원건수"];
-BFR_UEPS_RECP_CT [label="이전실업급여수급건수"];
-UEPS_RECP_YN [label="해당구직인증실업급여인정여부"];
-FRFT_AFTR_JHNT_REQR_DYCT [label="상실이후구직인증소요일수"];
-AGE [label="연령"];
-ACCR_CD [label="학력코드"];
-CARR_MYCT1 [label="경력월수1"];
-DLY_LABR_HOPE_YN [label="일용근로희망여부"];
-HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
-AGE -> ACCR_CD;
-AGE -> CARR_MYCT1;
-AGE -> BFR_OCTR_CT;
-AGE -> BFR_WTM6_JHCR_CT;
-AGE -> BFR_EJAP_CT;
-AGE -> BFR_UEPS_RECP_CT;
-AGE -> ACQ_180_YN;
-ACCR_CD -> CARR_MYCT1;
-ACCR_CD -> HOPE_WAGE_SM_AMT;
-CARR_MYCT1 -> BFR_OCTR_CT;
-CARR_MYCT1 -> BFR_WTM6_JHCR_CT;
-CARR_MYCT1 -> BFR_EJAP_CT;
-CARR_MYCT1 -> BFR_UEPS_RECP_CT;
-CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
-CARR_MYCT1 -> ACQ_180_YN;
-BFR_OCTR_CT -> BFR_EJAP_CT;
-BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
-BFR_UEPS_RECP_CT -> UEPS_RECP_YN;
-BFR_UEPS_RECP_CT -> FRFT_AFTR_JHNT_REQR_DYCT;
-BFR_UEPS_RECP_CT -> DLY_LABR_HOPE_YN;
-BFR_OCTR_CT -> ACQ_180_YN;
-BFR_WTM6_JHCR_CT -> ACQ_180_YN;
-BFR_EJAP_CT -> ACQ_180_YN;
-BFR_UEPS_RECP_CT -> ACQ_180_YN;
-UEPS_RECP_YN -> ACQ_180_YN;
-FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
-DLY_LABR_HOPE_YN -> ACQ_180_YN;
-HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-subgraph cluster_treatments {
-color="#CCCCCC";
-label="Treatments (outcome: ACQ_180_YN)";
-style=dashed;
-node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,filled"];
-T1 [label="T1: BFR_OCTR_CT", role="treatment_meta", treatment_def="이전직업훈련건수 수준 차이의 효과", treatment_name="BFR_OCTR_CT", treatment_question="이전 직업훈련을 많이 받은 사람과 거의 받지 않은 사람의 6개월 내 취업 확률 차이?", treatment_var="BFR_OCTR_CT"];
-T2 [label="T2: BFR_WTM6_JHCR_CT", role="treatment_meta", treatment_def="이전6개월이내구직인증건수 수준 차이의 효과", treatment_name="BFR_WTM6_JHCR_CT", treatment_question="과거 6개월간 구직인증 횟수가 많은 사람과 적은 사람의 6개월 내 취업 확률 차이?", treatment_var="BFR_WTM6_JHCR_CT"];
-T3 [label="T3: BFR_EJAP_CT", role="treatment_meta", treatment_def="이전이메일입사지원건수 수준 차이의 효과", treatment_name="BFR_EJAP_CT", treatment_question="이메일 입사지원 경험이 많은 사람과 거의 없는 사람의 6개월 내 취업 확률 차이?", treatment_var="BFR_EJAP_CT"];
-T4 [label="T4: BFR_UEPS_RECP_CT", role="treatment_meta", treatment_def="이전실업급여수급건수 수준 차이의 효과", treatment_name="BFR_UEPS_RECP_CT", treatment_question="실업급여 수급 건수가 많은 사람과 적은 사람의 6개월 내 취업 확률 차이?", treatment_var="BFR_UEPS_RECP_CT"];
-T5 [label="T5: FRFT_AFTR_JHNT_REQR_DYCT", role="treatment_meta", treatment_def="상실이후구직인증소요일수 길이 차이의 효과", treatment_name="FRFT_AFTR_JHNT_REQR_DYCT", treatment_question="상실 이후 구직인증까지 기간이 짧은 사람과 긴 사람의 6개월 내 취업 확률 차이?", treatment_var="FRFT_AFTR_JHNT_REQR_DYCT"];
-}
-
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box,
+		style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[label="T1: BFR_OCTR_CT",
+			role=treatment_meta,
+			treatment_def="이전직업훈련건수 수준 차이의 효과",
+			treatment_name=BFR_OCTR_CT,
+			treatment_question="이전 직업훈련을 많이 받은 사람과 거의 받지 않은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=BFR_OCTR_CT];
+		T2	[label="T2: BFR_WTM6_JHCR_CT",
+			role=treatment_meta,
+			treatment_def="이전6개월이내구직인증건수 수준 차이의 효과",
+			treatment_name=BFR_WTM6_JHCR_CT,
+			treatment_question="과거 6개월간 구직인증 횟수가 많은 사람과 적은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=BFR_WTM6_JHCR_CT];
+		T3	[label="T3: BFR_EJAP_CT",
+			role=treatment_meta,
+			treatment_def="이전이메일입사지원건수 수준 차이의 효과",
+			treatment_name=BFR_EJAP_CT,
+			treatment_question="이메일 입사지원 경험이 많은 사람과 거의 없는 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=BFR_EJAP_CT];
+		T4	[label="T4: BFR_UEPS_RECP_CT",
+			role=treatment_meta,
+			treatment_def="이전실업급여수급건수 수준 차이의 효과",
+			treatment_name=BFR_UEPS_RECP_CT,
+			treatment_question="실업급여 수급 건수가 많은 사람과 적은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=BFR_UEPS_RECP_CT];
+		T5	[label="T5: FRFT_AFTR_JHNT_REQR_DYCT",
+			role=treatment_meta,
+			treatment_def="상실이후구직인증소요일수 길이 차이의 효과",
+			treatment_name=FRFT_AFTR_JHNT_REQR_DYCT,
+			treatment_question="상실 이후 구직인증까지 기간이 짧은 사람과 긴 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=FRFT_AFTR_JHNT_REQR_DYCT];
+	}
+	ACQ_180_YN	[label="180일이내취업여부"];
+	BFR_OCTR_CT	[label=이전직업훈련건수];
+	BFR_OCTR_CT -> ACQ_180_YN;
+	BFR_WTM6_JHCR_CT	[label=이전6개월이내구직인증건수];
+	BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
+	BFR_EJAP_CT	[label=이전이메일입사지원건수];
+	BFR_OCTR_CT -> BFR_EJAP_CT;
+	BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+	BFR_EJAP_CT -> ACQ_180_YN;
+	BFR_UEPS_RECP_CT	[label=이전실업급여수급건수];
+	BFR_UEPS_RECP_CT -> ACQ_180_YN;
+	UEPS_RECP_YN	[label=해당구직인증실업급여인정여부];
+	BFR_UEPS_RECP_CT -> UEPS_RECP_YN;
+	FRFT_AFTR_JHNT_REQR_DYCT	[label=상실이후구직인증소요일수];
+	BFR_UEPS_RECP_CT -> FRFT_AFTR_JHNT_REQR_DYCT;
+	DLY_LABR_HOPE_YN	[label=일용근로희망여부];
+	BFR_UEPS_RECP_CT -> DLY_LABR_HOPE_YN;
+	UEPS_RECP_YN -> ACQ_180_YN;
+	FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
+	DLY_LABR_HOPE_YN -> ACQ_180_YN;
+	AGE	[label=연령];
+	AGE -> ACQ_180_YN;
+	AGE -> BFR_OCTR_CT;
+	AGE -> BFR_WTM6_JHCR_CT;
+	AGE -> BFR_EJAP_CT;
+	AGE -> BFR_UEPS_RECP_CT;
+	ACCR_CD	[label=학력코드];
+	AGE -> ACCR_CD;
+	CARR_MYCT1	[label=경력월수1];
+	AGE -> CARR_MYCT1;
+	ACCR_CD -> CARR_MYCT1;
+	HOPE_WAGE_SM_AMT	[label=희망임금합계금액];
+	ACCR_CD -> HOPE_WAGE_SM_AMT;
+	CARR_MYCT1 -> ACQ_180_YN;
+	CARR_MYCT1 -> BFR_OCTR_CT;
+	CARR_MYCT1 -> BFR_WTM6_JHCR_CT;
+	CARR_MYCT1 -> BFR_EJAP_CT;
+	CARR_MYCT1 -> BFR_UEPS_RECP_CT;
+	CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
 }

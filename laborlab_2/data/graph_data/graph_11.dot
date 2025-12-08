@@ -1,27 +1,60 @@
 digraph G {
-rankdir=LR;
-node [fillcolor="#F8F9FB", fontname="Helvetica", shape=box, style="rounded,filled"];
-ACQ_180_YN [label="180일이내취업여부"];
-MDTN_HOPE_YN [label="알선희망여부"];
-AGE [label="연령"];
-SXDS_CD [label="성별코드"];
-ACCR_CD [label="학력코드"];
-AGE -> ACCR_CD;
-AGE -> MDTN_HOPE_YN;
-MDTN_HOPE_YN -> ACQ_180_YN;
-AGE -> ACQ_180_YN;
-SXDS_CD -> ACQ_180_YN;
-ACCR_CD -> ACQ_180_YN;
-subgraph cluster_treatments {
-color="#CCCCCC";
-label="Treatments (outcome: ACQ_180_YN)";
-style=dashed;
-node [fillcolor="#FFF7E6", fontname="Helvetica", shape=note, style="rounded,filled"];
-T1 [label="T1: INFO_OTPB_GRAD_CD", role="treatment_meta", treatment_def="정보공개수준코드 차이의 효과", treatment_name="INFO_OTPB_GRAD_CD", treatment_question="이력서 정보를 폭넓게 공개하는 사람과 제한적으로 공개하는 사람의 6개월 내 취업 확률 차이?", treatment_var="INFO_OTPB_GRAD_CD"];
-T2 [label="T2: IDIF_AOFR_YN", role="treatment_meta", treatment_def="개인정보 제공 동의 여부 차이의 효과", treatment_name="IDIF_AOFR_YN", treatment_question="개인정보 제공에 동의한 사람과 동의하지 않은 사람의 6개월 내 취업 확률 차이?", treatment_var="IDIF_AOFR_YN"];
-T3 [label="T3: SAEIL_CNTC_AGRE_YN", role="treatment_meta", treatment_def="타 사이트 연계 동의 여부 차이의 효과", treatment_name="SAEIL_CNTC_AGRE_YN", treatment_question="타 사이트 연계에 동의한 사람과 동의하지 않은 사람의 6개월 내 취업 확률 차이?", treatment_var="SAEIL_CNTC_AGRE_YN"];
-T4 [label="T4: IDIF_IQRY_AGRE_YN", role="treatment_meta", treatment_def="이력서 조회 동의 여부 차이의 효과", treatment_name="IDIF_IQRY_AGRE_YN", treatment_question="채용공고의 이력서 조회에 동의한 사람과 동의하지 않은 사람의 6개월 내 취업 확률 차이?", treatment_var="IDIF_IQRY_AGRE_YN"];
-T5 [label="T5: EMAIL_OTPB_YN", role="treatment_meta", treatment_def="이메일 공개 여부 차이의 효과", treatment_name="EMAIL_OTPB_YN", treatment_question="이메일을 공개하는 사람과 공개하지 않는 사람의 6개월 내 취업 확률 차이?", treatment_var="EMAIL_OTPB_YN"];
-}
-
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box,
+		style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[label="T1: INFO_OTPB_GRAD_CD",
+			role=treatment_meta,
+			treatment_def="정보공개수준코드 차이의 효과",
+			treatment_name=INFO_OTPB_GRAD_CD,
+			treatment_question="이력서 정보를 폭넓게 공개하는 사람과 제한적으로 공개하는 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=INFO_OTPB_GRAD_CD];
+		T2	[label="T2: IDIF_AOFR_YN",
+			role=treatment_meta,
+			treatment_def="개인정보 제공 동의 여부 차이의 효과",
+			treatment_name=IDIF_AOFR_YN,
+			treatment_question="개인정보 제공에 동의한 사람과 동의하지 않은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=IDIF_AOFR_YN];
+		T3	[label="T3: SAEIL_CNTC_AGRE_YN",
+			role=treatment_meta,
+			treatment_def="타 사이트 연계 동의 여부 차이의 효과",
+			treatment_name=SAEIL_CNTC_AGRE_YN,
+			treatment_question="타 사이트 연계에 동의한 사람과 동의하지 않은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=SAEIL_CNTC_AGRE_YN];
+		T4	[label="T4: IDIF_IQRY_AGRE_YN",
+			role=treatment_meta,
+			treatment_def="이력서 조회 동의 여부 차이의 효과",
+			treatment_name=IDIF_IQRY_AGRE_YN,
+			treatment_question="채용공고의 이력서 조회에 동의한 사람과 동의하지 않은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=IDIF_IQRY_AGRE_YN];
+		T5	[label="T5: EMAIL_OTPB_YN",
+			role=treatment_meta,
+			treatment_def="이메일 공개 여부 차이의 효과",
+			treatment_name=EMAIL_OTPB_YN,
+			treatment_question="이메일을 공개하는 사람과 공개하지 않는 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=EMAIL_OTPB_YN];
+	}
+	ACQ_180_YN	[label="180일이내취업여부"];
+	MDTN_HOPE_YN	[label=알선희망여부];
+	MDTN_HOPE_YN -> ACQ_180_YN;
+	AGE	[label=연령];
+	AGE -> ACQ_180_YN;
+	AGE -> MDTN_HOPE_YN;
+	ACCR_CD	[label=학력코드];
+	AGE -> ACCR_CD;
+	ACCR_CD -> ACQ_180_YN;
+	SXDS_CD	[label=성별코드];
+	SXDS_CD -> ACQ_180_YN;
 }

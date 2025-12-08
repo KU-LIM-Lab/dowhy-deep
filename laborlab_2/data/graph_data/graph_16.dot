@@ -1,103 +1,81 @@
 digraph {
-    rankdir=LR;
-    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
-
-    ACCR_CD [label="학력코드"];
-    ACQ_180_YN [label="180일이내취업여부"];
-    AGE [label="연령"];
-    AREA_CD [label="지역코드"];
-    NTR_HOPE_WAGE_SM_AMT [label="중앙평균희망임금합계금액"];
-    NTR_OTIO_MYAV_RMNT_AMT [label="중앙입직월평균보수금액"];
-    CLOS_YM [label="마감년월"];
-    HOPE_WAGE_SM_AMT [label="희망임금합계금액"];
-    IPS_IRDS_NMPR [label="피보험자증감인원수"];
-    JBHT_NMPR [label="구직자인원수"];
-    JO_DRNG_RATE [label="구인배수비율"];
-    RCIT_NMPR [label="모집인원수"];
-
-    AGE -> ACCR_CD;
-    ACCR_CD -> HOPE_WAGE_SM_AMT;
-    AREA_CD -> IPS_IRDS_NMPR;
-    AREA_CD -> JBHT_NMPR;
-    AREA_CD -> RCIT_NMPR;
-    AREA_CD -> JO_DRNG_RATE;
-    AREA_CD -> NTR_OTIO_MYAV_RMNT_AMT;
-    AREA_CD -> NTR_HOPE_WAGE_SM_AMT;
-    CLOS_YM -> IPS_IRDS_NMPR;
-    CLOS_YM -> JBHT_NMPR;
-    CLOS_YM -> RCIT_NMPR;
-    CLOS_YM -> JO_DRNG_RATE;
-    CLOS_YM -> NTR_OTIO_MYAV_RMNT_AMT;
-    CLOS_YM -> NTR_HOPE_WAGE_SM_AMT;
-    IPS_IRDS_NMPR -> HOPE_WAGE_SM_AMT;
-    JBHT_NMPR -> HOPE_WAGE_SM_AMT;
-    RCIT_NMPR -> HOPE_WAGE_SM_AMT;
-    JO_DRNG_RATE -> HOPE_WAGE_SM_AMT;
-    NTR_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
-    NTR_HOPE_WAGE_SM_AMT -> HOPE_WAGE_SM_AMT;
-    IPS_IRDS_NMPR -> ACQ_180_YN;
-    JBHT_NMPR -> ACQ_180_YN;
-    RCIT_NMPR -> ACQ_180_YN;
-    JO_DRNG_RATE -> ACQ_180_YN;
-    CLOS_YM -> ACQ_180_YN;
-    NTR_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
-    NTR_HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-    AREA_CD -> ACQ_180_YN;
-    HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-    AGE -> ACQ_180_YN;
-    ACCR_CD -> ACQ_180_YN;
-
-    // Treatments
-    subgraph cluster_treatments {
-        label="Treatments (outcome: ACQ_180_YN)";
-        style=dashed;
-        color="#CCCCCC";
-        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
-
-        T1 [
-            label="T1: CLOS_YM",
-            role="treatment_meta",
-            treatment_var="CLOS_YM",
-            treatment_name="CLOS_YM",
-            treatment_def="마감년월(CLOS_YM) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="마감년월(CLOS_YM) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T2 [
-            label="T2: IPS_IRDS_NMPR",
-            role="treatment_meta",
-            treatment_var="IPS_IRDS_NMPR",
-            treatment_name="IPS_IRDS_NMPR",
-            treatment_def="피보험자증감인원수(IPS_IRDS_NMPR) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="피보험자증감인원수(IPS_IRDS_NMPR) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T3 [
-            label="T3: JBHT_NMPR",
-            role="treatment_meta",
-            treatment_var="JBHT_NMPR",
-            treatment_name="JBHT_NMPR",
-            treatment_def="구직자인원수(JBHT_NMPR) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="구직자인원수(JBHT_NMPR) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T4 [
-            label="T4: RCIT_NMPR",
-            role="treatment_meta",
-            treatment_var="RCIT_NMPR",
-            treatment_name="RCIT_NMPR",
-            treatment_def="모집인원수(RCIT_NMPR) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="모집인원수(RCIT_NMPR) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-        T5 [
-            label="T5: JO_DRNG_RATE",
-            role="treatment_meta",
-            treatment_var="JO_DRNG_RATE",
-            treatment_name="JO_DRNG_RATE",
-            treatment_def="구인배수비율(JO_DRNG_RATE) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
-            treatment_question="구인배수비율(JO_DRNG_RATE) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?"
-        ];
-
-    }
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+		fontname=Helvetica,
+		shape=box,
+		style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[label="T1: CLOS_YM",
+			role=treatment_meta,
+			treatment_def="마감년월(CLOS_YM) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=CLOS_YM,
+			treatment_question="마감년월(CLOS_YM) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?",
+			treatment_var=CLOS_YM];
+		T2	[label="T2: IPS_IRDS_NMPR",
+			role=treatment_meta,
+			treatment_def="피보험자증감인원수(IPS_IRDS_NMPR) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=IPS_IRDS_NMPR,
+			treatment_question="피보험자증감인원수(IPS_IRDS_NMPR) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?",
+			treatment_var=IPS_IRDS_NMPR];
+		T3	[label="T3: JBHT_NMPR",
+			role=treatment_meta,
+			treatment_def="구직자인원수(JBHT_NMPR) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=JBHT_NMPR,
+			treatment_question="구직자인원수(JBHT_NMPR) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?",
+			treatment_var=JBHT_NMPR];
+		T4	[label="T4: RCIT_NMPR",
+			role=treatment_meta,
+			treatment_def="모집인원수(RCIT_NMPR) 수준 차이가 ACQ_180_YN(180일이내취업여부)에 미치는 인과효과",
+			treatment_name=RCIT_NMPR,
+			treatment_question="모집인원수(RCIT_NMPR) 수준이 다른 구직자들의 6개월 내 취업 확률은 얼마나 다른가?",
+			treatment_var=RCIT_NMPR];
+	}
+	ACCR_CD	[label=학력코드];
+	ACQ_180_YN	[label="180일이내취업여부"];
+	ACCR_CD -> ACQ_180_YN;
+	HOPE_WAGE_SM_AMT	[label=희망임금합계금액];
+	ACCR_CD -> HOPE_WAGE_SM_AMT;
+	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	AGE	[label=연령];
+	AGE -> ACCR_CD;
+	AGE -> ACQ_180_YN;
+	AREA_CD	[label=지역코드];
+	AREA_CD -> ACQ_180_YN;
+	NTR_HOPE_WAGE_SM_AMT	[label=중앙평균희망임금합계금액];
+	AREA_CD -> NTR_HOPE_WAGE_SM_AMT;
+	NTR_OTIO_MYAV_RMNT_AMT	[label=중앙입직월평균보수금액];
+	AREA_CD -> NTR_OTIO_MYAV_RMNT_AMT;
+	IPS_IRDS_NMPR	[label=피보험자증감인원수];
+	AREA_CD -> IPS_IRDS_NMPR;
+	JBHT_NMPR	[label=구직자인원수];
+	AREA_CD -> JBHT_NMPR;
+	RCIT_NMPR	[label=모집인원수];
+	AREA_CD -> RCIT_NMPR;
+	NTR_HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	NTR_HOPE_WAGE_SM_AMT -> HOPE_WAGE_SM_AMT;
+	NTR_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
+	NTR_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
+	IPS_IRDS_NMPR -> ACQ_180_YN;
+	IPS_IRDS_NMPR -> HOPE_WAGE_SM_AMT;
+	JBHT_NMPR -> ACQ_180_YN;
+	JBHT_NMPR -> HOPE_WAGE_SM_AMT;
+	RCIT_NMPR -> ACQ_180_YN;
+	RCIT_NMPR -> HOPE_WAGE_SM_AMT;
+	CLOS_YM	[label=마감년월];
+	CLOS_YM -> ACQ_180_YN;
+	CLOS_YM -> NTR_HOPE_WAGE_SM_AMT;
+	CLOS_YM -> NTR_OTIO_MYAV_RMNT_AMT;
+	CLOS_YM -> IPS_IRDS_NMPR;
+	CLOS_YM -> JBHT_NMPR;
+	CLOS_YM -> RCIT_NMPR;
 }
