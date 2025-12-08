@@ -187,11 +187,11 @@ class Preprocessor:
 
         print(f"[DEBUG] basic_preprocessing 완료 - 최종 컬럼 수: {len(df.columns)}, JHNT_MBN 존재: {'JHNT_MBN' in df.columns}")
         
-        # JHNT_MBN과 JHNT_CTN을 문자열로 통일
+        # JHNT_MBN과 JHNT_CTN을 문자열로 통일 (13자리 0패딩)
         if 'JHNT_MBN' in df.columns:
-            df['JHNT_MBN'] = df['JHNT_MBN'].astype(str)
+            df['JHNT_MBN'] = df['JHNT_MBN'].astype(str).str.zfill(13)
         if 'JHNT_CTN' in df.columns:
-            df['JHNT_CTN'] = df['JHNT_CTN'].astype(str)
+            df['JHNT_CTN'] = df['JHNT_CTN'].astype(str).str.zfill(13)
         
         return df
 
