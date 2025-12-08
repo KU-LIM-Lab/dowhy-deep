@@ -73,7 +73,7 @@ class LLMScorer:
             return typo_count
             
         except Exception as e:
-            print(f"오탈자 개수 계산 실패: {e}")
+            print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
             return 0
     
     async def count_typos_async(self, text: str, session: aiohttp.ClientSession) -> int:
@@ -103,7 +103,7 @@ class LLMScorer:
                 return typo_count
                 
         except Exception as e:
-            print(f"오탈자 개수 계산 실패: {e}")
+            print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
             return 0
 
 
