@@ -1341,6 +1341,18 @@ def run_analysis_without_preprocessing(
         print(f"✅ Train set: {len(df_train)}건, Test set: {len(df_test)}건")
         step_times['Train/Test Split'] = time.time() - step_start
         
+        # 3-1. 컬럼별 타입 체크 (int/str 혼합 감지)
+        print("🔍 컬럼별 타입 체크 중...")
+        for col in df_train.columns:
+            if df_train[col].dtype == 'object':
+                non_null = df_train[col].dropna()
+                if len(non_null) > 0:
+                    types = set(type(v).__name__ for v in non_null)
+                    if len(types) > 1:
+                        print(f"⚠️ 컬럼 '{col}'에 타입 혼합 감지: {types}")
+                        if logger:
+                            logger.warning(f"컬럼 '{col}'에 타입 혼합 감지: {types}")
+        
         # 4. 인과모델 생성
         print("4️⃣ 인과모델 생성 중...")
         step_start = time.time()
