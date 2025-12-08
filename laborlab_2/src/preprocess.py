@@ -474,32 +474,41 @@ class Preprocessor:
         # 구직인증 일자 가져오기
         jhcr_de = item.get("JHCR_DE", "")  # 구직인증 일자
         
-        # TRAININGS에서 훈련 데이터 추출
-        trainings = item.get("TRAININGS", [])
+        # CONTENTS에서 훈련 데이터 추출
+        trainings = item.get("CONTENTS", [])
         
-        # TRAININGS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
+        # 날짜 파싱 헬퍼 함수 (여러 형식 지원)
+        def parse_date(date_str):
+            if not date_str:
+                return None
+            date_str = date_str.strip()
+            for fmt in ["%Y-%m-%d", "%Y%m%d"]:
+                try:
+                    return datetime.strptime(date_str, fmt)
+                except:
+                    continue
+            return None
+        
+        # CONTENTS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
         training_end_dates = []
         for tr in trainings:
-            trng_ende = tr.get("TRNG_ENDE", "").strip()
-            if trng_ende:
-                try:
-                    # 날짜 문자열을 datetime 객체로 변환
-                    date_obj = datetime.strptime(trng_ende, DEFAULT_DATE_FORMAT)
-                    training_end_dates.append(date_obj)
-                except:
-                    pass
+            trng_ende = tr.get("TRNG_ENDE", "")
+            date_obj = parse_date(trng_ende)
+            if date_obj:
+                training_end_dates.append(date_obj)
         
         # 경과일 계산: JHCR_DE - 최근 TRNG_ENDE (일수 차이)
         elapsed_days = None
         if jhcr_de and training_end_dates:
             try:
                 # 구직인증 일자를 datetime 객체로 변환
-                jhcr_date = datetime.strptime(jhcr_de, DEFAULT_DATE_FORMAT)
-                # 가장 최근 훈련 종료일 (최대값)
+                jhcr_date = parse_date(jhcr_de)
+                # 가장 최근 훈련 종료일 (최대값)    
                 latest_end_date = max(training_end_dates)
-                # 일수 차이 계산
-                elapsed_days = (jhcr_date - latest_end_date).days
-                elapsed_days = elapsed_days if elapsed_days >= 0 else None
+                # 일수 차이 계산 (둘 다 유효한 경우에만)
+                if jhcr_date and latest_end_date:
+                    elapsed_days = (jhcr_date - latest_end_date).days
+                    elapsed_days = elapsed_days if elapsed_days >= 0 else None
             except:
                 elapsed_days = None
         
