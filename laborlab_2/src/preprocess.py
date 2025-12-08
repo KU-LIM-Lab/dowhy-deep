@@ -242,12 +242,12 @@ class Preprocessor:
         if not seek_id:
             return None
         
-        # BASIC_RESUME_YN == "Y"인 resume 찾기
-        resumes = item.get("RESUMES", [])
+        # BASIC_RESUME_YN == "Y"인 resume 찾기 (CONTENTS 배열에서)
+        contents = item.get("CONTENTS", [])
         basic_resume = None
-        for resume in resumes:
-            if str(resume.get("BASIC_RESUME_YN", "")).upper() == "Y":
-                basic_resume = resume
+        for content in contents:
+            if str(content.get("BASIC_RESUME_YN", "")).upper() == "Y":
+                basic_resume = content
                 break
         
         # 기본 이력서가 없으면 빈 결과 반환
@@ -258,8 +258,8 @@ class Preprocessor:
                 "items_num": 0
             }
         
-        # ITEMS 가져오기
-        items = basic_resume.get("ITEMS", [])
+        # RESUME_CONTENTS 가져오기
+        items = basic_resume.get("RESUME_CONTENTS", [])
         items_num = len(items)
         
         # variable_mapping에서 resume 섹션 가져오기
