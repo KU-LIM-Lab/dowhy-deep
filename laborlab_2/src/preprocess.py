@@ -981,9 +981,19 @@ class Preprocessor:
         categorical_cols = ['HOPE_JSCD1', 'HOPE_JSCD2', 'HOPE_JSCD3', 'AREA_CD']
         for col in categorical_cols:
             if col in result.columns:
-                result[col] = result[col].apply(
-                    lambda x: str(int(float(x))) if pd.notna(x) and str(x).strip() != '' else np.nan
-                )
+                def safe_convert_to_str(x):
+                    """숫자로 변환 가능한 값은 정수로 변환 후 문자열로, 아니면 그대로 문자열로 유지"""
+                    if pd.isna(x) or str(x).strip() == '':
+                        return np.nan
+                    try:
+                        # 숫자로 변환 가능한 경우 정수로 변환 후 문자열로
+                        num_val = float(x)
+                        return str(int(num_val))
+                    except (ValueError, TypeError):
+                        # 숫자로 변환 불가능한 경우 그대로 문자열로 유지
+                        return str(x).strip()
+                
+                result[col] = result[col].apply(safe_convert_to_str)
         
         # 결측치 보간 (평균값 또는 최빈값으로)
         from . import utils
