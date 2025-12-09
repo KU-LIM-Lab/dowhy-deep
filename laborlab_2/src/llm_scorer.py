@@ -45,66 +45,55 @@ class LLMScorer:
     
         
     def count_typos(self, text: str) -> int:
-        """TYPO_CHECK 프롬프트를 사용한 오탈자 개수 계산 (동기 버전)"""
-        if not text or text.strip() == "":
-            return 0
-
-        if not OLLAMA_AVAILABLE or ollama is None:
-            # ollama가 설치되지 않은 경우 기본값 반환
-            return 0
-
-        try:
-            sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
-            user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
-            
-            # 로컬 Ollama 클라이언트 생성 (무조건 환경변수에서 가져온 호스트 사용)
-            client = ollama.Client(host=self.ollama_host)
-            
-            resp = client.chat(
-                model="llama3.2:1b",
-                messages=[sys_msg, user_msg],
-                options={"temperature": 0.1},
-                stream=False
-            )
-            
-            content = resp["message"]["content"]
-            data = json.loads(content)
-            typo_count = int(max(0, int(data.get("typo_count", 0))))
-            return typo_count
-            
-        except Exception as e:
-            print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
-            return 0
+        """오탈자 개수 계산 로직 비활성화."""
+        # 아래는 기존 오탈자 계산 로직(주석 처리)
+        # if not text or text.strip() == "":
+        #     return 0
+        # if not OLLAMA_AVAILABLE or ollama is None:
+        #     return 0
+        # try:
+        #     sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
+        #     user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
+        #     client = ollama.Client(host=self.ollama_host)
+        #     resp = client.chat(
+        #         model="llama3.2:1b",
+        #         messages=[sys_msg, user_msg],
+        #         options={"temperature": 0.1},
+        #         stream=False
+        #     )
+        #     content = resp["message"]["content"]
+        #     data = json.loads(content)
+        #     return int(max(0, int(data.get("typo_count", 0))))
+        # except Exception as e:
+        #     print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
+        #     return 0
+        return 0
     
     async def count_typos_async(self, text: str, session: aiohttp.ClientSession) -> int:
-        """TYPO_CHECK 프롬프트를 사용한 오탈자 개수 계산 (비동기 버전)"""
-        if not text or text.strip() == "":
-            return 0
-
-        try:
-            sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
-            user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
-            
-            # Ollama API 엔드포인트 URL 구성
-            url = f"http://{self.ollama_host}/api/chat"
-            payload = {
-                "model": "llama3.2:1b",
-                "messages": [sys_msg, user_msg],
-                "options": {"temperature": 0.1},
-                "stream": False
-            }
-            
-            async with session.post(url, json=payload) as resp:
-                resp.raise_for_status()
-                result = await resp.json()
-                content = result["message"]["content"]
-                data = json.loads(content)
-                typo_count = int(max(0, int(data.get("typo_count", 0))))
-                return typo_count
-                
-        except Exception as e:
-            print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
-            return 0
+        """오탈자 개수 계산 로직 비활성화 (비동기)."""
+        # 아래는 기존 오탈자 계산 로직(주석 처리)
+        # if not text or text.strip() == "":
+        #     return 0
+        # try:
+        #     sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
+        #     user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
+        #     url = f"http://{self.ollama_host}/api/chat"
+        #     payload = {
+        #         "model": "llama3.2:1b",
+        #         "messages": [sys_msg, user_msg],
+        #         "options": {"temperature": 0.1},
+        #         "stream": False
+        #     }
+        #     async with session.post(url, json=payload) as resp:
+        #         resp.raise_for_status()
+        #         result = await resp.json()
+        #         content = result["message"]["content"]
+        #         data = json.loads(content)
+        #         return int(max(0, int(data.get("typo_count", 0))))
+        # except Exception as e:
+        #     print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
+        #     return 0
+        return 0
 
 
     def _build_prompt(self, section: str, job_name: str, job_examples: List[str], text: str) -> str:

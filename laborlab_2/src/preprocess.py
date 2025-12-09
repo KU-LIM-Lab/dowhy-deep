@@ -388,14 +388,17 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산 (비동기)
+        # 점수 계산
         score, _ = await self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
-        
-        # 오탈자 수 계산 - 비활성화 (타임아웃 이슈로 사용 안 함)
+
+        # 오탈자 계산 로직 비활성화 (기존 로직 주석)
+        # score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
         # typo_task = self.llm_scorer.count_typos_async(full_text, session)
+        # score, _ = await score_task
         # typo_count = await typo_task
+        typo_count = 0
         
-        # score만 반환 (그래프 변수명과 일치)
+        # score와 오탈자 수 반환 (오탈자는 0 고정)
         return {
             "JHNT_MBN": str(seek_id),  # 문자열로 변환
             "cover_letter_score": score  # 그래프: cover_letter_score
