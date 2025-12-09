@@ -14,7 +14,7 @@ services:
       # 소스 코드 마운트 (코드 수정 시 재빌드 불필요)
       - ./src:/app/laborlab_2/src
       # TabPFN 모델 캐시 (폐쇄망용)
-      - ../tabpfn_ckpt:/app/tabpfn_ckpt:ro
+      - ../tabpfn_ckpt:/app/tabpfn_ckpt
     environment:
       - PYTHONPATH=/app
       - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log

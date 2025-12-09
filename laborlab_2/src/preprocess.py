@@ -414,11 +414,9 @@ class Preprocessor:
         rows = []
         import logging
         
-        # 타임아웃 넉넉하게 설정 (학습용 - 전체 2시간 소요)
-        timeout = aiohttp.ClientTimeout(total=600, sock_read=300)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with aiohttp.ClientSession() as session:
             tasks = []
-            for item in data:
+            for item in data:햣 
                 task = self._process_single_cover_letter(item, session)
                 tasks.append(task)
             
@@ -485,6 +483,7 @@ class Preprocessor:
         
         # CONTENTS에서 훈련 데이터 추출
         trainings = item.get("CONTENTS", [])
+        print(f"{log_prefix} item keys: {list(item.keys())}")
         if not trainings:
             print(f"{log_prefix} CONTENTS 비어있음 (훈련 데이터 없음)")
         
