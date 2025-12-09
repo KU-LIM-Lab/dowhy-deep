@@ -388,13 +388,17 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산과 오탈자 수 계산을 비동기로 병렬 실행
-        score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
-        typo_task = self.llm_scorer.count_typos_async(full_text, session)
-        score, _ = await score_task
-        typo_count = await typo_task
+        # 점수 계산
+        score, _ = await self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
+
+        # 오탈자 계산 로직 비활성화 (기존 로직 주석)
+        # score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
+        # typo_task = self.llm_scorer.count_typos_async(full_text, session)
+        # score, _ = await score_task
+        # typo_count = await typo_task
+        typo_count = 0
         
-        # score와 오탈자 수만 반환 (그래프 변수명과 일치)
+        # score와 오탈자 수 반환 (오탈자는 0 고정)
         return {
             "JHNT_MBN": str(seek_id),  # 문자열로 변환
             "cover_letter_score": score,  # 그래프: cover_letter_score
@@ -430,7 +434,7 @@ class Preprocessor:
                     print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
                         "JHNT_MBN": str(seek_id),  # 문자열로 변환
-                        "cove_letter_score": None,
+                        "cover_letter_score": None,
                         "cover_letter_typo_count": 0
                     })
         
