@@ -470,14 +470,20 @@ class Preprocessor:
         """단일 직업훈련 레코드 처리 (비동기)"""
         # JHNT_CTN을 키로 사용
         jhnt_ctn = item.get("JHNT_CTN", "")
+        log_prefix = f"[직업훈련][JHNT_CTN:{jhnt_ctn}]"
         if not jhnt_ctn:
+            print(f"{log_prefix} JHNT_CTN 누락 → 스킵")
             return None
         
         # 구직인증 일자 가져오기
         jhcr_de = item.get("JHCR_DE", "")  # 구직인증 일자
+        if not jhcr_de:
+            print(f"{log_prefix} JHCR_DE(구직인증일) 없음")
         
         # CONTENTS에서 훈련 데이터 추출
         trainings = item.get("CONTENTS", [])
+        if not trainings:
+            print(f"{log_prefix} CONTENTS 비어있음 (훈련 데이터 없음)")
         
         # 날짜 파싱 헬퍼 함수 (여러 형식 지원)
         def parse_date(date_str):
@@ -489,6 +495,7 @@ class Preprocessor:
                     return datetime.strptime(date_str, fmt)
                 except:
                     continue
+            print(f"{log_prefix} 날짜 파싱 실패: {date_str}")
             return None
         
         # CONTENTS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
@@ -498,6 +505,9 @@ class Preprocessor:
             date_obj = parse_date(trng_ende)
             if date_obj:
                 training_end_dates.append(date_obj)
+            else:
+                print(f"{log_prefix} TRNG_ENDE 파싱 실패 또는 없음: {trng_ende}")
+        print(f"{log_prefix} 훈련 종료일 파싱 결과 개수={len(training_end_dates)} / 총 {len(trainings)}건")
         
         # 경과일 계산: JHCR_DE - 최근 TRNG_ENDE (일수 차이)
         elapsed_days = None
@@ -505,17 +515,28 @@ class Preprocessor:
             try:
                 # 구직인증 일자를 datetime 객체로 변환
                 jhcr_date = parse_date(jhcr_de)
-                print(f"[DEBUG] jhcr_de={jhcr_de}, jhcr_date={jhcr_date}")
-                print(f"[DEBUG] training_end_dates[0]={training_end_dates[0] if training_end_dates else 'empty'}, type={type(training_end_dates[0]) if training_end_dates else 'N/A'}")
+                print(f"{log_prefix} jhcr_de(raw)={jhcr_de}, jhcr_date={jhcr_date}")
+                if not jhcr_date:
+                    print(f"{log_prefix} JHCR_DE 파싱 실패 → 경과일 계산 불가")
+                print(f"{log_prefix} 첫 번째 종료일={training_end_dates[0] if training_end_dates else 'empty'}, 총 {len(training_end_dates)}건")
                 # 가장 최근 훈련 종료일 (최대값)    
                 latest_end_date = max(training_end_dates)
                 # 일수 차이 계산 (둘 다 유효한 경우에만)
                 if jhcr_date and latest_end_date:
                     elapsed_days = (jhcr_date - latest_end_date).days
-                    elapsed_days = elapsed_days if elapsed_days >= 0 else None
+                    if elapsed_days < 0:
+                        print(f"{log_prefix} 경과일 음수({elapsed_days}) → None 처리")
+                        elapsed_days = None
+                    else:
+                        print(f"{log_prefix} 경과일 계산 성공: {elapsed_days}일 (구직인증일 - 최종훈련종료일)")
             except Exception as e:
-                print(f"[ERROR] 경과일 계산 실패: {type(e).__name__}: {e}")
+                print(f"{log_prefix} [ERROR] 경과일 계산 실패: {type(e).__name__}: {e}")
                 elapsed_days = None
+        else:
+            if not jhcr_de:
+                print(f"{log_prefix} 경과일 계산 스킵: JHCR_DE 없음")
+            if not training_end_dates:
+                print(f"{log_prefix} 경과일 계산 스킵: 유효한 TRNG_ENDE 없음")
         
         # 텍스트 포맷팅: {TRNG_CRSN}: ({TRNG_BGDE} ~ {TRNG_ENDE})
         training_texts = []
