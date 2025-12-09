@@ -943,8 +943,8 @@ class Preprocessor:
                             # Logger 객체를 NaN으로 대체
                             df[col] = df[col].apply(lambda x: np.nan if (isinstance(x, logging.Logger) or 'Logger' in str(type(x))) else x)
             
-            # 테이블을 기준으로 inner join
-            result = result.merge(df, on=merge_key, how="inner", suffixes=('', f'_df{idx+1}'))
+            # CSV 파일을 기준으로 left join (CSV의 모든 행 유지)
+            result = result.merge(df, on=merge_key, how="left", suffixes=('', f'_df{idx+1}'))
             print(f"[DEBUG] 병합 후 result 크기: {result.shape}")
             
             # 병합 후에 Logger 객체가 있는지 확인
