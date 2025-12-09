@@ -972,11 +972,13 @@ class Preprocessor:
                 missing_pct = (missing_count / total_rows * 100) if total_rows > 0 else 0
                 print(f"   {col}: {missing_count}개 ({missing_pct:.2f}%)")
         
-        # 범주형으로 처리해야 할 컬럼들을 문자열로 변환 (최빈값 보간을 위해)
-        categorical_cols = ['HOPE_JSCD1', 'HOPE_JSCD2', 'HOPE_JSCD3']
+        # 범주형으로 처리해야 할 컬럼들을 문자열로 변환 (int/str 혼합 → str 통일)
+        categorical_cols = ['HOPE_JSCD1', 'HOPE_JSCD2', 'HOPE_JSCD3', 'AREA_CD']
         for col in categorical_cols:
             if col in result.columns:
-                result[col] = result[col].astype(str).replace('nan', np.nan)
+                result[col] = result[col].apply(
+                    lambda x: str(int(float(x))) if pd.notna(x) and str(x).strip() != '' else np.nan
+                )
         
         # 결측치 보간 (평균값 또는 최빈값으로)
         from . import utils
