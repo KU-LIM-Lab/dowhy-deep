@@ -393,14 +393,14 @@ def load_all_data(data_dir: str, seis_data_dir: str, graph_file: Optional[str] =
 
 def impute_missing_values(df: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     """
-    결측치를 평균값(수치형) 또는 최빈값(범주형)으로 보간하는 함수
+    결측치를 전부 0으로 채우는 단순 보간 함수
     
     Input:
         df (pd.DataFrame): 원본 데이터프레임
         logger (Optional[logging.Logger]): 로거 객체
     
     Output:
-        pd.DataFrame: 결측치가 보간된 데이터프레임
+        pd.DataFrame: 결측치가 0으로 채워진 데이터프레임
     """
     df_imputed = df.copy()
     
@@ -410,41 +410,11 @@ def impute_missing_values(df: pd.DataFrame, logger: Optional[logging.Logger] = N
         if missing_count == 0:
             continue
         
-        # 수치형 변수: 평균값으로 보간
-        if df_imputed[col].dtype in ['int64', 'int32', 'float64', 'float32']:
-            mean_value = df_imputed[col].mean()
-            if pd.notna(mean_value):
-                df_imputed[col] = df_imputed[col].fillna(mean_value)
-                if logger:
-                    logger.info(f"컬럼 '{col}': {missing_count}개 결측치를 평균값({mean_value:.2f})으로 보간")
-                else:
-                    print(f"📊 컬럼 '{col}': {missing_count}개 결측치를 평균값({mean_value:.2f})으로 보간")
-            else:
-                # 평균값이 NaN인 경우 0으로 보간
-                df_imputed[col] = df_imputed[col].fillna(0)
-                if logger:
-                    logger.warning(f"컬럼 '{col}': 평균값 계산 불가, 0으로 보간")
-                else:
-                    print(f"⚠️ 컬럼 '{col}': 평균값 계산 불가, 0으로 보간")
-        
-        # 범주형 변수(문자열, 객체): 최빈값으로 보간
+        df_imputed[col] = df_imputed[col].fillna(0)
+        if logger:
+            logger.info(f"컬럼 '{col}': {missing_count}개 결측치를 0으로 보간")
         else:
-            mode_values = df_imputed[col].mode()
-            if len(mode_values) > 0:
-                mode_value = mode_values[0]
-                df_imputed[col] = df_imputed[col].fillna(mode_value)
-                if logger:
-                    logger.info(f"컬럼 '{col}': {missing_count}개 결측치를 최빈값('{mode_value}')으로 보간")
-                else:
-                    print(f"📊 컬럼 '{col}': {missing_count}개 결측치를 최빈값('{mode_value}')으로 보간")
-            else:
-                # 최빈값이 없는 경우 빈 문자열 또는 'Unknown'으로 보간
-                fill_value = '' if df_imputed[col].dtype == 'object' else 'Unknown'
-                df_imputed[col] = df_imputed[col].fillna(fill_value)
-                if logger:
-                    logger.warning(f"컬럼 '{col}': 최빈값 계산 불가, '{fill_value}'로 보간")
-                else:
-                    print(f"⚠️ 컬럼 '{col}': 최빈값 계산 불가, '{fill_value}'로 보간")
+            print(f"📊 컬럼 '{col}': {missing_count}개 결측치를 0으로 보간")
     
     return df_imputed
 
