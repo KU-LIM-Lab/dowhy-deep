@@ -21,7 +21,7 @@
     "use_multi_gpu": false,
     "device_ids": [],
     "max_num_classes": 10,
-    "prediction_batch_size": 64
+    "prediction_batch_size": 512
   },
   "experiment_list": [
     ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],

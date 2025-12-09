@@ -234,14 +234,34 @@ def cleanup_tabpfn_memory(estimate, device_id=3, logger=None):
         # Python garbage collection 강제 실행
         gc.collect()
         
-        # GPU 캐시 정리
+        # GPU 캐시 정리 (PyTorch 메모리 풀 정리)
         torch.cuda.empty_cache()
         torch.cuda.synchronize()
+        
+        # 메모리 통계 리셋 (다른 서비스와 공유 시 유용)
+        try:
+            torch.cuda.reset_peak_memory_stats(device_id)
+        except:
+            pass  # 일부 PyTorch 버전에서는 지원하지 않을 수 있음
+        
+        # force_release 옵션이 활성화된 경우 추가 정리 시도
+        if force_release:
+            # 여러 번 empty_cache 호출로 메모리 풀 강제 정리 시도
+            for _ in range(3):
+                gc.collect()
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
         
         if logger:
             allocated = torch.cuda.memory_allocated(device_id) / 1024**3  # GB
             reserved = torch.cuda.memory_reserved(device_id) / 1024**3  # GB
             logger.debug(f"TabPFN 메모리 정리 완료 (CUDA {device_id}) - 할당: {allocated:.2f}GB, 예약: {reserved:.2f}GB")
+            if reserved > 0.1:  # 예약 메모리가 100MB 이상이면 경고
+                logger.warning(
+                    f"⚠️ GPU 메모리 예약량이 {reserved:.2f}GB입니다. "
+                    f"PyTorch는 메모리 풀을 사용하므로 예약된 메모리는 다른 프로세스가 즉시 사용할 수 없을 수 있습니다. "
+                    f"다른 서비스와 같은 GPU를 공유하는 경우 메모리 부족 문제가 발생할 수 있습니다."
+                )
     except Exception as e:
         if logger:
             logger.warning(f"TabPFN 메모리 정리 중 오류: {e}")
