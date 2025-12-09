@@ -481,11 +481,11 @@ class Preprocessor:
         if not jhcr_de:
             print(f"{log_prefix} JHCR_DE(구직인증일) 없음")
         
-        # CONTENTS에서 훈련 데이터 추출
-        trainings = item.get("CONTENTS", [])
+        # TRAININGS_JSON에서 훈련 데이터 추출
+        trainings = item.get("TRAININGS_JSON", [])
         print(f"{log_prefix} item keys: {list(item.keys())}")
         if not trainings:
-            print(f"{log_prefix} CONTENTS 비어있음 (훈련 데이터 없음)")
+            print(f"{log_prefix} TRAININGS_JSON 비어있음 (훈련 데이터 없음)")
         
         # 날짜 파싱 헬퍼 함수 (여러 형식 지원)
         def parse_date(date_str):
@@ -500,7 +500,7 @@ class Preprocessor:
             print(f"{log_prefix} 날짜 파싱 실패: {date_str}")
             return None
         
-        # CONTENTS에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
+        # TRAININGS_JSON에서 모든 TRNG_ENDE 가져와서 datetime 객체 리스트로 변환
         training_end_dates = []
         for tr in trainings:
             trng_ende = tr.get("TRNG_ENDE", "")
