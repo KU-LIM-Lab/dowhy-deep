@@ -16,6 +16,7 @@ import pickle
 import json
 import time
 import itertools
+import gc
 from typing import Dict, Any, Optional, List, Tuple
 from scipy import stats
 from sklearn.model_selection import train_test_split
@@ -183,6 +184,69 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             logger.error(f"예측 실패: {e}")
         raise
 
+def cleanup_tabpfn_memory(estimate, device_id=3, logger=None):
+    """
+    TabPFN 모델의 GPU 메모리를 완전히 해제하는 함수
+    
+    Args:
+        estimate: CausalEstimate 객체
+        device_id: CUDA device ID (기본값: 3)
+        logger: 로거 객체
+    """
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return
+        
+        torch.cuda.set_device(device_id)
+        
+        # TabPFN 모델 객체에서 메모리 해제
+        if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, 'tabpfn_model'):
+            tabpfn_model = estimate.estimator.tabpfn_model
+            if tabpfn_model is not None:
+                # _single_model 해제
+                if hasattr(tabpfn_model, '_single_model') and tabpfn_model._single_model is not None:
+                    try:
+                        del tabpfn_model._single_model
+                    except:
+                        pass
+                    tabpfn_model._single_model = None
+                
+                # train_X, train_y 메모리 해제
+                if hasattr(tabpfn_model, 'train_X'):
+                    try:
+                        del tabpfn_model.train_X
+                    except:
+                        pass
+                if hasattr(tabpfn_model, 'train_y'):
+                    try:
+                        del tabpfn_model.train_y
+                    except:
+                        pass
+                
+                # 모델 객체 삭제
+                try:
+                    del tabpfn_model
+                except:
+                    pass
+                estimate.estimator.tabpfn_model = None
+        
+        # Python garbage collection 강제 실행
+        gc.collect()
+        
+        # GPU 캐시 정리
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+        
+        if logger:
+            allocated = torch.cuda.memory_allocated(device_id) / 1024**3  # GB
+            reserved = torch.cuda.memory_reserved(device_id) / 1024**3  # GB
+            logger.debug(f"TabPFN 메모리 정리 완료 (CUDA {device_id}) - 할당: {allocated:.2f}GB, 예약: {reserved:.2f}GB")
+    except Exception as e:
+        if logger:
+            logger.warning(f"TabPFN 메모리 정리 중 오류: {e}")
+
+
 def estimate_causal_effect(model, identified_estimand, estimator, logger=None, tabpfn_config=None):
     """인과효과를 추정하는 함수
     
@@ -254,23 +318,7 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
             )
             
             # TabPFN 사용 후 GPU 메모리 정리 (CUDA 3번)
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    torch.cuda.set_device(3)  # CUDA 3번으로 설정
-                    # TabPFN 모델 객체에서 메모리 해제
-                    if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, 'tabpfn_model'):
-                        if hasattr(estimate.estimator.tabpfn_model, '_single_model'):
-                            estimate.estimator.tabpfn_model._single_model = None
-                        estimate.estimator.tabpfn_model = None
-                    
-                    # GPU 캐시 정리
-                    torch.cuda.empty_cache()
-                    if logger:
-                        logger.debug("GPU 메모리 캐시 정리 완료 (CUDA 3번)")
-            except Exception as mem_err:
-                if logger:
-                    logger.warning(f"GPU 메모리 정리 중 경고: {mem_err}")
+            cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
         else:
             estimate = model.estimate_effect(
                 identified_estimand,
@@ -298,7 +346,9 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                 import torch
                 if torch.cuda.is_available():
                     torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                    gc.collect()
                     torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
                     if logger:
                         logger.debug("에러 발생 후 GPU 메모리 캐시 정리 완료 (CUDA 3번)")
             except:
@@ -1584,6 +1634,10 @@ def run_analysis_without_preprocessing(
         print_summary_report(estimate, validation_results, sensitivity_df)
         step_times['요약 보고서'] = time.time() - step_start
         
+        # 12. TabPFN 메모리 정리 (분석 완료 후)
+        if estimator == 'tabpfn':
+            cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
+        
         total_time = sum(step_times.values())
         step_times['전체'] = total_time
         
@@ -1693,17 +1747,8 @@ def run_single_experiment(
                         all_metrics.append(job_result["metrics"])
                     
                     # TabPFN 사용 시 각 실험 후 GPU 메모리 정리 (CUDA 3번)
-                    if estimator == 'tabpfn':
-                        try:
-                            import torch
-                            if torch.cuda.is_available():
-                                torch.cuda.set_device(3)  # CUDA 3번으로 설정
-                                torch.cuda.empty_cache()
-                                if logger:
-                                    logger.debug(f"직종소분류 '{job_category}' 실험 후 GPU 메모리 캐시 정리 완료 (CUDA 3번)")
-                        except Exception as mem_err:
-                            if logger:
-                                logger.warning(f"GPU 메모리 정리 중 경고: {mem_err}")
+                    if estimator == 'tabpfn' and job_result.get('estimate'):
+                        cleanup_tabpfn_memory(job_result['estimate'], device_id=3, logger=logger)
                         
                 except Exception as e:
                     # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
@@ -1712,7 +1757,9 @@ def run_single_experiment(
                             import torch
                             if torch.cuda.is_available():
                                 torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                                gc.collect()
                                 torch.cuda.empty_cache()
+                                torch.cuda.synchronize()
                         except:
                             pass
                     
