@@ -13,6 +13,8 @@ services:
       - ./config.json:/app/laborlab_2/config.json:ro
       # 소스 코드 마운트 (코드 수정 시 재빌드 불필요)
       - ./src:/app/laborlab_2/src
+      # TabPFN 모델 캐시 (폐쇄망용)
+      - ../tabpfn_ckpt:/app/tabpfn_ckpt:ro
     environment:
       - PYTHONPATH=/app
       - TERMINAL_OUTPUT_DIR=/app/laborlab_2/log
@@ -20,6 +22,8 @@ services:
       - OLLAMA_HOST=http://ollama:11434
       # Ollama 동시 요청 수 제한 (서버 설정과 동일하게 유지)
       - OLLAMA_NUM_PARALLEL=32
+      # TabPFN 모델 캐시 경로 (폐쇄망용 - 인터넷 다운로드 불필요)
+      - TABPFN_MODEL_CACHE_DIR=/app/tabpfn_ckpt
     depends_on: [ollama]
     working_dir: /app/laborlab_2
     # CPU 모드 (온라인 환경용)

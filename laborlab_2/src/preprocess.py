@@ -410,7 +410,9 @@ class Preprocessor:
         rows = []
         import logging
         
-        async with aiohttp.ClientSession() as session:
+        # 타임아웃 넉넉하게 설정 (학습용 - 전체 2시간 소요)
+        timeout = aiohttp.ClientTimeout(total=600, sock_read=300)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             tasks = []
             for item in data:
                 task = self._process_single_cover_letter(item, session)
@@ -503,13 +505,16 @@ class Preprocessor:
             try:
                 # 구직인증 일자를 datetime 객체로 변환
                 jhcr_date = parse_date(jhcr_de)
+                print(f"[DEBUG] jhcr_de={jhcr_de}, jhcr_date={jhcr_date}")
+                print(f"[DEBUG] training_end_dates[0]={training_end_dates[0] if training_end_dates else 'empty'}, type={type(training_end_dates[0]) if training_end_dates else 'N/A'}")
                 # 가장 최근 훈련 종료일 (최대값)    
                 latest_end_date = max(training_end_dates)
                 # 일수 차이 계산 (둘 다 유효한 경우에만)
                 if jhcr_date and latest_end_date:
                     elapsed_days = (jhcr_date - latest_end_date).days
                     elapsed_days = elapsed_days if elapsed_days >= 0 else None
-            except:
+            except Exception as e:
+                print(f"[ERROR] 경과일 계산 실패: {type(e).__name__}: {e}")
                 elapsed_days = None
         
         # 텍스트 포맷팅: {TRNG_CRSN}: ({TRNG_BGDE} ~ {TRNG_ENDE})
