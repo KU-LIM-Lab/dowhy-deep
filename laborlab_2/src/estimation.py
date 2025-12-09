@@ -21,6 +21,11 @@ from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 
+# CUDA 3번 GPU만 사용하도록 설정
+import torch
+if torch.cuda.is_available():
+    torch.cuda.set_device(3)
+
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
 from dowhy import CausalModel
 
@@ -206,15 +211,23 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
         logger.info(f"사용할 추정 방법: {method}")
         logger.info(f"요청된 추정기: {estimator}")
     
+    estimate = None
     try:
         # TabPFN의 경우 새 버전 사용 (표준 인터페이스)
         if estimator == 'tabpfn':
-            # 기본 TabPFN 설정
+            # CUDA 3번 GPU만 사용하도록 강제 설정
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.set_device(3)
+            
+            # 기본 TabPFN 설정 (CUDA 3번만 사용)
+            # device_ids를 빈 리스트로 설정하여 단일 GPU 모드 사용
+            # torch.cuda.set_device(3)으로 기본 device가 3번으로 설정됨
             default_tabpfn_config = {
                 "n_estimators": 8,
                 "model_type": "auto",
                 "use_multi_gpu": False,
-                "device_ids": [],
+                "device_ids": [],  # 빈 리스트 = 단일 GPU 모드 (기본 device 사용, 즉 CUDA 3번)
                 "max_num_classes": 10,
                 "prediction_batch_size": 64  # 배치 크기 (기본값: 64)
             }
@@ -222,23 +235,16 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
             # config에서 설정 가져오기 (없으면 기본값 사용)
             if tabpfn_config:
                 method_params = {**default_tabpfn_config, **tabpfn_config}
+                # device_ids는 항상 빈 리스트로 강제 설정 (단일 GPU 모드, CUDA 3번 사용)
+                method_params["device_ids"] = []
+                method_params["use_multi_gpu"] = False  # 단일 GPU 모드
             else:
                 method_params = default_tabpfn_config
             
-            # device_ids가 빈 리스트이고 use_multi_gpu가 True면 자동 감지
-            if method_params.get("use_multi_gpu", False) and not method_params.get("device_ids"):
-                import torch
-                if torch.cuda.is_available():
-                    method_params["device_ids"] = list(range(torch.cuda.device_count()))
-                    if logger:
-                        logger.info(f"GPU 자동 감지: {len(method_params['device_ids'])}개 GPU 사용")
-                        logger.info(f"GPU IDs: {method_params['device_ids']}")
+            # device_ids 자동 감지 로직 제거 (항상 CUDA 3번만 사용)
             
             if logger:
-                if method_params.get("use_multi_gpu", False):
-                    logger.info(f"TabPFN Multi-GPU 모드 활성화: {method_params.get('device_ids', [])}")
-                else:
-                    logger.info("TabPFN 단일 GPU/CPU 모드 사용")
+                logger.info("TabPFN 단일 GPU 모드 사용 (CUDA 3번)")
             
             estimate = model.estimate_effect(
                 identified_estimand,
@@ -246,6 +252,25 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                 test_significance=True,
                 method_params=method_params
             )
+            
+            # TabPFN 사용 후 GPU 메모리 정리 (CUDA 3번)
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                    # TabPFN 모델 객체에서 메모리 해제
+                    if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, 'tabpfn_model'):
+                        if hasattr(estimate.estimator.tabpfn_model, '_single_model'):
+                            estimate.estimator.tabpfn_model._single_model = None
+                        estimate.estimator.tabpfn_model = None
+                    
+                    # GPU 캐시 정리
+                    torch.cuda.empty_cache()
+                    if logger:
+                        logger.debug("GPU 메모리 캐시 정리 완료 (CUDA 3번)")
+            except Exception as mem_err:
+                if logger:
+                    logger.warning(f"GPU 메모리 정리 중 경고: {mem_err}")
         else:
             estimate = model.estimate_effect(
                 identified_estimand,
@@ -267,6 +292,18 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
         return estimate
         
     except Exception as e:
+        # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
+        if estimator == 'tabpfn':
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                    torch.cuda.empty_cache()
+                    if logger:
+                        logger.debug("에러 발생 후 GPU 메모리 캐시 정리 완료 (CUDA 3번)")
+            except:
+                pass
+        
         if logger:
             logger.error(f"❌ 인과효과 추정 실패: {e}")
         raise
@@ -1654,8 +1691,31 @@ def run_single_experiment(
                     
                     if job_result.get("metrics"):
                         all_metrics.append(job_result["metrics"])
+                    
+                    # TabPFN 사용 시 각 실험 후 GPU 메모리 정리 (CUDA 3번)
+                    if estimator == 'tabpfn':
+                        try:
+                            import torch
+                            if torch.cuda.is_available():
+                                torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                                torch.cuda.empty_cache()
+                                if logger:
+                                    logger.debug(f"직종소분류 '{job_category}' 실험 후 GPU 메모리 캐시 정리 완료 (CUDA 3번)")
+                        except Exception as mem_err:
+                            if logger:
+                                logger.warning(f"GPU 메모리 정리 중 경고: {mem_err}")
                         
                 except Exception as e:
+                    # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
+                    if estimator == 'tabpfn':
+                        try:
+                            import torch
+                            if torch.cuda.is_available():
+                                torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                                torch.cuda.empty_cache()
+                        except:
+                            pass
+                    
                     if logger:
                         logger.error(f"직종소분류 '{job_category}' 실험 실패: {e}")
                     print(f"  ❌ 직종소분류 '{job_category}' 실험 실패: {e}")
