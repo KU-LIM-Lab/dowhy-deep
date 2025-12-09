@@ -416,7 +416,7 @@ class Preprocessor:
         
         async with aiohttp.ClientSession() as session:
             tasks = []
-            for item in data:햣 
+            for item in data:
                 task = self._process_single_cover_letter(item, session)
                 tasks.append(task)
             
