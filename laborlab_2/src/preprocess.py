@@ -388,17 +388,18 @@ class Preprocessor:
         job_name = self.get_job_name_from_code(hope_jscd1)
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
-        # 점수 계산과 오탈자 수 계산을 비동기로 병렬 실행
-        score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
-        typo_task = self.llm_scorer.count_typos_async(full_text, session)
-        score, _ = await score_task
-        typo_count = await typo_task
+        # 점수 계산 (비동기)
+        score, _ = await self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
         
-        # score와 오탈자 수만 반환 (그래프 변수명과 일치)
+        # 오탈자 수 계산 - 비활성화 (타임아웃 이슈로 사용 안 함)
+        # typo_task = self.llm_scorer.count_typos_async(full_text, session)
+        # typo_count = await typo_task
+        
+        # score만 반환 (그래프 변수명과 일치)
         return {
             "JHNT_MBN": str(seek_id),  # 문자열로 변환
-            "cover_letter_score": score,  # 그래프: cover_letter_score
-            "cover_letter_typo_count": typo_count  # 그래프: cover_letter_typo_count
+            "cover_letter_score": score  # 그래프: cover_letter_score
+            # "cover_letter_typo_count": typo_count  # 비활성화
         }
     
     async def _preprocess_cover_letter(self, data):
@@ -430,8 +431,7 @@ class Preprocessor:
                     print(f"⚠️ 자기소개서 처리 오류 (JHNT_MBN: {seek_id}): {e}")
                     rows.append({
                         "JHNT_MBN": str(seek_id),  # 문자열로 변환
-                        "cove_letter_score": None,
-                        "cover_letter_typo_count": 0
+                        "cover_letter_score": None  # 오탈자 수 계산 비활성화
                     })
         
         # DataFrame 생성 전에 Logger 객체 확인 및 제거
