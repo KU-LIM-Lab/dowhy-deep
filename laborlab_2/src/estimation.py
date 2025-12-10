@@ -36,6 +36,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 # DoWhy 내부 함수 임포트
 from dowhy.causal_estimator import estimate_effect as dowhy_estimate_effect
 
+# DoWhy/TabPFN 내부 로깅 활성화 (INFO 레벨)
+logging.getLogger("dowhy").setLevel(logging.INFO)
+logging.getLogger("dowhy.causal_model").setLevel(logging.INFO)
+logging.getLogger("dowhy.causal_estimator").setLevel(logging.INFO)
+logging.getLogger("dowhy.causal_estimators.tabpfn_estimator").setLevel(logging.INFO)
+logging.getLogger("tabpfn").setLevel(logging.INFO)
+
 def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None):
     """
     E(Y|A, X) 조건부 기대값 예측
@@ -307,7 +314,27 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                 test_significance=True,
                 method_params=method_params
             )
-            
+                        
+            # 로드된 모델의 실제 device 확인
+            if logger and hasattr(estimate, 'estimator'):
+                estimator_obj = estimate.estimator
+                if hasattr(estimator_obj, '_device'):
+                    logger.info(f"🔧 TabpfnEstimator._device: {estimator_obj._device}")
+                if hasattr(estimator_obj, 'tabpfn_model') and estimator_obj.tabpfn_model is not None:
+                    tabpfn_model = estimator_obj.tabpfn_model
+                    # TabPFNModelWrapper에서 내부 모델 확인
+                    if hasattr(tabpfn_model, '_single_model') and tabpfn_model._single_model is not None:
+                        inner_model = tabpfn_model._single_model
+                        # 모델 파라미터의 device 확인
+                        try:
+                            first_param = next(inner_model.parameters())
+                            logger.info(f"🎯 TabPFN 내부 모델 device: {first_param.device}")
+                        except StopIteration:
+                            logger.info("🎯 TabPFN 내부 모델: 파라미터 없음")
+                        except Exception as e:
+                            logger.info(f"🎯 TabPFN 내부 모델 device 확인 실패: {e}")
+                    else:
+                        logger.info("🎯 TabPFN _single_model: None (멀티프로세싱 모드이거나 아직 로드 안됨)")
             # TabPFN 사용 후 GPU 메모리 정리 (CUDA 0번)
             cleanup_tabpfn_memory(estimate, device_id=0, logger=logger)
         else:
