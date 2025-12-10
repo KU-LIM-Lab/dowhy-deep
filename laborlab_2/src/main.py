@@ -144,7 +144,8 @@ def learning(
     estimator: str = "tabpfn",
     experiment_id: Optional[str] = None,
     logger: Optional[Any] = None,
-    training_size: int = 5000
+    training_size: int = 5000,
+    tabpfn_config: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     단일 실험에 대한 learning 함수
@@ -180,7 +181,8 @@ def learning(
         estimator=estimator,
         experiment_id=experiment_id,
         logger=logger,
-        training_size=training_size
+        training_size=training_size,
+        tabpfn_config=tabpfn_config
     )
     
     if result["status"] == "success":
@@ -205,6 +207,7 @@ def _run_experiments_batch(
     merged_df_clean: pd.DataFrame,
     logger: Optional[Any] = None,
     output_dir: Optional[Path] = None,
+    tabpfn_config: Optional[Dict[str, Any]] = None,
     **kwargs
 ) -> List[Dict[str, Any]]:
     """
@@ -274,6 +277,7 @@ def _run_experiments_batch(
             estimator=estimator,
             experiment_id=experiment_id,
             logger=logger,
+            tabpfn_config=tabpfn_config,
             **kwargs
         )
         
@@ -353,7 +357,8 @@ def learning_experiments(
     experiment_list: List[Tuple[str, str, str, str]],
     logger: Optional[Any] = None,
     output_dir: Optional[Path] = None,
-    training_size: int = 5000
+    training_size: int = 5000,
+    tabpfn_config: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
     """
     experiment_list의 모든 조합에 대해 learning 실행
@@ -374,7 +379,8 @@ def learning_experiments(
         merged_df_clean=merged_df_clean,
         logger=logger,
         output_dir=output_dir,
-        training_size=training_size
+        training_size=training_size,
+        tabpfn_config=tabpfn_config
     )
 
 
@@ -528,6 +534,9 @@ def main():
     do_prediction = config.get("prediction", False)
     do_experiment = config.get("experiment", False)
     
+    # TabPFN 설정 추출
+    tabpfn_config = config.get("tabpfn_config", {})
+    
     # 절대 경로로 변환
     data_dir_path = script_dir / data_dir
     output_dir_path = script_dir / output_dir
@@ -642,7 +651,8 @@ def main():
                 experiment_list=experiment_list,
                 logger=logger,
                 output_dir=output_dir_path,
-                training_size=training_size
+                training_size=training_size,
+                tabpfn_config=tabpfn_config
             )
         else:
             # 단일 실험 실행 (config에서 첫 번째 실험 조합 사용)
@@ -655,7 +665,8 @@ def main():
                     outcome=outcome,
                     estimator=estimator,
                     logger=logger,
-                    training_size=training_size
+                    training_size=training_size,
+                    tabpfn_config=tabpfn_config
                 )
             else:
                 print("❌ 실행할 실험이 없습니다.")

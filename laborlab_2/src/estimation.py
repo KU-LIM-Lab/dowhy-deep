@@ -16,10 +16,16 @@ import pickle
 import json
 import time
 import itertools
+import gc
 from typing import Dict, Any, Optional, List, Tuple
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
+
+# CUDA 3번 GPU만 사용하도록 설정
+import torch
+if torch.cuda.is_available():
+    torch.cuda.set_device(3)
 
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
 from dowhy import CausalModel
@@ -30,15 +36,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 # DoWhy 내부 함수 임포트
 from dowhy.causal_estimator import estimate_effect as dowhy_estimate_effect
 
-def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None):
+def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None, batch_size=64):
     """
-    E(Y|A, X) 조건부 기대값 예측
+    E(Y|A, X) 조건부 기대값 예측 (배치 처리)
     
     Args:
         estimate: CausalEstimate 객체
         data_df: 예측할 데이터프레임
         treatment_value: 처치 값 (None이면 실제 값 사용)
         logger: 로거 객체
+        batch_size: 배치 크기 (기본값: 64)
     
     Returns:
         tuple: (metrics_dict, data_df_with_predictions)
@@ -52,10 +59,15 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
     if not isinstance(estimator, RegressionEstimator):
         raise ValueError(f"{type(estimator).__name__}는 예측을 지원하지 않습니다.")
     
+    # batch_size가 None이면 기본값 64 사용
+    if batch_size is None:
+        batch_size = 64
+    
     if logger:
         logger.info(f"E(Y|A, X) 예측 시작: {len(data_df)}개")
         if treatment_value is not None:
             logger.info(f"처치 값: {treatment_value}")
+        logger.info(f"배치 크기: {batch_size}")
     
     try:
         # 데이터프레임 복사 (원본 보호)
@@ -70,11 +82,37 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         if treatment_var not in data_df_clean.columns:
             raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
         
-        # predict_fn을 사용하는 방식으로 예측 (RegressionEstimator의 표준 인터페이스)
-        if treatment_value is not None:
-            predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
+        # 배치 단위로 예측 수행
+        all_predictions = []
+        total_batches = (len(data_df_clean) + batch_size - 1) // batch_size
+        
+        if logger:
+            logger.info(f"배치 처리 모드: 총 {total_batches}개 배치로 분할 처리")
+        
+        for batch_idx in range(total_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, len(data_df_clean))
+            batch_df = data_df_clean.iloc[start_idx:end_idx].copy()
+            
+            if logger and (batch_idx + 1) % max(1, total_batches // 10) == 0:
+                logger.info(f"배치 처리 진행: {batch_idx + 1}/{total_batches} ({100 * (batch_idx + 1) / total_batches:.1f}%)")
+            
+            # 배치별 예측 수행
+            if treatment_value is not None:
+                batch_predictions = estimator.interventional_outcomes(batch_df, treatment_value)
+            else:
+                batch_predictions = estimator.predict(batch_df)
+            
+            all_predictions.append(batch_predictions)
+        
+        # 모든 배치 결과 합치기
+        if isinstance(all_predictions[0], np.ndarray):
+            predictions = np.concatenate(all_predictions)
         else:
-            predictions = estimator.predict(data_df_clean)
+            predictions = np.array([item for sublist in all_predictions for item in (sublist if isinstance(sublist, (list, np.ndarray)) else [sublist])])
+        
+        if logger:
+            logger.info(f"배치 처리 완료: 총 {len(predictions)}개 예측값 생성")
         
         predictions_series = pd.Series(predictions, index=data_df_clean.index)
         
@@ -146,8 +184,99 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             logger.error(f"예측 실패: {e}")
         raise
 
-def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
-    """인과효과를 추정하는 함수"""
+def cleanup_tabpfn_memory(estimate, device_id=3, logger=None):
+    """
+    TabPFN 모델의 GPU 메모리를 완전히 해제하는 함수
+    
+    Args:
+        estimate: CausalEstimate 객체
+        device_id: CUDA device ID (기본값: 3)
+        logger: 로거 객체
+    """
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return
+        
+        torch.cuda.set_device(device_id)
+        
+        # TabPFN 모델 객체에서 메모리 해제
+        if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, 'tabpfn_model'):
+            tabpfn_model = estimate.estimator.tabpfn_model
+            if tabpfn_model is not None:
+                # _single_model 해제
+                if hasattr(tabpfn_model, '_single_model') and tabpfn_model._single_model is not None:
+                    try:
+                        del tabpfn_model._single_model
+                    except:
+                        pass
+                    tabpfn_model._single_model = None
+                
+                # train_X, train_y 메모리 해제
+                if hasattr(tabpfn_model, 'train_X'):
+                    try:
+                        del tabpfn_model.train_X
+                    except:
+                        pass
+                if hasattr(tabpfn_model, 'train_y'):
+                    try:
+                        del tabpfn_model.train_y
+                    except:
+                        pass
+                
+                # 모델 객체 삭제
+                try:
+                    del tabpfn_model
+                except:
+                    pass
+                estimate.estimator.tabpfn_model = None
+        
+        # Python garbage collection 강제 실행
+        gc.collect()
+        
+        # GPU 캐시 정리 (PyTorch 메모리 풀 정리)
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+        
+        # 메모리 통계 리셋 (다른 서비스와 공유 시 유용)
+        try:
+            torch.cuda.reset_peak_memory_stats(device_id)
+        except:
+            pass  # 일부 PyTorch 버전에서는 지원하지 않을 수 있음
+        
+        # force_release 옵션이 활성화된 경우 추가 정리 시도
+        if force_release:
+            # 여러 번 empty_cache 호출로 메모리 풀 강제 정리 시도
+            for _ in range(3):
+                gc.collect()
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+        
+        if logger:
+            allocated = torch.cuda.memory_allocated(device_id) / 1024**3  # GB
+            reserved = torch.cuda.memory_reserved(device_id) / 1024**3  # GB
+            logger.debug(f"TabPFN 메모리 정리 완료 (CUDA {device_id}) - 할당: {allocated:.2f}GB, 예약: {reserved:.2f}GB")
+            if reserved > 0.1:  # 예약 메모리가 100MB 이상이면 경고
+                logger.warning(
+                    f"⚠️ GPU 메모리 예약량이 {reserved:.2f}GB입니다. "
+                    f"PyTorch는 메모리 풀을 사용하므로 예약된 메모리는 다른 프로세스가 즉시 사용할 수 없을 수 있습니다. "
+                    f"다른 서비스와 같은 GPU를 공유하는 경우 메모리 부족 문제가 발생할 수 있습니다."
+                )
+    except Exception as e:
+        if logger:
+            logger.warning(f"TabPFN 메모리 정리 중 오류: {e}")
+
+
+def estimate_causal_effect(model, identified_estimand, estimator, logger=None, tabpfn_config=None):
+    """인과효과를 추정하는 함수
+    
+    Args:
+        model: CausalModel 객체
+        identified_estimand: IdentifiedEstimand 객체
+        estimator: 추정 방법 이름
+        logger: 로거 객체 (선택적)
+        tabpfn_config: TabPFN 설정 딕셔너리 (선택적)
+    """
     if logger:
         logger.info("="*60)
         logger.info("인과효과 추정 시작")
@@ -166,18 +295,50 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
         logger.info(f"사용할 추정 방법: {method}")
         logger.info(f"요청된 추정기: {estimator}")
     
+    estimate = None
     try:
         # TabPFN의 경우 새 버전 사용 (표준 인터페이스)
         if estimator == 'tabpfn':
+            # CUDA 3번 GPU만 사용하도록 강제 설정
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.set_device(3)
+            
+            # 기본 TabPFN 설정 (CUDA 3번만 사용)
+            # device_ids를 빈 리스트로 설정하여 단일 GPU 모드 사용
+            # torch.cuda.set_device(3)으로 기본 device가 3번으로 설정됨
+            default_tabpfn_config = {
+                "n_estimators": 8,
+                "model_type": "auto",
+                "use_multi_gpu": False,
+                "device_ids": [],  # 빈 리스트 = 단일 GPU 모드 (기본 device 사용, 즉 CUDA 3번)
+                "max_num_classes": 10,
+                "prediction_batch_size": 64  # 배치 크기 (기본값: 64)
+            }
+            
+            # config에서 설정 가져오기 (없으면 기본값 사용)
+            if tabpfn_config:
+                method_params = {**default_tabpfn_config, **tabpfn_config}
+                # device_ids는 항상 빈 리스트로 강제 설정 (단일 GPU 모드, CUDA 3번 사용)
+                method_params["device_ids"] = []
+                method_params["use_multi_gpu"] = False  # 단일 GPU 모드
+            else:
+                method_params = default_tabpfn_config
+            
+            # device_ids 자동 감지 로직 제거 (항상 CUDA 3번만 사용)
+            
+            if logger:
+                logger.info("TabPFN 단일 GPU 모드 사용 (CUDA 3번)")
+            
             estimate = model.estimate_effect(
                 identified_estimand,
                 method_name=method,
                 test_significance=True,
-                method_params={
-                    "n_estimators": 8,
-                    "model_type": "auto"
-                }
+                method_params=method_params
             )
+            
+            # TabPFN 사용 후 GPU 메모리 정리 (CUDA 3번)
+            cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
         else:
             estimate = model.estimate_effect(
                 identified_estimand,
@@ -199,6 +360,20 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None):
         return estimate
         
     except Exception as e:
+        # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
+        if estimator == 'tabpfn':
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
+                    if logger:
+                        logger.debug("에러 발생 후 GPU 메모리 캐시 정리 완료 (CUDA 3번)")
+            except:
+                pass
+        
         if logger:
             logger.error(f"❌ 인과효과 추정 실패: {e}")
         raise
@@ -1237,7 +1412,8 @@ def run_analysis_without_preprocessing(
     logger: Optional[logging.Logger] = None,
     experiment_id: Optional[str] = None,
     job_category: Optional[str] = None,
-    training_size: int = 5000
+    training_size: int = 5000,
+    tabpfn_config: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -1377,7 +1553,8 @@ def run_analysis_without_preprocessing(
             model,
             identified_estimand,
             estimator,
-            logger
+            logger,
+            tabpfn_config=tabpfn_config
         )
         step_times['인과효과 추정'] = time.time() - step_start
         
@@ -1418,8 +1595,13 @@ def run_analysis_without_preprocessing(
             required_vars=list(essential_vars_for_pred) + [f"{outcome}_actual"] if f"{outcome}_actual" in df_test.columns else list(essential_vars_for_pred),
             logger=logger
         )
+        # TabPFN 배치 크기 설정 (config에서 가져오기, 기본값: 64)
+        batch_size = 64
+        if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, 'method_params'):
+            batch_size = estimate.estimator.method_params.get('prediction_batch_size', 64)
+        
         metrics, df_with_predictions = predict_conditional_expectation(
-            estimate, df_test_clean, logger=logger
+            estimate, df_test_clean, logger=logger, batch_size=batch_size
         )
         step_times['예측'] = time.time() - step_start
         
@@ -1472,6 +1654,10 @@ def run_analysis_without_preprocessing(
         print_summary_report(estimate, validation_results, sensitivity_df)
         step_times['요약 보고서'] = time.time() - step_start
         
+        # 12. TabPFN 메모리 정리 (분석 완료 후)
+        if estimator == 'tabpfn':
+            cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
+        
         total_time = sum(step_times.values())
         step_times['전체'] = total_time
         
@@ -1508,7 +1694,8 @@ def run_single_experiment(
     experiment_id: str,
     logger: Optional[logging.Logger] = None,
     split_by_job_category: bool = True,
-    training_size: int = 5000
+    training_size: int = 5000,
+    tabpfn_config: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -1563,7 +1750,8 @@ def run_single_experiment(
                         logger=logger,
                         experiment_id=job_experiment_id,
                         job_category=job_category,
-                        training_size=training_size
+                        training_size=training_size,
+                        tabpfn_config=tabpfn_config
                     )
                     
                     all_results.append(job_result)
@@ -1577,8 +1765,24 @@ def run_single_experiment(
                     
                     if job_result.get("metrics"):
                         all_metrics.append(job_result["metrics"])
+                    
+                    # TabPFN 사용 시 각 실험 후 GPU 메모리 정리 (CUDA 3번)
+                    if estimator == 'tabpfn' and job_result.get('estimate'):
+                        cleanup_tabpfn_memory(job_result['estimate'], device_id=3, logger=logger)
                         
                 except Exception as e:
+                    # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
+                    if estimator == 'tabpfn':
+                        try:
+                            import torch
+                            if torch.cuda.is_available():
+                                torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                                gc.collect()
+                                torch.cuda.empty_cache()
+                                torch.cuda.synchronize()
+                        except:
+                            pass
+                    
                     if logger:
                         logger.error(f"직종소분류 '{job_category}' 실험 실패: {e}")
                     print(f"  ❌ 직종소분류 '{job_category}' 실험 실패: {e}")
@@ -1644,7 +1848,8 @@ def run_single_experiment(
                 estimator=estimator,
                 logger=logger,
                 experiment_id=experiment_id,
-                training_size=training_size
+                training_size=training_size,
+                tabpfn_config=tabpfn_config
             )
         
         end_time = datetime.now()
