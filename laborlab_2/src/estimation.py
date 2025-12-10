@@ -307,7 +307,11 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
             
             if logger:
                 logger.info("TabPFN 단일 GPU 모드 사용 (CUDA 0번)")
-            
+                # GPU 상태 로깅
+                device_id = torch.cuda.current_device()
+                device_name = torch.cuda.get_device_name(device_id)
+                logger.info(f"🖥️ GPU 정보: {device_name} (cuda:{device_id})")
+
             estimate = model.estimate_effect(
                 identified_estimand,
                 method_name=method,
