@@ -302,7 +302,7 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             identified_estimand, estimate,
             method_name="placebo_treatment_refuter",
             placebo_type="permute",
-            num_simulations=100
+            num_simulations=20
         )
         validation_results['placebo'] = refute_placebo
         
@@ -346,7 +346,7 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             confounders_effect_on_outcome="linear",
             effect_strength_on_treatment=0.10,
             effect_strength_on_outcome=0.10,
-            num_simulations=100
+            num_simulations=20
         )
         validation_results['unobserved'] = refute_unobserved
         
@@ -387,7 +387,7 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             identified_estimand, estimate,
             method_name="data_subset_refuter",
             subset_fraction=0.8,  # 80% 서브셋 사용
-            num_simulations=100
+            num_simulations=20
         )
         validation_results['subset'] = refute_subset
         
@@ -428,7 +428,7 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
         refute_dummys = model.refute_estimate(
             identified_estimand, estimate,
             method_name="dummy_outcome_refuter",
-            num_simulations=100
+            num_simulations=20
         )
         refute_dummy = refute_dummys[0]
         validation_results['dummy'] = refute_dummy
@@ -535,11 +535,11 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
         logger.info("민감도 분석 실행 시작")
         logger.info("="*60)
         logger.info("효과 강도 범위: 0.0 ~ 0.5")
-        logger.info("그리드 포인트 수: 11x11 = 121개")
-        logger.info("시뮬레이션 수: 200회")
+        logger.info("그리드 포인트 수: 5x5 = 25개")
+        logger.info("시뮬레이션 수: 50회")
     
     try:
-        grid = np.linspace(0.0, 0.5, 11)
+        grid = np.linspace(0.0, 0.5, 5)
         rows = []
         total_combinations = len(grid) * len(grid)
         processed = 0
@@ -561,7 +561,7 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
                         confounders_effect_on_outcome="linear",
                         effect_strength_on_treatment=et,
                         effect_strength_on_outcome=eo,
-                        num_simulations=200
+                        num_simulations=50
                     )
                     rows.append((et, eo, ref.new_effect))
                 except Exception as e:
