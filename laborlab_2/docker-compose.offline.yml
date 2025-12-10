@@ -36,13 +36,14 @@ services:
     # updated 이미지가 tail -f /dev/null로 커밋되어 있어 command 오버라이드 필요
     command: ["python", "-m", "src.main", "--config", "config.json"]
     # GPU 지원 (폐쇄망 환경용 - NVIDIA Container Toolkit 필요)
+    # GPU 3번만 사용하도록 설정
     # CPU 모드를 사용하려면 docker-compose.offline.cpu.yml 사용
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              device_ids: ["3"]
               capabilities: [gpu]
     # 컨테이너 시작 시 자동으로 파이프라인 실행
     # docker-compose -f docker-compose.offline.yml up 시 자동 실행됨
@@ -64,13 +65,14 @@ services:
       - OLLAMA_CONTEXT_LENGTH=1024
       - OLLAMA_MAX_QUEUE=100000
     # GPU 지원 (폐쇄망 환경용 - NVIDIA Container Toolkit 필요)
+    # GPU 3번만 사용하도록 설정
     # CPU 모드를 사용하려면 docker-compose.offline.cpu.yml 사용
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              device_ids: ["3"]
               capabilities: [gpu]
     restart: "no"
 
