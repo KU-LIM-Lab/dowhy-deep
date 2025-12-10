@@ -124,8 +124,20 @@ class TabPFNModelWrapper:
 
         # Build outcome values by resolved type
         if self.resolved_model_type == "Classifier":
-            y, _ = pd.factorize(outcome_series)
-            self.train_y = y.astype(np.int64)
+            s = pd.Series(outcome_series)
+
+            # 1) binary case: bool or {0, 1} subset
+            unique_vals = pd.unique(s.dropna())
+            if s.dtype == bool or set(unique_vals).issubset({0, 1}):
+                y = s.astype(np.int64).to_numpy()
+
+            else:
+                # 2) multiclass: convert to categorical codes
+                cats = sorted(pd.unique(s.astype(str).dropna()))
+                y = pd.Categorical(s.astype(str), categories=cats, ordered=True).codes
+                y = y.astype(np.int64)
+
+            self.train_y = y
         else:
             self.train_y = outcome_series.to_numpy(dtype=np.float32)
         self.train_X = features
