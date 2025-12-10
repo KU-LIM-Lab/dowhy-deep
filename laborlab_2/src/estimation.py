@@ -22,10 +22,10 @@ from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 
-# CUDA 3번 GPU만 사용하도록 설정
+# CUDA 0번 GPU 사용 (Docker 컨테이너 내부에서는 할당된 GPU가 0번으로 보임)
 import torch
 if torch.cuda.is_available():
-    torch.cuda.set_device(3)
+    torch.cuda.set_device(0)
 
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
 from dowhy import CausalModel
@@ -155,13 +155,13 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             logger.error(f"예측 실패: {e}")
         raise
 
-def cleanup_tabpfn_memory(estimate, device_id=3, logger=None):
+def cleanup_tabpfn_memory(estimate, device_id=0, logger=None):
     """
     TabPFN 모델의 GPU 메모리를 완전히 해제하는 함수
     
     Args:
         estimate: CausalEstimate 객체
-        device_id: CUDA device ID (기본값: 3)
+        device_id: CUDA device ID (기본값: 0, Docker 컨테이너 내부 기준)
         logger: 로거 객체
     """
     try:
@@ -270,14 +270,14 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
     try:
         # TabPFN의 경우 새 버전 사용 (표준 인터페이스)
         if estimator == 'tabpfn':
-            # CUDA 3번 GPU만 사용하도록 강제 설정
+            # CUDA 0번 GPU 사용 (Docker 컨테이너 내부에서는 할당된 GPU가 0번으로 보임)
             import torch
             if torch.cuda.is_available():
-                torch.cuda.set_device(3)
+                torch.cuda.set_device(0)
             
-            # 기본 TabPFN 설정 (CUDA 3번만 사용)
+            # 기본 TabPFN 설정 (CUDA 0번 사용)
             # device_ids를 빈 리스트로 설정하여 단일 GPU 모드 사용
-            # torch.cuda.set_device(3)으로 기본 device가 3번으로 설정됨
+            # torch.cuda.set_device(0)으로 기본 device가 0번으로 설정됨
             default_tabpfn_config = {
                 "n_estimators": 8,
                 "model_type": "auto",
@@ -296,10 +296,10 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
             else:
                 method_params = default_tabpfn_config
             
-            # device_ids 자동 감지 로직 제거 (항상 CUDA 3번만 사용)
+            # device_ids 자동 감지 로직 제거 (항상 CUDA 0번 사용)
             
             if logger:
-                logger.info("TabPFN 단일 GPU 모드 사용 (CUDA 3번)")
+                logger.info("TabPFN 단일 GPU 모드 사용 (CUDA 0번)")
             
             estimate = model.estimate_effect(
                 identified_estimand,
@@ -308,8 +308,8 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                 method_params=method_params
             )
             
-            # TabPFN 사용 후 GPU 메모리 정리 (CUDA 3번)
-            cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
+            # TabPFN 사용 후 GPU 메모리 정리 (CUDA 0번)
+            cleanup_tabpfn_memory(estimate, device_id=0, logger=logger)
         else:
             estimate = model.estimate_effect(
                 identified_estimand,
@@ -331,17 +331,17 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
         return estimate
         
     except Exception as e:
-        # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
+        # 실패 시에도 GPU 메모리 정리 (CUDA 0번)
         if estimator == 'tabpfn':
             try:
                 import torch
                 if torch.cuda.is_available():
-                    torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                    torch.cuda.set_device(0)  # CUDA 0번으로 설정
                     gc.collect()
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()
                     if logger:
-                        logger.debug("에러 발생 후 GPU 메모리 캐시 정리 완료 (CUDA 3번)")
+                        logger.debug("에러 발생 후 GPU 메모리 캐시 정리 완료 (CUDA 0번)")
             except:
                 pass
         
@@ -1608,7 +1608,7 @@ def run_analysis_without_preprocessing(
         
         # 9. TabPFN 메모리 정리 (분석 완료 후)
         if estimator == 'tabpfn':
-            cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
+            cleanup_tabpfn_memory(estimate, device_id=0, logger=logger)
         
         total_time = sum(step_times.values())
         step_times['전체'] = total_time
@@ -1716,17 +1716,17 @@ def run_single_experiment(
                     if job_result.get("metrics"):
                         all_metrics.append(job_result["metrics"])
                     
-                    # TabPFN 사용 시 각 실험 후 GPU 메모리 정리 (CUDA 3번)
+                    # TabPFN 사용 시 각 실험 후 GPU 메모리 정리 (CUDA 0번)
                     if estimator == 'tabpfn' and job_result.get('estimate'):
-                        cleanup_tabpfn_memory(job_result['estimate'], device_id=3, logger=logger)
+                        cleanup_tabpfn_memory(job_result['estimate'], device_id=0, logger=logger)
                         
                 except Exception as e:
-                    # 실패 시에도 GPU 메모리 정리 (CUDA 3번)
+                    # 실패 시에도 GPU 메모리 정리 (CUDA 0번)
                     if estimator == 'tabpfn':
                         try:
                             import torch
                             if torch.cuda.is_available():
-                                torch.cuda.set_device(3)  # CUDA 3번으로 설정
+                                torch.cuda.set_device(0)  # CUDA 0번으로 설정
                                 gc.collect()
                                 torch.cuda.empty_cache()
                                 torch.cuda.synchronize()
