@@ -36,16 +36,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 # DoWhy 내부 함수 임포트
 from dowhy.causal_estimator import estimate_effect as dowhy_estimate_effect
 
-def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None, batch_size=64):
+def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None):
     """
-    E(Y|A, X) 조건부 기대값 예측 (배치 처리)
+    E(Y|A, X) 조건부 기대값 예측
     
     Args:
         estimate: CausalEstimate 객체
         data_df: 예측할 데이터프레임
         treatment_value: 처치 값 (None이면 실제 값 사용)
         logger: 로거 객체
-        batch_size: 배치 크기 (기본값: 64)
     
     Returns:
         tuple: (metrics_dict, data_df_with_predictions)
@@ -59,15 +58,10 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
     if not isinstance(estimator, RegressionEstimator):
         raise ValueError(f"{type(estimator).__name__}는 예측을 지원하지 않습니다.")
     
-    # batch_size가 None이면 기본값 64 사용
-    if batch_size is None:
-        batch_size = 64
-    
     if logger:
         logger.info(f"E(Y|A, X) 예측 시작: {len(data_df)}개")
         if treatment_value is not None:
             logger.info(f"처치 값: {treatment_value}")
-        logger.info(f"배치 크기: {batch_size}")
     
     try:
         # 데이터프레임 복사 (원본 보호)
@@ -82,37 +76,14 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         if treatment_var not in data_df_clean.columns:
             raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
         
-        # 배치 단위로 예측 수행
-        all_predictions = []
-        total_batches = (len(data_df_clean) + batch_size - 1) // batch_size
-        
-        if logger:
-            logger.info(f"배치 처리 모드: 총 {total_batches}개 배치로 분할 처리")
-        
-        for batch_idx in range(total_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, len(data_df_clean))
-            batch_df = data_df_clean.iloc[start_idx:end_idx].copy()
-            
-            if logger and (batch_idx + 1) % max(1, total_batches // 10) == 0:
-                logger.info(f"배치 처리 진행: {batch_idx + 1}/{total_batches} ({100 * (batch_idx + 1) / total_batches:.1f}%)")
-            
-            # 배치별 예측 수행
-            if treatment_value is not None:
-                batch_predictions = estimator.interventional_outcomes(batch_df, treatment_value)
-            else:
-                batch_predictions = estimator.predict(batch_df)
-            
-            all_predictions.append(batch_predictions)
-        
-        # 모든 배치 결과 합치기
-        if isinstance(all_predictions[0], np.ndarray):
-            predictions = np.concatenate(all_predictions)
+        # 예측 수행
+        if treatment_value is not None:
+            predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
         else:
-            predictions = np.array([item for sublist in all_predictions for item in (sublist if isinstance(sublist, (list, np.ndarray)) else [sublist])])
+            predictions = estimator.predict(data_df_clean)
         
         if logger:
-            logger.info(f"배치 처리 완료: 총 {len(predictions)}개 예측값 생성")
+            logger.info(f"예측 완료: {len(predictions)}개 예측값 생성")
         
         predictions_series = pd.Series(predictions, index=data_df_clean.index)
         
@@ -1596,12 +1567,8 @@ def run_analysis_without_preprocessing(
             logger=logger
         )
         # TabPFN 배치 크기 설정 (config에서 가져오기, 기본값: 64)
-        batch_size = 64
-        if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, 'method_params'):
-            batch_size = estimate.estimator.method_params.get('prediction_batch_size', 64)
-        
         metrics, df_with_predictions = predict_conditional_expectation(
-            estimate, df_test_clean, logger=logger, batch_size=batch_size
+            estimate, df_test_clean, logger=logger
         )
         step_times['예측'] = time.time() - step_start
         
@@ -1617,44 +1584,29 @@ def run_analysis_without_preprocessing(
         excel_path = utils.save_predictions_to_excel(df_with_predictions, filename=filename, logger=logger)
         step_times['예측 결과 저장'] = time.time() - step_start
         
-        # 8. 검증 테스트
-        print("8️⃣ 검증 테스트 실행 중...")
-        step_start = time.time()
-        validation_results = run_validation_tests(
-            model,
-            identified_estimand,
-            estimate,
-            logger
-        )
-        step_times['검증 테스트'] = time.time() - step_start
+        # 8. 결과 출력 (민감도 분석/refutation은 나중에 별도 실행)
+        print("\n" + "="*60)
+        print("📊 추정 결과 요약")
+        print("="*60)
+        print(f"  ATE (Average Treatment Effect): {estimate.value:.6f}")
+        p_value, ci = extract_significance(estimate)
+        if p_value is not None and isinstance(p_value, float):
+            print(f"  P-value: {p_value:.6f}")
+        if ci is not None:
+            print(f"  신뢰구간: {ci}")
+        if metrics:
+            print(f"\n📈 예측 성능:")
+            if metrics.get('accuracy') is not None:
+                print(f"  Accuracy: {metrics['accuracy']:.4f}")
+            if metrics.get('f1_score') is not None:
+                print(f"  F1 Score: {metrics['f1_score']:.4f}")
+            if metrics.get('auc') is not None:
+                print(f"  AUC: {metrics['auc']:.4f}")
+        print("="*60)
+        print("ℹ️  민감도 분석/Refutation 테스트는 별도로 실행하세요.")
+        print("="*60 + "\n")
         
-        # 9. 민감도 분석
-        print("9️⃣ 민감도 분석 실행 중...")
-        step_start = time.time()
-        sensitivity_df = run_sensitivity_analysis(
-            model,
-            identified_estimand,
-            estimate,
-            logger
-        )
-        step_times['민감도 분석'] = time.time() - step_start
-        
-        # 10. 시각화
-        print("🔟 시각화 생성 중...")
-        step_start = time.time()
-        heatmap_path = create_sensitivity_heatmap(
-            sensitivity_df,
-            logger
-        ) if not sensitivity_df.empty else None
-        step_times['시각화 생성'] = time.time() - step_start
-        
-        # 11. 요약 보고서
-        print("1️⃣1️⃣ 최종 요약 보고서 출력 중...")
-        step_start = time.time()
-        print_summary_report(estimate, validation_results, sensitivity_df)
-        step_times['요약 보고서'] = time.time() - step_start
-        
-        # 12. TabPFN 메모리 정리 (분석 완료 후)
+        # 9. TabPFN 메모리 정리 (분석 완료 후)
         if estimator == 'tabpfn':
             cleanup_tabpfn_memory(estimate, device_id=3, logger=logger)
         
@@ -1666,8 +1618,6 @@ def run_analysis_without_preprocessing(
         return {
             "status": "success",
             "estimate": estimate,
-            "validation_results": validation_results,
-            "sensitivity_df": sensitivity_df,
             "metrics": metrics,
             "excel_path": excel_path,
             "checkpoint_path": checkpoint_path,
@@ -1857,7 +1807,6 @@ def run_single_experiment(
         
         metrics = result.get("metrics", {})
         estimate = result.get("estimate")
-        validation_results = result.get("validation_results", {})
         
         ate_value = None
         if estimate and hasattr(estimate, 'value'):
@@ -1875,31 +1824,6 @@ def run_single_experiment(
                     ci_upper = ci_tmp[1] if len(ci_tmp) > 1 else None
                 except Exception:
                     pass
-        
-        # Refutation 결과 추출
-        refutation_data = {}
-        refutation_types = ['placebo', 'unobserved', 'subset', 'dummy']
-        for ref_type in refutation_types:
-            ref_result = validation_results.get(ref_type)
-            if ref_result is not None:
-                if ref_type == 'placebo':
-                    effect_change = abs(ref_result.new_effect - ref_result.estimated_effect)
-                    refutation_data[f'{ref_type}_passed'] = effect_change < 0.01
-                elif ref_type == 'unobserved':
-                    change_rate = abs(ref_result.new_effect - ref_result.estimated_effect) / abs(ref_result.estimated_effect) if abs(ref_result.estimated_effect) > 0 else float('inf')
-                    refutation_data[f'{ref_type}_passed'] = change_rate < 0.2
-                elif ref_type == 'subset':
-                    effect_change = abs(ref_result.new_effect - ref_result.estimated_effect)
-                    change_rate = abs(ref_result.estimated_effect) > 0 and abs(effect_change / ref_result.estimated_effect) or float('inf')
-                    refutation_data[f'{ref_type}_passed'] = change_rate < 0.1
-                elif ref_type == 'dummy':
-                    refutation_data[f'{ref_type}_passed'] = abs(ref_result.new_effect) < 0.01
-                
-                p_value = calculate_refutation_pvalue(ref_result, ref_type)
-                refutation_data[f'{ref_type}_pvalue'] = p_value
-            else:
-                refutation_data[f'{ref_type}_passed'] = None
-                refutation_data[f'{ref_type}_pvalue'] = None
         
         return {
             "experiment_id": experiment_id,
@@ -1921,8 +1845,7 @@ def run_single_experiment(
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
             "ci_lower": ci_lower,
-            "ci_upper": ci_upper,
-            **refutation_data
+            "ci_upper": ci_upper
         }
     except Exception as e:
         end_time = datetime.now()

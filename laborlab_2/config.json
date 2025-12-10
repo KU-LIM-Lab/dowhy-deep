@@ -25,6 +25,13 @@
   },
   "experiment_list": [
     ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
-    ["graph_1.dot", "ACCR_CD", "ACQ_180_YN", "tabpfn"]
+    ["graph_1.dot", "ACCR_CD", "ACQ_180_YN", "tabpfn"],
+    ["graph_1.dot", "CARR_MYCT1", "ACQ_180_YN", "tabpfn"],
+    ["graph_1.dot", "OCTR_HOPE_JSFC_CSCY_SCOR1", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "BFR_WTM6_JHCR_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "BFR_EJAP_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "BFR_UEPS_RECP_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "FRFT_AFTR_JHNT_REQR_DYCT", "ACQ_180_YN", "tabpfn"]
   ]
 }
