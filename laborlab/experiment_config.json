@@ -1,0 +1,26 @@
+{
+  "data_dir": "data",
+  "graph_data_dir": "graph_data",
+  "api_key": "your key",
+  "auto_extract_treatments": true,
+  "graphs": [
+    "main_graph",
+    "dummy_graph"
+  ],
+  "treatments": [
+    "ACCR_CD",
+    "CARR_MYCT1",
+    "NTR_BPLC_PSNT_WAGE_AMT"
+  ],
+  "outcomes": [
+    "ACQ_180_YN"
+  ],
+  "estimators": [
+    "tabpfn",
+    "linear_regression"
+  ],
+  "no_logs": false,
+  "verbose": false,
+  "comment": "auto_extract_treatments가 true이면 graphs와 treatments는 무시되고, 각 graph 파일에서 자동으로 추출됩니다. api_key는 GPT API 키를 설정하세요 (예: \"sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"). null이면 환경변수 LLM_API_KEY를 사용합니다."
+}
+

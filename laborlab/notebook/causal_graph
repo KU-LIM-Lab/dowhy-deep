@@ -1,0 +1,85 @@
+digraph {
+    graph [rankdir=LR, splines=true, nodesep=0.4, ranksep=0.5];
+    node  [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+    edge  [fontname="Helvetica"];
+
+    # ==== Nodes (IDs are ascii; labels are original Korean names) ====
+    employed_within_180d [label="180일이내취업여부"];         # Target
+    gender               [label="성별코드"];
+    age                  [label="연령"];
+    education            [label="학력코드"];
+    education_status     [label="학력상태코드"];
+    cert_count           [label="자격증건수"];
+    can_drive            [label="운전가능여부"];
+    shift_ok             [label="교대제여부"];
+    daily_work_pref      [label="일용근로희망여부"];
+    dispatch_ok          [label="파견근로여부"];
+    employment_type      [label="고용형태코드"];
+    wage_type            [label="상용임금유형코드"];
+    desired_wage         [label="희망임금합계금액"];
+    negotiable           [label="면접후재조정가능여부"];
+    email_opt_in         [label="이메일수신여부"];
+    privacy_opt_in       [label="개인정보제공동의여부"];
+    referral_pref        [label="알선희망수준코드"];
+    app_channel          [label="구직신청채널구분코드"];
+    prior_search_6m      [label="이전 6개월이내구직인증건수"];
+    days_since_sep2reg   [label="상실이후구직인증소요일수"];
+    ui_received          [label="실업급여수급여부"];
+    ui_entitlement_days  [label="소정급여일수"];
+    prior_email_apps_3m  [label="이전이메일입사지원건수"];
+    days_since_cv        [label="자기소개서작성이후경과일수"];
+    training_match1      [label="직업훈련희망직종일치도점수1"];
+    market_offered_wage  [label="중앙사업장제시임금금액"];
+    applicants_per_open  [label="모집대비구직자인원수"];
+    net_sep_hire_ratio   [label="피보험자대비상실취득비율"];
+    jobseekers_change    [label="구직자증감인원수"];
+    cohort_month         [label="마감년월"];
+    U                    [label="Unobserved Confounders"];
+
+    # ==== Edges with brief rationale comments ====
+
+    # Demographics → Human capital / expectations / hiring
+    gender -> {employment_type, desired_wage, employed_within_180d}; # 성별은 선호·가능 근무형태와 기대임금 및 채용확률(차별/돌봄제약 등)에 영향
+    age    -> {desired_wage, employed_within_180d};                  # 연령이 높을수록 기대임금/채용확률 프로파일이 달라짐(연공/연령차별)
+
+    # Education & credentials
+    education        -> {cert_count, desired_wage, employment_type}; # 학력↑ → 자격증/직무선호/임금기대에 구조적 영향
+    education_status -> education;                                   # 학력상태가 최종학력코드에 선행
+    cert_count       -> employed_within_180d;                         # 보유 자격증은 매칭가능 직무 폭·신호효과로 취업 확률↑
+
+    # Job-type constraints / flexibility
+    {can_drive, shift_ok, daily_work_pref, dispatch_ok} -> employed_within_180d; # 운전/교대/일용/파견 가능여부는 지원가능 공고 범위를 결정
+    employment_type  -> employed_within_180d;                         # 선호 고용형태(정규/계약 등)가 수용가능 공고를 제한/확대
+    wage_type        -> employed_within_180d;                         # 상용/일용 구분은 탐색·채용 프로세스의 속도/기회에 영향
+
+    # Search intensity & contactability
+    prior_search_6m  -> employed_within_180d;                         # 최근 6개월 잦은 구직인증은 미매칭 지속/이직성향 신호 가능
+    prior_email_apps_3m -> employed_within_180d;                      # 최근 이메일 지원건수는 탐색강도↑ → 접점 증가
+    days_since_cv    -> employed_within_180d;                         # 이력서 최신도(작성이후 경과일수↓)는 콜백/매칭률↑
+    referral_pref    -> employed_within_180d;                         # 알선 수용성↑일수록 중개매칭 기회↑
+    app_channel      -> employed_within_180d;                         # 채널(온라인/오프라인/기관) 특성에 따라 매칭속도·품질이 다름
+    privacy_opt_in   -> email_opt_in;                                 # 개인정보 제공 동의는 이메일 수신동의와 연계되는 경향
+    email_opt_in     -> employed_within_180d;                         # 연락가능성↑ → 인터뷰/오퍼 연결 확률↑
+
+    # Reservation wage & bargaining
+    market_offered_wage -> {desired_wage, employed_within_180d};      # 시장 제시임금은 기대임금의 기준점이자 수용가능성에 직접 영향
+    desired_wage        -> employed_within_180d;                      # 기대임금이 시장과 괴리↑ 시 오퍼 거절·미매칭↑
+    negotiable          -> employed_within_180d;                      # 면접 후 임금 재조정 가능성은 합의 도달 확률↑
+
+    # Insurance & separation timing
+    ui_entitlement_days -> ui_received;                                # 급여일수 권리는 실업급여 수급여부에 인과적 선행
+    ui_received         -> employed_within_180d;                       # 실업급여는 탐색기간 연장/품질 개선(양면효과)으로 채용시점에 영향
+    days_since_sep2reg  -> employed_within_180d;                       # 상실→구직인증까지 기간은 긴급성/휴먼캐피털 감가를 반영
+
+    # Training fit
+    training_match1 -> employed_within_180d;                           # 직업훈련과 희망직종의 일치도↑ → 취업 매칭률↑
+
+    # Local labor-market conditions
+    {applicants_per_open, net_sep_hire_ratio, jobseekers_change} -> employed_within_180d; # 구직난/구인난 지표가 채용가능성에 직접 영향
+
+    # Calendar/seasonality → market aggregates
+    cohort_month -> {market_offered_wage, applicants_per_open, net_sep_hire_ratio, jobseekers_change}; # 월별 경기/시즌성 변동이 시장지표에 반영
+
+    # Unobserved confounding (ability, networks, motivation, health, childcare etc.)
+    U -> {education, cert_count, desired_wage, employed_within_180d}; # 관측불가 능력/네트워크/돌봄 등은 학력·자격·임금기대·취업에 동시 영향
+}

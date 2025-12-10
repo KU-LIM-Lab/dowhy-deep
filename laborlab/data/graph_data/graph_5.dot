@@ -1,0 +1,131 @@
+digraph {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#F8F9FB", fontname="Helvetica"];
+
+    // ==== 노드 라벨 정의 (Outcome + 기본 배경) ====
+    ACQ_180_YN                  [label="180일이내취업여부"];
+    AGE                         [label="연령"];
+    SXDS_CD                     [label="성별코드"];
+    ACCR_CD                     [label="학력코드"];
+    MAJR_CD1                    [label="전공코드"];
+    CARR_MYCT1                  [label="경력월수1"];
+    AREA_CD                     [label="지역코드"];
+
+    // ==== 직종/노동시장/임금 관련 structured 변수 ====
+    HOPE_JSCD1                  [label="희망직종코드1"];
+
+    // ==== certification 테이블 변수 ====
+    CLOS_YM                     [label="마감년월(자격증데이터)"];
+    JHNT_CTN                    [label="구직인증번호(자격증연결)"];
+    CRTF_CD                     [label="자격증코드"];
+    CRTF_NM                     [label="자격증명"];
+    CRTF_LCLS_NM                [label="자격증대분류명"];
+    ETL_DT                      [label="자격증데이터ETL일시"];
+
+    // ============================================================
+    // ==== Treatment definitions (메타데이터용 노드) ==============
+    // role="treatment_meta"로 태깅한 노드에 treatment 정보를 저장한다.
+    // 파이프라인에서 pygraphviz로 읽어 DoWhy/TabPFN에 넘길 때 사용.
+
+    subgraph cluster_treatments {
+        label="Treatments (outcome: ACQ_180_YN, focus: Certification)";
+        style=dashed;
+        color="#CCCCCC";
+        node [shape=note, style="rounded,filled", fillcolor="#FFF7E6", fontname="Helvetica"];
+
+        // T1: 자격증 보유 여부 (at least one certificate)
+        T1 [
+            label="T1: has_any_certificate",
+            role="treatment_meta",
+            treatment_var="CRTF_CD",
+            treatment_name="has_any_certificate",
+            treatment_def="개인별 고유 CRTF_CD 개수 >= 1 이면 1, 0개이면 0",
+            treatment_question="자격증을 한 개라도 보유한 구직자는 자격증이 전혀 없는 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T2: 자격증 개수가 많은 구직자 (certificate intensity)
+        T2 [
+            label="T2: many_certificates",
+            role="treatment_meta",
+            treatment_var="CRTF_CD",
+            treatment_name="many_certificates",
+            treatment_def="개인별 고유 CRTF_CD 개수가 분포 상위 분위(예: 상위 30%)에 해당하면 1, 그 외 0",
+            treatment_question="자격증을 여러 개 보유한 구직자는 한두 개만 갖거나 자격증이 없는 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T3: 다양한 분야의 자격증을 가진 구직자 (field diversity)
+        T3 [
+            label="T3: diverse_certificate_fields",
+            role="treatment_meta",
+            treatment_var="CRTF_LCLS_NM",
+            treatment_name="diverse_certificate_fields",
+            treatment_def="개인별 고유 CRTF_LCLS_NM(자격증 대분류명) 종류 수가 분포 상위 분위(예: 상위 30%)면 1, 그 외 0",
+            treatment_question="서로 다른 분야의 자격증을 다양하게 보유한 구직자는 한두 분야에만 집중되어 있거나 자격증이 없는 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T4: 희망직종과 일치하는 분야 자격증 보유 여부 (job-aligned certificate)
+        T4 [
+            label="T4: job_aligned_certificate",
+            role="treatment_meta",
+            treatment_var="CRTF_LCLS_NM",
+            treatment_name="job_aligned_certificate",
+            treatment_def="희망직종코드1(HOPE_JSCD1)에 대응되는 산업/직종군과 동일하거나 밀접하게 관련된 CRTF_LCLS_NM의 자격증을 하나 이상 보유하면 1, 그 외 0 (매핑 룰은 별도 정의)",
+            treatment_question="희망 직종과 같은 분야(또는 밀접 분야)의 자격증을 보유한 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+
+        // T5: 기술/전문 분야 자격증 보유 여부 (high-value technical/professional cert)
+        T5 [
+            label="T5: tech_professional_certificate",
+            role="treatment_meta",
+            treatment_var="CRTF_LCLS_NM",
+            treatment_name="tech_professional_certificate",
+            treatment_def="CRTF_LCLS_NM이 '기술', '전문', '정보통신' 등 고숙련·전문직군에 해당하는 자격증을 하나 이상 포함하면 1, 그 외 0 (대분류-직군 매핑 룰 별도 정의)",
+            treatment_question="기술·전문·IT 등 고숙련 직군에 해당하는 자격증을 보유한 구직자는 그렇지 않은 구직자보다 6개월 이내 취업 확률이 얼마나 높은가?"
+        ];
+    }
+
+    // ============================================================
+    // ==== Causal structure (DAG for Certification) ==============
+
+    // --- 인구학적/배경 변수 ---
+    SXDS_CD -> ACCR_CD;                    // 성별에 따라 학력 경로가 달라질 수 있음
+    SXDS_CD -> MAJR_CD1;                   // 성별에 따라 전공 선택이 다름
+
+    AGE -> ACCR_CD;                        // 나이가 많을수록 높은 학력일 가능성
+    AGE -> CARR_MYCT1;                     // 나이가 많을수록 경력월수 증가
+    AGE -> ACQ_180_YN;                     // 연령에 따른 취업확률 차이
+
+    AREA_CD -> HOPE_JSCD1;                 // 지역에 따라 선택 가능한/선호되는 직종이 다를 수 있음
+    AREA_CD -> ACQ_180_YN;                 // 지역 노동시장 여건 차이
+
+    // --- 학력/전공/경력 -> 직종/자격증 선택 ---
+    ACCR_CD -> MAJR_CD1;                   // 학력이 전공 선택과 연계
+    ACCR_CD -> HOPE_JSCD1;                 // 학력에 따라 진입 가능한 직종이 달라짐
+    ACCR_CD -> ACQ_180_YN;                 // 학력이 직접 취업확률에 영향
+
+    MAJR_CD1 -> HOPE_JSCD1;                // 전공과 관련된 직종을 희망하는 경향
+    MAJR_CD1 -> CRTF_LCLS_NM;              // 전공 분야와 관련된 자격증 대분류 선택
+
+    CARR_MYCT1 -> HOPE_JSCD1;              // 경력 분야를 계속 희망할 가능성
+    CARR_MYCT1 -> ACQ_180_YN;              // 경력 자체가 취업 가능성에 직접 영향
+
+    // --- 직종 구조 (노동시장·임금 요약은 생략, 존재하지 않는 변수 제거) ---
+    HOPE_JSCD1 -> CRTF_LCLS_NM;            // 희망 직종과 관련 분야 자격증을 준비/선택하는 경향
+
+    // --- 자격증 데이터 구조 및 취득/관측 ---
+    // certification 테이블은 JHNT_CTN을 통해 구직인증과 연결
+    JHNT_CTN -> CRTF_CD;                   // 해당 구직인증 시점에 보유한 자격증 코드
+    JHNT_CTN -> CRTF_NM;                   // 자격증명
+    JHNT_CTN -> CRTF_LCLS_NM;              // 자격증 대분류명
+
+    CRTF_LCLS_NM -> CRTF_CD;               // 어떤 분야(대분류)의 자격증인지가 세부 자격증 코드를 부분적으로 결정
+
+    // 자격증 보유가 취업에 미치는 직접적인 구조
+    CRTF_CD -> ACQ_180_YN;                 // 특정 자격증 보유 자체가 취업 가능성에 직접 영향
+    CRTF_LCLS_NM -> ACQ_180_YN;            // 어떤 분야의 자격증인지(예: 전문기술 vs 일반)도 취업에 차이를 줄 수 있음
+
+    // --- 데이터 마감/관측 구조 ---
+    CLOS_YM -> ACQ_180_YN;                 // 관측 기간(마감년월)에 따라 180일 내 취업 여부의 관측 가능 여부가 달라질 수 있음
+    CLOS_YM -> CRTF_CD;                    // 마감 시점까지 취득한 자격증만 관측
+    ETL_DT -> CRTF_CD;                     // ETL 시점에 따라 어떤 자격증 정보가 데이터에 반영되었는지 달라질 수 있음
+}
