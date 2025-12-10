@@ -84,11 +84,11 @@ class TestTabpfnEstimator(object):
             cfg["confidence_intervals"] = True
             cfg["test_significance"] = True
             cfg["method_params"] = {
-                "num_simulations": 5, 
+                "num_simulations": 8, 
                 "num_null_simulations": 10,
-                "n_estimators": 2,
+                "n_estimators": 4,
                 "model_type": "auto",
-                "use_multi_gpu": False,
+                "use_multi_gpu": True,
                 "max_num_classes": 10,
             }
             estimator_tester.average_treatment_effect_test(**cfg)
@@ -124,7 +124,7 @@ class TestTabpfnEstimator(object):
                 "estimator": TabpfnEstimator,
                 "model_type": "auto",
                 "n_estimators": 4,
-                "use_multi_gpu": False,
+                "use_multi_gpu": True,
             },
         )
 
@@ -159,7 +159,7 @@ class TestTabpfnEstimator(object):
                 "estimator": TabpfnEstimator,
                 "model_type": "auto",
                 "n_estimators": 4,
-                "use_multi_gpu": False,
+                "use_multi_gpu": True,
             },
         )
 
@@ -193,7 +193,7 @@ class TestTabpfnEstimator(object):
         est = TabpfnEstimator(
             identified_estimand,
             confidence_intervals=False,
-            method_params={"model_type": "classifier", "n_estimators": 4, "use_multi_gpu": False},
+            method_params={"model_type": "classifier", "n_estimators": 4, "use_multi_gpu": True},
         )
         est.fit(data["df"])
 
