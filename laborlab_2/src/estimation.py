@@ -22,12 +22,10 @@ from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 
-# CUDA 3번 GPU만 사용하도록 설정 (환경변수로 강제)
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-
+# CUDA 3번 GPU만 사용하도록 설정
 import torch
-# 이제 GPU 3번이 cuda:0으로 보임
+if torch.cuda.is_available():
+    torch.cuda.set_device(3)
 
 from dowhy.causal_estimators.regression_estimator import RegressionEstimator
 from dowhy import CausalModel
@@ -157,13 +155,13 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             logger.error(f"예측 실패: {e}")
         raise
 
-def cleanup_tabpfn_memory(estimate, device_id=0, logger=None):
+def cleanup_tabpfn_memory(estimate, device_id=3, logger=None):
     """
     TabPFN 모델의 GPU 메모리를 완전히 해제하는 함수
     
     Args:
         estimate: CausalEstimate 객체
-        device_id: CUDA device ID (기본값: 0, CUDA_VISIBLE_DEVICES로 GPU 3번이 0으로 매핑됨)
+        device_id: CUDA device ID (기본값: 3)
         logger: 로거 객체
     """
     try:
