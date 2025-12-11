@@ -21,6 +21,7 @@ from typing import Dict, Any, Optional, List, Tuple
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
+from tqdm import tqdm
 
 # CUDA 0번 GPU 사용 (Docker 컨테이너 내부에서는 할당된 GPU가 0번으로 보임)
 import torch
@@ -65,10 +66,13 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
     if not isinstance(estimator, RegressionEstimator):
         raise ValueError(f"{type(estimator).__name__}는 예측을 지원하지 않습니다.")
     
+    total_samples = len(data_df)
     if logger:
-        logger.info(f"E(Y|A, X) 예측 시작: {len(data_df)}개")
+        logger.info(f"E(Y|A, X) 예측 시작: {total_samples}개")
         if treatment_value is not None:
             logger.info(f"처치 값: {treatment_value}")
+    
+    print(f"🔮 예측 시작: {total_samples}개 샘플")
     
     try:
         # 데이터프레임 복사 (원본 보호)
@@ -83,11 +87,88 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         if treatment_var not in data_df_clean.columns:
             raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
         
-        # 예측 수행
-        if treatment_value is not None:
-            predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
+        # 예측 수행 (진행률 표시)
+        estimator_type = type(estimator).__name__
+        is_tabpfn = 'tabpfn' in estimator_type.lower() or 'TabPFN' in estimator_type
+        
+        # TabPFN의 경우 배치 크기 확인
+        batch_size = None
+        if is_tabpfn:
+            # TabPFN의 경우 배치 크기 확인
+            if hasattr(estimate, 'estimator') and hasattr(estimate.estimator, '_method_params'):
+                method_params = estimate.estimator._method_params
+                if method_params and 'prediction_batch_size' in method_params:
+                    batch_size = method_params['prediction_batch_size']
+            if batch_size is None:
+                batch_size = 512  # 기본 배치 크기
+        
+        prediction_start_time = time.time()
+        
+        # 배치로 나누어 처리 가능한 경우 progress bar 표시
+        if batch_size and total_samples > batch_size:
+            num_batches = (total_samples + batch_size - 1) // batch_size
+            print(f"📊 배치 크기: {batch_size}, 총 배치 수: {num_batches}")
+            
+            predictions_list = []
+            with tqdm(total=total_samples, desc="예측 진행", unit="샘플", ncols=100, leave=True) as pbar:
+                for i in range(0, total_samples, batch_size):
+                    batch_end = min(i + batch_size, total_samples)
+                    batch_df = data_df_clean.iloc[i:batch_end]
+                    
+                    try:
+                        # 배치 예측 수행
+                        if treatment_value is not None:
+                            batch_predictions = estimator.interventional_outcomes(batch_df, treatment_value)
+                        else:
+                            batch_predictions = estimator.predict(batch_df)
+                        
+                        # 예측 결과를 리스트에 추가
+                        if isinstance(batch_predictions, np.ndarray):
+                            predictions_list.append(batch_predictions)
+                        elif isinstance(batch_predictions, (list, tuple)):
+                            predictions_list.extend(batch_predictions)
+                        elif isinstance(batch_predictions, pd.Series):
+                            predictions_list.append(batch_predictions.values)
+                        else:
+                            predictions_list.append([batch_predictions])
+                        
+                        pbar.update(len(batch_df))
+                    except Exception as e:
+                        # 배치 처리 실패 시 전체 데이터로 fallback
+                        if logger:
+                            logger.warning(f"배치 예측 실패, 전체 데이터로 처리: {e}")
+                        pbar.close()
+                        print("⚠️ 배치 처리 실패, 전체 데이터로 예측 수행 중...")
+                        if treatment_value is not None:
+                            predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
+                        else:
+                            predictions = estimator.predict(data_df_clean)
+                        prediction_elapsed = time.time() - prediction_start_time
+                        print(f"✅ 예측 완료: {len(predictions)}개 예측값 생성 (소요 시간: {prediction_elapsed:.2f}초)")
+                        break
+                else:
+                    # 모든 배치가 성공적으로 처리된 경우
+                    if predictions_list:
+                        # 배치 결과 합치기
+                        if isinstance(predictions_list[0], np.ndarray):
+                            predictions = np.concatenate(predictions_list)
+                        else:
+                            predictions = np.array([item for sublist in predictions_list for item in (sublist if isinstance(sublist, (list, tuple)) else [sublist])])
+                        prediction_elapsed = time.time() - prediction_start_time
+                        print(f"\n✅ 예측 완료: {len(predictions)}개 예측값 생성 (소요 시간: {prediction_elapsed:.2f}초)")
+                    else:
+                        raise ValueError("예측 결과가 생성되지 않았습니다.")
         else:
-            predictions = estimator.predict(data_df_clean)
+            # 전체 데이터를 한 번에 처리하거나 배치 크기가 충분히 큰 경우
+            with tqdm(total=1, desc="예측 수행", unit="배치", ncols=100, leave=True) as pbar:
+                if treatment_value is not None:
+                    predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
+                else:
+                    predictions = estimator.predict(data_df_clean)
+                pbar.update(1)
+            
+            prediction_elapsed = time.time() - prediction_start_time
+            print(f"✅ 예측 완료: {len(predictions)}개 예측값 생성 (소요 시간: {prediction_elapsed:.2f}초)")
         
         if logger:
             logger.info(f"예측 완료: {len(predictions)}개 예측값 생성")
@@ -273,6 +354,8 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
         logger.info(f"사용할 추정 방법: {method}")
         logger.info(f"요청된 추정기: {estimator}")
     
+    print(f"📊 인과효과 추정 시작: {estimator}")
+    
     estimate = None
     try:
         # TabPFN의 경우 새 버전 사용 (표준 인터페이스)
@@ -311,13 +394,25 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                 device_id = torch.cuda.current_device()
                 device_name = torch.cuda.get_device_name(device_id)
                 logger.info(f"🖥️ GPU 정보: {device_name} (cuda:{device_id})")
-
-            estimate = model.estimate_effect(
-                identified_estimand,
-                method_name=method,
-                test_significance=True,
-                method_params=method_params
-            )
+            
+            print("⏳ TabPFN 모델 추정 중... (이 과정은 시간이 걸릴 수 있습니다)")
+            print(f"   - n_estimators: {method_params.get('n_estimators', 8)}")
+            print(f"   - prediction_batch_size: {method_params.get('prediction_batch_size', 64)}")
+            
+            # Progress bar 표시 (TabPFN은 내부적으로 처리되므로 간단한 progress bar)
+            estimate_start_time = time.time()
+            with tqdm(total=100, desc="추정 진행", unit="%", ncols=100, leave=True, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}%') as pbar:
+                # TabPFN 추정은 내부적으로 처리되므로 progress bar는 대략적인 진행률만 표시
+                estimate = model.estimate_effect(
+                    identified_estimand,
+                    method_name=method,
+                    test_significance=True,
+                    method_params=method_params
+                )
+                pbar.update(100)  # 완료 시 100% 표시
+            
+            estimate_elapsed = time.time() - estimate_start_time
+            print(f"✅ TabPFN 추정 완료 (소요 시간: {estimate_elapsed:.2f}초)")
                         
             # 로드된 모델의 실제 device 확인
             if logger and hasattr(estimate, 'estimator'):
@@ -342,11 +437,17 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
             # TabPFN 사용 후 GPU 메모리 정리 (CUDA 0번)
             cleanup_tabpfn_memory(estimate, device_id=0, logger=logger)
         else:
-            estimate = model.estimate_effect(
-                identified_estimand,
-                method_name=method,
-                test_significance=True
-            )
+            print(f"⏳ {estimator} 추정 중...")
+            estimate_start_time = time.time()
+            with tqdm(total=100, desc="추정 진행", unit="%", ncols=100, leave=True, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}%') as pbar:
+                estimate = model.estimate_effect(
+                    identified_estimand,
+                    method_name=method,
+                    test_significance=True
+                )
+                pbar.update(100)  # 완료 시 100% 표시
+            estimate_elapsed = time.time() - estimate_start_time
+            print(f"✅ {estimator} 추정 완료 (소요 시간: {estimate_elapsed:.2f}초)")
         
         if logger:
             logger.info("✅ 인과효과 추정 성공")
