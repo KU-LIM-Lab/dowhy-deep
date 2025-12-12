@@ -406,7 +406,6 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                 estimate = model.estimate_effect(
                     identified_estimand,
                     method_name=method,
-                    test_significance=True,
                     method_params=method_params
                 )
                 pbar.update(100)  # 완료 시 100% 표시
@@ -442,8 +441,7 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
             with tqdm(total=100, desc="추정 진행", unit="%", ncols=100, leave=True, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}%') as pbar:
                 estimate = model.estimate_effect(
                     identified_estimand,
-                    method_name=method,
-                    test_significance=True
+                    method_name=method
                 )
                 pbar.update(100)  # 완료 시 100% 표시
             estimate_elapsed = time.time() - estimate_start_time
@@ -452,13 +450,6 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
         if logger:
             logger.info("✅ 인과효과 추정 성공")
             logger.info(f"추정된 인과 효과 (ATE): {estimate.value:.6f}")
-            p_value, ci = extract_significance(estimate)
-            if (p_value is not None) & isinstance(p_value, float):
-                logger.info(f"P-value: {p_value}")
-                significance = "유의함" if p_value <= 0.05 else "유의하지 않음"
-                logger.info(f"통계적 유의성: {significance}")
-            if ci is not None:
-                logger.info(f"신뢰구간: {ci}")
 
         return estimate
         
@@ -1721,11 +1712,6 @@ def run_analysis_without_preprocessing(
         print("📊 추정 결과 요약")
         print("="*60)
         print(f"  ATE (Average Treatment Effect): {estimate.value:.6f}")
-        p_value, ci = extract_significance(estimate)
-        if p_value is not None and isinstance(p_value, float):
-            print(f"  P-value: {p_value:.6f}")
-        if ci is not None:
-            print(f"  신뢰구간: {ci}")
         if metrics:
             print(f"\n📈 예측 성능:")
             if metrics.get('accuracy') is not None:
@@ -1944,19 +1930,6 @@ def run_single_experiment(
         if estimate and hasattr(estimate, 'value'):
             ate_value = estimate.value
         
-        # 신뢰구간 추출
-        ci_lower = None
-        ci_upper = None
-        if estimate:
-            p_val_tmp, ci_tmp = extract_significance(estimate)
-            if ci_tmp is not None:
-                # ci_tmp가 (lower, upper) 형태라고 가정
-                try:
-                    ci_lower = ci_tmp[0]
-                    ci_upper = ci_tmp[1] if len(ci_tmp) > 1 else None
-                except Exception:
-                    pass
-        
         return {
             "experiment_id": experiment_id,
             "status": "success",
@@ -1975,9 +1948,7 @@ def run_single_experiment(
             "train_size": result.get("train_size"),
             "test_size": result.get("test_size"),
             "start_time": start_time.isoformat(),
-            "end_time": end_time.isoformat(),
-            "ci_lower": ci_lower,
-            "ci_upper": ci_upper
+            "end_time": end_time.isoformat()
         }
     except Exception as e:
         end_time = datetime.now()
