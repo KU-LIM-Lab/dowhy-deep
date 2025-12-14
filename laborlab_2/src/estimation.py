@@ -425,11 +425,25 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                     if hasattr(tabpfn_model, '_single_model') and tabpfn_model._single_model is not None:
                         inner_model = tabpfn_model._single_model
                         # 모델 파라미터의 device 확인
+                        device_info = None
                         try:
-                            first_param = next(inner_model.parameters())
-                            logger.info(f"🎯 TabPFN 내부 모델 device: {first_param.device}")
-                        except StopIteration:
-                            logger.info("🎯 TabPFN 내부 모델: 파라미터 없음")
+                            # 방법 1: parameters() 메서드가 있는 경우 (PyTorch 모델)
+                            if hasattr(inner_model, 'parameters'):
+                                try:
+                                    first_param = next(inner_model.parameters())
+                                    device_info = str(first_param.device)
+                                except StopIteration:
+                                    device_info = "파라미터 없음"
+                            # 방법 2: device 속성이 직접 있는 경우
+                            elif hasattr(inner_model, 'device'):
+                                device_info = str(inner_model.device)
+                            # 방법 3: 모델 타입 확인
+                            else:
+                                model_type = type(inner_model).__name__
+                                device_info = f"device 속성 없음 (타입: {model_type})"
+                            
+                            if device_info:
+                                logger.info(f"🎯 TabPFN 내부 모델 device: {device_info}")
                         except Exception as e:
                             logger.info(f"🎯 TabPFN 내부 모델 device 확인 실패: {e}")
                     else:
