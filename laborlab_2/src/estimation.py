@@ -243,7 +243,7 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             logger.error(f"예측 실패: {e}")
         raise
 
-def cleanup_tabpfn_memory(estimate, device_id=0, logger=None):
+def cleanup_tabpfn_memory(estimate, device_id=0, logger=None, force_release=False):
     """
     TabPFN 모델의 GPU 메모리를 완전히 해제하는 함수
     
@@ -251,6 +251,7 @@ def cleanup_tabpfn_memory(estimate, device_id=0, logger=None):
         estimate: CausalEstimate 객체
         device_id: CUDA device ID (기본값: 0, Docker 컨테이너 내부 기준)
         logger: 로거 객체
+        force_release: 강제 메모리 해제 여부 (기본값: False)
     """
     try:
         import torch
