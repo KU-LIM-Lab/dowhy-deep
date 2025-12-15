@@ -87,6 +87,98 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         if treatment_var not in data_df_clean.columns:
             raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
         
+        # Unknown Categories 안전장치: 예측 시도 시 오류 발생하면 해당 행 제외
+        def safe_predict(df_to_predict, treatment_val=None):
+            """Unknown categories 오류 발생 시 해당 행을 제외하고 재시도"""
+            try:
+                if treatment_val is not None:
+                    return estimator.interventional_outcomes(df_to_predict, treatment_val)
+                else:
+                    return estimator.predict(df_to_predict)
+            except ValueError as e:
+                if "unknown categories" in str(e).lower() or "found unknown" in str(e).lower():
+                    error_msg = str(e)
+                    
+                    # 오류 메시지에서 컬럼 정보 추출
+                    column_info = "알 수 없음"
+                    if "column" in error_msg.lower():
+                        # "in column 0" 또는 "in column 'col_name'" 형식 파싱
+                        import re
+                        col_match = re.search(r"column\s+(\d+|\w+)", error_msg, re.IGNORECASE)
+                        if col_match:
+                            col_ref = col_match.group(1)
+                            # 숫자인 경우 인덱스로 변환
+                            try:
+                                col_idx = int(col_ref)
+                                categorical_cols = df_to_predict.select_dtypes(include=['object', 'string', 'category']).columns
+                                if col_idx < len(categorical_cols):
+                                    column_info = categorical_cols[col_idx]
+                            except:
+                                column_info = col_ref
+                    
+                    # 카테고리 변수 식별 및 필터링
+                    categorical_cols = df_to_predict.select_dtypes(include=['object', 'string', 'category']).columns
+                    problematic_cols = []
+                    
+                    if len(categorical_cols) > 0 and hasattr(estimator, '_data'):
+                        # Train 데이터의 카테고리 값만 유지
+                        train_data = estimator._data
+                        rows_before = len(df_to_predict)
+                        
+                        for col in categorical_cols:
+                            if col in train_data.columns:
+                                train_categories = set(train_data[col].dropna().unique())
+                                test_categories = set(df_to_predict[col].dropna().unique())
+                                unknown_categories = test_categories - train_categories
+                                
+                                if unknown_categories:
+                                    problematic_cols.append({
+                                        'column': col,
+                                        'unknown_count': len(unknown_categories),
+                                        'unknown_values': list(unknown_categories)[:10]  # 최대 10개만 표시
+                                    })
+                                    mask = df_to_predict[col].isin(train_categories) | df_to_predict[col].isna()
+                                    df_to_predict = df_to_predict[mask].copy()
+                        
+                        rows_after = len(df_to_predict)
+                        rows_removed = rows_before - rows_after
+                        
+                        # 로깅 및 프린트
+                        if problematic_cols:
+                            for prob_col in problematic_cols:
+                                col_name = prob_col['column']
+                                unknown_vals = prob_col['unknown_values']
+                                unknown_count = prob_col['unknown_count']
+                                
+                                msg = (
+                                    f"⚠️ Unknown Categories 감지 - 컬럼: '{col_name}', "
+                                    f"알 수 없는 값: {unknown_count}개 "
+                                    f"({unknown_vals[:5]}{'...' if len(unknown_vals) > 5 else ''})"
+                                )
+                                print(msg)
+                                if logger:
+                                    logger.warning(msg)
+                        
+                        if rows_removed > 0:
+                            msg = f"📊 필터링 결과: {rows_before}건 → {rows_after}건 ({rows_removed}건 제거)"
+                            print(msg)
+                            if logger:
+                                logger.info(msg)
+                        
+                        if len(df_to_predict) == 0:
+                            error_msg = "필터링 후 예측 가능한 데이터가 없습니다."
+                            print(f"❌ {error_msg}")
+                            if logger:
+                                logger.error(error_msg)
+                            raise ValueError(error_msg)
+                        
+                        # 재시도
+                        if treatment_val is not None:
+                            return estimator.interventional_outcomes(df_to_predict, treatment_val)
+                        else:
+                            return estimator.predict(df_to_predict)
+                raise
+        
         # 예측 수행 (진행률 표시)
         estimator_type = type(estimator).__name__
         is_tabpfn = 'tabpfn' in estimator_type.lower() or 'TabPFN' in estimator_type
@@ -116,11 +208,8 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
                     batch_df = data_df_clean.iloc[i:batch_end]
                     
                     try:
-                        # 배치 예측 수행
-                        if treatment_value is not None:
-                            batch_predictions = estimator.interventional_outcomes(batch_df, treatment_value)
-                        else:
-                            batch_predictions = estimator.predict(batch_df)
+                        # 배치 예측 수행 (안전장치 포함)
+                        batch_predictions = safe_predict(batch_df, treatment_value)
                         
                         # 예측 결과를 리스트에 추가
                         if isinstance(batch_predictions, np.ndarray):
@@ -139,10 +228,7 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
                             logger.warning(f"배치 예측 실패, 전체 데이터로 처리: {e}")
                         pbar.close()
                         print("⚠️ 배치 처리 실패, 전체 데이터로 예측 수행 중...")
-                        if treatment_value is not None:
-                            predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
-                        else:
-                            predictions = estimator.predict(data_df_clean)
+                        predictions = safe_predict(data_df_clean, treatment_value)
                         prediction_elapsed = time.time() - prediction_start_time
                         print(f"✅ 예측 완료: {len(predictions)}개 예측값 생성 (소요 시간: {prediction_elapsed:.2f}초)")
                         break
@@ -161,10 +247,7 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         else:
             # 전체 데이터를 한 번에 처리하거나 배치 크기가 충분히 큰 경우
             with tqdm(total=1, desc="예측 수행", unit="배치", ncols=100, leave=True) as pbar:
-                if treatment_value is not None:
-                    predictions = estimator.interventional_outcomes(data_df_clean, treatment_value)
-                else:
-                    predictions = estimator.predict(data_df_clean)
+                predictions = safe_predict(data_df_clean, treatment_value)
                 pbar.update(1)
             
             prediction_elapsed = time.time() - prediction_start_time
