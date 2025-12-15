@@ -1723,6 +1723,10 @@ def run_analysis_without_preprocessing(
         )
         step_times['예측'] = time.time() - step_start
         
+        # 직종소분류 정보 추가 (있는 경우)
+        if job_category is not None:
+            df_with_predictions['job_category'] = job_category
+        
         # 예측 결과 저장
         if experiment_id:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1821,6 +1825,7 @@ def run_single_experiment(
             all_results = []
             all_predictions = []
             all_metrics = []
+            job_category_list = []  # 직종소분류 리스트 저장 (성공한 것만)
             
             for job_category in job_categories:
                 job_df = merged_df_clean[merged_df_clean["HOPE_JSCD1_NAME"] == job_category].copy()
@@ -1851,6 +1856,7 @@ def run_single_experiment(
                     )
                     
                     all_results.append(job_result)
+                    job_category_list.append(job_category)  # 성공한 직종소분류만 저장
                     
                     if job_result.get("excel_path"):
                         try:
@@ -1887,10 +1893,28 @@ def run_single_experiment(
             if not all_results:
                 raise ValueError("모든 직종소분류 실험이 실패했습니다.")
             
-            # 예측 결과 합치기
+            # 예측 결과 합치기 및 평가지표 계산
             if all_predictions:
                 combined_predictions = pd.concat(all_predictions, ignore_index=True)
                 
+                # 각 직종소분류별 평가지표 수집
+                job_category_metrics_list = []
+                for idx, job_result in enumerate(all_results):
+                    job_category = job_category_list[idx] if idx < len(job_category_list) else None
+                    job_metrics = job_result.get("metrics", {})
+                    
+                    if job_category and job_metrics:
+                        job_metric_row = {
+                            "job_category": job_category,
+                            "train_size": job_result.get("train_size", 0),
+                            "test_size": job_result.get("test_size", 0),
+                            "accuracy": job_metrics.get("accuracy"),
+                            "f1_score": job_metrics.get("f1_score"),
+                            "auc": job_metrics.get("auc")
+                        }
+                        job_category_metrics_list.append(job_metric_row)
+                
+                # 전체 데이터 평가지표 계산
                 combined_metrics = {}
                 if all_metrics:
                     actual_outcome_col = f"{outcome}_actual"
@@ -1911,6 +1935,32 @@ def run_single_experiment(
                                 except:
                                     combined_metrics['auc'] = None
                 
+                # 전체 평가지표를 리스트에 추가
+                if combined_metrics:
+                    overall_metric_row = {
+                        "job_category": "전체",
+                        "train_size": sum([r.get("train_size", 0) for r in all_results]),
+                        "test_size": sum([r.get("test_size", 0) for r in all_results]),
+                        "accuracy": combined_metrics.get("accuracy"),
+                        "f1_score": combined_metrics.get("f1_score"),
+                        "auc": combined_metrics.get("auc")
+                    }
+                    job_category_metrics_list.append(overall_metric_row)
+                
+                # 평가지표를 DataFrame으로 변환하여 CSV 저장
+                if job_category_metrics_list:
+                    metrics_df = pd.DataFrame(job_category_metrics_list)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    script_dir = Path(__file__).parent.parent
+                    output_dir = script_dir / "log"
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    metrics_csv_path = output_dir / f"metrics_{experiment_id}_{timestamp}.csv"
+                    metrics_df.to_csv(metrics_csv_path, index=False, encoding='utf-8-sig')
+                    if logger:
+                        logger.info(f"✅ 평가지표 CSV 저장 완료: {metrics_csv_path}")
+                    print(f"✅ 평가지표 CSV 저장 완료: {metrics_csv_path}")
+                
+                # 예측 결과 Excel 저장
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 excel_path = utils.save_predictions_to_excel(
                     combined_predictions, 
