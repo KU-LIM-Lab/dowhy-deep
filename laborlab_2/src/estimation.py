@@ -1060,6 +1060,19 @@ def print_summary_report(estimate, validation_results, sensitivity_df):
 # Checkpoint 저장/로드 함수
 # ============================================================================
 
+def _json_default(obj):
+    """JSON 직렬화 보조: numpy/pandas 객체를 기본 타입으로 변환"""
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if hasattr(obj, "isoformat"):  # datetime, Timestamp 등
+        return obj.isoformat()
+    return str(obj)
+
+
 def save_checkpoint(estimate, checkpoint_dir, experiment_id, graph_name=None, logger=None):
     """
     CausalEstimate 객체를 checkpoint로 저장하는 함수
@@ -1088,15 +1101,15 @@ def save_checkpoint(estimate, checkpoint_dir, experiment_id, graph_name=None, lo
         if len(parts) >= 3:
             graph_name = parts[2]  # graph_name 위치
     
-    # 메타데이터 저장
+    # 메타데이터 저장 (numpy 타입을 Python 기본 타입으로 변환)
     metadata = {
         "experiment_id": experiment_id,
         "graph_name": graph_name,
         "treatment": estimate._treatment_name[0] if isinstance(estimate._treatment_name, list) else estimate._treatment_name,
         "outcome": estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name,
-        "ate_value": estimate.value,
-        "control_value": estimate.control_value,
-        "treatment_value": estimate.treatment_value,
+        "ate_value": float(estimate.value) if estimate.value is not None else None,
+        "control_value": float(estimate.control_value) if estimate.control_value is not None else None,
+        "treatment_value": float(estimate.treatment_value) if estimate.treatment_value is not None else None,
         "estimator_type": type(estimate.estimator).__name__ if hasattr(estimate, 'estimator') else None,
         "saved_at": datetime.now().isoformat()
     }
@@ -1115,7 +1128,7 @@ def save_checkpoint(estimate, checkpoint_dir, experiment_id, graph_name=None, lo
         
         # 메타데이터 저장
         with open(metadata_file, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
+            json.dump(metadata, f, indent=2, ensure_ascii=False, default=_json_default)
         
         if logger:
             logger.info(f"✅ Checkpoint 저장 완료: {checkpoint_file}")
