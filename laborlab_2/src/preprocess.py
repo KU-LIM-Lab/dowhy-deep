@@ -372,9 +372,9 @@ class Preprocessor:
         # 자기소개서 데이터 추출 (BASS_SFID_YN == "Y"인 항목만)
         texts = []
         items = []
-        for c in item.get("COVERLETTERS", []):
+        for c in item.get("CONTENTS", []):
             if str(c.get("BASS_SFID_YN", "")).upper() == "Y":
-                items = c.get("ITEMS", []) or []
+                items = c.get("COVERLETTER_CONTENTS", []) or []
                 for it in items:
                     t = it.get("SELF_INTRO_CONT", "")
                     if t:
