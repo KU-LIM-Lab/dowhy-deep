@@ -392,7 +392,8 @@ def prediction(
     estimator: str,
     checkpoint_dir: Path,
     experiment_id: Optional[str] = None,
-    logger: Optional[Any] = None
+    logger: Optional[Any] = None,
+    **kwargs  # tabpfn_config 등 추가 인자 무시
 ) -> Dict[str, Any]:
     """
     단일 실험에 대한 prediction 함수

@@ -558,8 +558,6 @@ def estimate_causal_effect(model, identified_estimand, estimator, logger=None, t
                             logger.info(f"🎯 TabPFN 내부 모델 device 확인 실패: {e}")
                     else:
                         logger.info("🎯 TabPFN _single_model: None (멀티프로세싱 모드이거나 아직 로드 안됨)")
-            # TabPFN 사용 후 GPU 메모리 정리 (CUDA 0번)
-            cleanup_tabpfn_memory(estimate, device_id=0, logger=logger)
         else:
             print(f"⏳ {estimator} 추정 중...")
             estimate_start_time = time.time()
