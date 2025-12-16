@@ -21,6 +21,7 @@ from typing import Dict, Any, Optional, List, Tuple
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
+from sklearn.preprocessing import OrdinalEncoder
 from tqdm import tqdm
 
 # CUDA 0번 GPU 사용 (Docker 컨테이너 내부에서는 할당된 GPU가 0번으로 보임)
@@ -86,6 +87,27 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         # treatment 변수가 있는지 확인
         if treatment_var not in data_df_clean.columns:
             raise ValueError(f"Treatment 변수 '{treatment_var}'가 데이터에 없습니다. 사용 가능한 컬럼: {list(data_df_clean.columns)}")
+        
+        # OrdinalEncoder가 저장되어 있으면 예측 데이터에도 적용
+        if hasattr(estimate, '_ordinal_encoder') and hasattr(estimate, '_categorical_columns'):
+            ordinal_encoder = estimate._ordinal_encoder
+            categorical_columns = estimate._categorical_columns
+            
+            # 실제로 존재하는 categorical 컬럼만 필터링
+            existing_categorical_cols = [col for col in categorical_columns if col in data_df_clean.columns]
+            
+            if existing_categorical_cols:
+                print(f"🔢 예측 데이터에 OrdinalEncoder 적용: {len(existing_categorical_cols)}개 변수")
+                
+                # 예측 데이터 인코딩 (unknown categories는 -1로 처리됨)
+                data_df_clean[existing_categorical_cols] = ordinal_encoder.transform(data_df_clean[existing_categorical_cols])
+                
+                # Unknown categories 처리 결과 로깅
+                for col in existing_categorical_cols:
+                    # -1로 인코딩된 값이 있는지 확인
+                    unknown_count = (data_df_clean[col] == -1).sum()
+                    if unknown_count > 0:
+                        print(f"   ⚠️ '{col}': {unknown_count}개 unknown categories → -1로 인코딩됨")
         
         # Unknown Categories 안전장치: 예측 시도 시 오류 발생하면 해당 행 제외
         def safe_predict(df_to_predict, treatment_val=None):
@@ -1734,6 +1756,55 @@ def run_analysis_without_preprocessing(
                         if logger:
                             logger.warning(f"컬럼 '{col}'에 타입 혼합 감지: {types}")
         
+        # 3-2. Categorical 변수 Ordinal Encoding (TabPFN용)
+        ordinal_encoder = None
+        categorical_columns = []
+        if estimator == 'tabpfn':
+            print("🔢 Categorical 변수 Ordinal Encoding 중...")
+            step_start = time.time()
+            
+            # Categorical 변수 찾기 (object, string, category 타입)
+            categorical_columns = df_train.select_dtypes(include=['object', 'string', 'category']).columns.tolist()
+            
+            # Treatment와 Outcome은 제외 (이미 숫자형이거나 별도 처리 필요)
+            categorical_columns = [col for col in categorical_columns if col not in [treatment, outcome]]
+            
+            if categorical_columns:
+                print(f"   발견된 categorical 변수: {categorical_columns}")
+                
+                # OrdinalEncoder 생성 (handle_unknown='use_encoded_value'로 설정)
+                ordinal_encoder = OrdinalEncoder(
+                    handle_unknown='use_encoded_value',
+                    unknown_value=-1,  # unknown categories는 -1로 인코딩
+                    dtype=np.int64
+                )
+                
+                # Train 데이터로 fit 및 transform
+                df_train_encoded = df_train.copy()
+                df_train_encoded[categorical_columns] = ordinal_encoder.fit_transform(df_train[categorical_columns])
+                
+                # Test 데이터에도 동일한 인코더 적용
+                df_test_encoded = df_test.copy()
+                df_test_encoded[categorical_columns] = ordinal_encoder.transform(df_test[categorical_columns])
+                
+                # Unknown categories 처리 결과 로깅
+                for col in categorical_columns:
+                    train_unique = set(df_train[col].dropna().unique())
+                    test_unique = set(df_test[col].dropna().unique())
+                    unknown_cats = test_unique - train_unique
+                    if unknown_cats:
+                        unknown_count = df_test[col].isin(unknown_cats).sum()
+                        print(f"   ⚠️ '{col}': {unknown_count}개 unknown categories 발견 → -1로 인코딩됨")
+                
+                df_train = df_train_encoded
+                df_test = df_test_encoded
+                
+                print(f"✅ Ordinal Encoding 완료: {len(categorical_columns)}개 변수")
+            else:
+                print("   Categorical 변수가 없습니다.")
+            
+            step_times['Ordinal Encoding'] = time.time() - step_start
+        
         # 4. 인과모델 생성
         print("4️⃣ 인과모델 생성 중...")
         step_start = time.time()
@@ -1761,6 +1832,13 @@ def run_analysis_without_preprocessing(
             logger,
             tabpfn_config=tabpfn_config
         )
+        
+        # OrdinalEncoder를 estimate 객체에 저장 (예측 시 사용)
+        if ordinal_encoder is not None:
+            estimate._ordinal_encoder = ordinal_encoder
+            estimate._categorical_columns = categorical_columns
+            print(f"💾 OrdinalEncoder를 estimate 객체에 저장: {len(categorical_columns)}개 변수")
+        
         step_times['인과효과 추정'] = time.time() - step_start
         
         # 6-1. Checkpoint 저장
