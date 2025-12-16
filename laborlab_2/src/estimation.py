@@ -93,8 +93,13 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             ordinal_encoder = estimate._ordinal_encoder
             categorical_columns = estimate._categorical_columns
             
-            # 실제로 존재하는 categorical 컬럼만 필터링
-            existing_categorical_cols = [col for col in categorical_columns if col in data_df_clean.columns]
+            # 실제로 존재하고, 아직 object/string/category 타입인 컬럼만 필터링
+            # (이미 숫자형으로 인코딩된 컬럼은 건너뜀)
+            existing_categorical_cols = [
+                col for col in categorical_columns 
+                if col in data_df_clean.columns 
+                and data_df_clean[col].dtype in ['object', 'string', 'category']
+            ]
             
             if existing_categorical_cols:
                 print(f"🔢 예측 데이터에 OrdinalEncoder 적용: {len(existing_categorical_cols)}개 변수")
