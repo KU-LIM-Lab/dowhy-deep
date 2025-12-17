@@ -25,7 +25,11 @@ import numpy as np
 import json
 import re
 import os
+import logging
 from datetime import datetime
+
+# 모듈 레벨 로거 가져오기 (main.py의 setup_logging과 같은 로거 사용)
+logger = logging.getLogger(__name__)
 from typing import Optional, List, Dict, Any
 from collections import Counter
 from pathlib import Path
@@ -290,8 +294,10 @@ class Preprocessor:
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
         # LLM scorer에 전달하여 점수 계산 (비동기)
-        score, _ = await self.llm_scorer.score_async("이력서", job_name, job_examples, formatting_sentence, session)
-        
+        score, msg = await self.llm_scorer.score_async("이력서", job_name, job_examples, formatting_sentence, session)
+        if msg.startswith("LLM API 오류:"):
+            logger.error(f"이력서 점수 계산 오류: msg={msg}")
+
         return {
             "JHNT_MBN": str(seek_id),  # 문자열로 변환
             "resume_score": score,
@@ -389,7 +395,9 @@ class Preprocessor:
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
         # 점수 계산
-        score, _ = await self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
+        score, msg = await self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
+        if msg.startswith("LLM API 오류:"):
+            logger.error(f"자기소개서 점수 계산 오류: msg={msg}")
 
         # 오탈자 계산 로직 비활성화 (기존 로직 주석)
         # score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
@@ -560,7 +568,9 @@ class Preprocessor:
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
         # 점수 계산 (비동기)
-        score, why = await self.llm_scorer.score_async("직업훈련", job_name, job_examples, text, session)
+        score, msg = await self.llm_scorer.score_async("직업훈련", job_name, job_examples, text, session)
+        if msg.startswith("LLM API 오류:"):
+            logger.error(f"직업훈련 점수 계산 오류: msg={msg}")
         
         return {
             "JHNT_CTN": str(jhnt_ctn),  # 문자열로 변환
@@ -648,7 +658,9 @@ class Preprocessor:
         job_examples = []  # 필요시 HOPE_JSCD1로부터 직종 예시 리스트 생성 가능
         
         # 점수 계산 (비동기)
-        score, _ = await self.llm_scorer.score_async("자격증", job_name, job_examples, text, session)
+        score, msg = await self.llm_scorer.score_async("자격증", job_name, job_examples, text, session)
+        if msg.startswith("LLM API 오류:"):
+            logger.error(f"자격증 점수 계산 오류: msg={msg}")
         
         # score만 반환 (그래프 변수명과 일치)
         return {
