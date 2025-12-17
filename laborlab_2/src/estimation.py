@@ -93,26 +93,32 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
             ordinal_encoder = estimate._ordinal_encoder
             categorical_columns = estimate._categorical_columns
             
-            # 실제로 존재하고, 아직 object/string/category 타입인 컬럼만 필터링
-            # (이미 숫자형으로 인코딩된 컬럼은 건너뜀)
-            existing_categorical_cols = [
+            # 존재하는 컬럼 중 인코딩이 필요한 것만 필터링
+            cols_to_encode = [
                 col for col in categorical_columns 
-                if col in data_df_clean.columns 
-                and data_df_clean[col].dtype in ['object', 'string', 'category']
+                if col in data_df_clean.columns and not pd.api.types.is_integer_dtype(data_df_clean[col])
             ]
             
-            if existing_categorical_cols:
-                print(f"🔢 예측 데이터에 OrdinalEncoder 적용: {len(existing_categorical_cols)}개 변수")
+            if cols_to_encode:
+                print(f"🔢 예측 데이터에 OrdinalEncoder 적용: {len(cols_to_encode)}개 변수")
                 
-                # 예측 데이터 인코딩 (unknown categories는 -1로 처리됨)
-                data_df_clean[existing_categorical_cols] = ordinal_encoder.transform(data_df_clean[existing_categorical_cols])
+                # 전처리: NaN 처리 및 문자열 변환
+                for col in cols_to_encode:
+                    data_df_clean[col] = data_df_clean[col].fillna('__nan__').astype(str)
                 
-                # Unknown categories 처리 결과 로깅
-                for col in existing_categorical_cols:
-                    # -1로 인코딩된 값이 있는지 확인
-                    unknown_count = (data_df_clean[col] == -1).sum()
-                    if unknown_count > 0:
-                        print(f"   ⚠️ '{col}': {unknown_count}개 unknown categories → -1로 인코딩됨")
+                # 인코딩 적용
+                try:
+                    data_df_clean[cols_to_encode] = ordinal_encoder.transform(data_df_clean[cols_to_encode])
+                    
+                    # Unknown categories 로깅
+                    for col in cols_to_encode:
+                        unknown_count = (data_df_clean[col] == -1).sum()
+                        if unknown_count > 0:
+                            print(f"   ⚠️ '{col}': {unknown_count}개 unknown categories → -1로 인코딩됨")
+                except Exception as e:
+                    print(f"   ⚠️ OrdinalEncoder 오류: {e}")
+                    print(f"   컬럼 타입: {[(col, str(data_df_clean[col].dtype)) for col in cols_to_encode]}")
+                    raise
         
         # Unknown Categories 안전장치: 예측 시도 시 오류 발생하면 해당 행 제외
         def safe_predict(df_to_predict, treatment_val=None):
@@ -1766,43 +1772,62 @@ def run_analysis_without_preprocessing(
             print("🔢 Categorical 변수 Ordinal Encoding 중...")
             step_start = time.time()
             
-            # Categorical 변수 찾기 (object, string, category 타입)
-            categorical_columns = df_train.select_dtypes(include=['object', 'string', 'category']).columns.tolist()
-            
-            # Treatment와 Outcome은 제외 (이미 숫자형이거나 별도 처리 필요)
-            categorical_columns = [col for col in categorical_columns if col not in [treatment, outcome]]
+            # Categorical 변수 찾기 (Treatment/Outcome 제외)
+            categorical_columns = [
+                col for col in df_train.select_dtypes(include=['object', 'string', 'category']).columns
+                if col not in [treatment, outcome]
+            ]
             
             if categorical_columns:
                 print(f"   발견된 categorical 변수: {categorical_columns}")
                 
-                # OrdinalEncoder 생성 (handle_unknown='use_encoded_value'로 설정)
+                # OrdinalEncoder 생성
                 ordinal_encoder = OrdinalEncoder(
                     handle_unknown='use_encoded_value',
-                    unknown_value=-1,  # unknown categories는 -1로 인코딩
+                    unknown_value=-1,
                     dtype=np.int64
                 )
                 
-                # Train 데이터로 fit 및 transform
-                df_train_encoded = df_train.copy()
-                df_train_encoded[categorical_columns] = ordinal_encoder.fit_transform(df_train[categorical_columns])
+                # 전처리 함수: NaN 처리 및 문자열 변환
+                def preprocess_for_encoding(df, cols):
+                    df_processed = df.copy()
+                    for col in cols:
+                        if col in df_processed.columns:
+                            df_processed[col] = df_processed[col].fillna('__nan__').astype(str)
+                    return df_processed
                 
-                # Test 데이터에도 동일한 인코더 적용
-                df_test_encoded = df_test.copy()
-                df_test_encoded[categorical_columns] = ordinal_encoder.transform(df_test[categorical_columns])
+                # Train/Test 데이터 전처리 및 인코딩
+                df_train_processed = preprocess_for_encoding(df_train, categorical_columns)
+                df_test_processed = preprocess_for_encoding(df_test, categorical_columns)
                 
-                # Unknown categories 처리 결과 로깅
-                for col in categorical_columns:
-                    train_unique = set(df_train[col].dropna().unique())
-                    test_unique = set(df_test[col].dropna().unique())
-                    unknown_cats = test_unique - train_unique
-                    if unknown_cats:
-                        unknown_count = df_test[col].isin(unknown_cats).sum()
-                        print(f"   ⚠️ '{col}': {unknown_count}개 unknown categories 발견 → -1로 인코딩됨")
+                # 존재하는 컬럼만 인코딩
+                existing_cols = [col for col in categorical_columns if col in df_train_processed.columns]
+                if not existing_cols:
+                    print("   ⚠️ categorical 컬럼이 데이터에 없습니다.")
+                    ordinal_encoder = None
+                    categorical_columns = []
+                else:
+                    df_train_encoded = df_train.copy()
+                    df_train_encoded[existing_cols] = ordinal_encoder.fit_transform(df_train_processed[existing_cols])
+                    
+                    df_test_encoded = df_test.copy()
+                    test_existing_cols = [col for col in existing_cols if col in df_test_processed.columns]
+                    if len(test_existing_cols) < len(existing_cols):
+                        missing_cols = [col for col in existing_cols if col not in test_existing_cols]
+                        print(f"   ⚠️ Test 데이터에 일부 categorical 컬럼이 없습니다: {missing_cols}")
+                    df_test_encoded[test_existing_cols] = ordinal_encoder.transform(df_test_processed[test_existing_cols])
                 
-                df_train = df_train_encoded
-                df_test = df_test_encoded
-                
-                print(f"✅ Ordinal Encoding 완료: {len(categorical_columns)}개 변수")
+                    # Unknown categories 로깅
+                    for col in existing_cols:
+                        if col in df_test.columns and col in df_train.columns:
+                            unknown_cats = set(df_test[col].dropna().unique()) - set(df_train[col].dropna().unique())
+                            if unknown_cats:
+                                unknown_count = df_test[col].isin(unknown_cats).sum()
+                                print(f"   ⚠️ '{col}': {unknown_count}개 unknown categories → -1로 인코딩됨")
+                    
+                    df_train, df_test = df_train_encoded, df_test_encoded
+                    categorical_columns = existing_cols
+                    print(f"✅ Ordinal Encoding 완료: {len(categorical_columns)}개 변수")
             else:
                 print("   Categorical 변수가 없습니다.")
             
