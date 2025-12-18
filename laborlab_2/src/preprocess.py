@@ -80,7 +80,7 @@ class Preprocessor:
         return variable_mapping
     
     def load_job_mapping(self):
-        """job_subcategories_XXXX.csv 또는 job_KECO_S_keis_raw.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
+        """job_subcategories_XXXX.csv 또는 job_KECO_keis_raw.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
         try:
             # __file__ 기준으로 경로 계산: src/preprocess.py -> laborlab_2/ -> data/
             preprocess_file = Path(__file__)  # src/preprocess.py
@@ -89,9 +89,9 @@ class Preprocessor:
             # job_category_file에 따라 파일명 결정 (KECO, KSCO, KSIC, KECO_RAW)
             job_category_file = self.job_category_file.upper()
             
-            # 신규 매핑 테이블 파일명 (job_KECO_S_keis_raw.csv) 대응
+            # 신규 매핑 테이블 파일명 (job_KECO_keis_raw.csv) 대응
             if job_category_file == "KECO_RAW":
-                job_mapping_path = laborlab_dir / "data" / "job_KECO_S_keis_raw.csv"
+                job_mapping_path = laborlab_dir / "data" / "job_KECO_keis_raw.csv"
                 key_col = "JOBS_CD"
                 val_col = "JOBS_CD_KOR_NM"
             else:
