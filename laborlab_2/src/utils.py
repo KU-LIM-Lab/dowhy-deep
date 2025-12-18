@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 
 # ============================================================================
@@ -548,4 +549,67 @@ def load_config(config_path: Path) -> Dict[str, Any]:
     with open(config_path, 'r', encoding='utf-8') as f:
         config = json.load(f)
     return config
+
+
+# ============================================================================
+# 평가지표 계산 함수
+# ============================================================================
+
+def calculate_metrics(
+    actual_y: pd.Series, 
+    predicted_y: pd.Series, 
+    prob_y: Optional[pd.Series] = None, 
+    logger: Optional[logging.Logger] = None
+) -> Dict[str, Optional[float]]:
+    """
+    실제값과 예측값을 비교하여 평가지표(Accuracy, F1, AUC)를 계산합니다.
+    
+    Args:
+        actual_y: 실제 정답값 (Series)
+        predicted_y: 예측값 (Series, 확률 또는 클래스)
+        prob_y: 예측 확률값 (Series, Optional. AUC 계산용)
+        logger: 로거 객체 (Optional)
+        
+    Returns:
+        Dict: {'accuracy', 'f1_score', 'auc'}를 포함하는 딕셔너리
+    """
+    metrics = {'accuracy': None, 'f1_score': None, 'auc': None}
+    
+    # 데이터 타입 확인 및 변환
+    if not pd.api.types.is_numeric_dtype(actual_y):
+        actual_y = pd.to_numeric(actual_y, errors='coerce')
+    
+    # NaN 제거
+    valid_mask = ~(pd.isna(actual_y) | pd.isna(predicted_y))
+    if valid_mask.sum() == 0:
+        if logger:
+            logger.warning("유효한 데이터가 없어 메트릭을 계산할 수 없습니다.")
+        return metrics
+        
+    actual_y_clean = actual_y[valid_mask]
+    predicted_y_clean = predicted_y[valid_mask]
+    
+    # 이진 분류 여부 확인
+    unique_values = set(actual_y_clean.dropna().unique())
+    is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
+    
+    if is_binary:
+        # 클래스 예측값 생성 (0.5 기준)
+        # predicted_y가 이미 클래스일 수도 있고 확률일 수도 있음
+        if predicted_y_clean.min() >= 0 and predicted_y_clean.max() <= 1:
+            predicted_classes = (predicted_y_clean >= 0.5).astype(int)
+        else:
+            # 확률이 아닌 경우 (예: Regression 결과) 그대로 사용하거나 시그모이드 변환 검토 필요
+            # 여기서는 기본적으로 0.5 기준으로 클래스 분리
+            predicted_classes = (predicted_y_clean >= 0.5).astype(int)
+            
+        metrics['accuracy'] = float(accuracy_score(actual_y_clean, predicted_classes))
+        metrics['f1_score'] = float(f1_score(actual_y_clean, predicted_classes, zero_division=0))
+        
+        # AUC 계산
+        # 전용 확률값(prob_y) 또는 확률 형태의 예측값(predicted_y)이 있다고 가정
+        auc_input = prob_y[valid_mask] if prob_y is not None else predicted_y_clean
+        metrics['auc'] = float(roc_auc_score(actual_y_clean, auc_input))
+            
+    return metrics
 
