@@ -1624,7 +1624,8 @@ def run_analysis_without_preprocessing(
     job_category: Optional[str] = None,
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
-    do_refutation: bool = False
+    do_refutation: bool = False,
+    do_sensitivity_analysis: bool = False
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -1641,6 +1642,7 @@ def run_analysis_without_preprocessing(
         job_category (Optional[str]): 직종소분류명 (checkpoint 저장 경로에 사용)
         training_size (int): Train set 크기 (기본값: 5000)
         do_refutation (bool): Refutation 실행 여부 (기본값: False)
+        do_sensitivity_analysis (bool): Sensitivity Analysis 실행 여부 (기본값: False)
     
     Returns:
         Dict[str, Any]: 분석 결과 딕셔너리
@@ -1877,6 +1879,18 @@ def run_analysis_without_preprocessing(
             validation_results = run_validation_tests(model, identified_estimand, estimate, logger=logger)
             step_times['Refutation'] = time.time() - step_start
         
+        # 6-3. Sensitivity Analysis (선택 사항)
+        sensitivity_df = pd.DataFrame()
+        if do_sensitivity_analysis:
+            print("📈 민감도 분석 실행 중...")
+            step_start = time.time()
+            sensitivity_df = run_sensitivity_analysis(model, identified_estimand, estimate, logger=logger)
+            step_times['Sensitivity Analysis'] = time.time() - step_start
+            
+            # 히트맵 생성
+            if not sensitivity_df.empty:
+                create_sensitivity_heatmap(sensitivity_df, logger=logger)
+        
         # 7. 예측
         print("7️⃣ 예측 중...")
         step_start = time.time()
@@ -1947,9 +1961,15 @@ def run_analysis_without_preprocessing(
                 print(f"  AUC: {metrics['auc']:.4f}")
         print("="*60)
         
-        if not do_refutation:
+        if not do_refutation and not do_sensitivity_analysis:
             print("ℹ️  민감도 분석/Refutation 테스트는 별도로 실행하거나 config에서 활성화하세요.")
             print("="*60 + "\n")
+        elif not do_sensitivity_analysis and do_refutation:
+             print("ℹ️  민감도 분석은 별도로 실행하거나 config에서 활성화하세요.")
+             print("="*60 + "\n")
+        elif do_sensitivity_analysis and not do_refutation:
+             print("ℹ️  Refutation 테스트는 별도로 실행하거나 config에서 활성화하세요.")
+             print("="*60 + "\n")
         
         # 9. TabPFN 메모리 정리 (분석 완료 후)
         if estimator == 'tabpfn':
@@ -1964,6 +1984,7 @@ def run_analysis_without_preprocessing(
             "status": "success",
             "estimate": estimate,
             "validation_results": validation_results,
+            "sensitivity_df": sensitivity_df,
             "metrics": metrics,
             "excel_path": excel_path,
             "checkpoint_path": checkpoint_path,
@@ -2012,7 +2033,8 @@ def run_single_experiment(
     split_by_job_category: bool = True,
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
-    do_refutation: bool = False
+    do_refutation: bool = False,
+    do_sensitivity_analysis: bool = False
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -2028,6 +2050,7 @@ def run_single_experiment(
         split_by_job_category (bool): 직종소분류별로 분리하여 실험 실행 여부
         training_size (int): Train set 크기 (기본값: 5000)
         do_refutation (bool): Refutation 실행 여부 (기본값: False)
+        do_sensitivity_analysis (bool): Sensitivity Analysis 실행 여부 (기본값: False)
     
     Returns:
         Dict[str, Any]: 실험 결과 딕셔너리
@@ -2071,7 +2094,8 @@ def run_single_experiment(
                         job_category=job_category,
                         training_size=training_size,
                         tabpfn_config=tabpfn_config,
-                        do_refutation=do_refutation
+                        do_refutation=do_refutation,
+                        do_sensitivity_analysis=do_sensitivity_analysis
                     )
                     
                     all_results.append(job_result)
@@ -2206,7 +2230,8 @@ def run_single_experiment(
                 experiment_id=experiment_id,
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
-                do_refutation=do_refutation
+                do_refutation=do_refutation,
+                do_sensitivity_analysis=do_sensitivity_analysis
             )
         
         end_time = datetime.now()

@@ -146,7 +146,8 @@ def learning(
     logger: Optional[Any] = None,
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
-    do_refutation: bool = False
+    do_refutation: bool = False,
+    do_sensitivity_analysis: bool = False
 ) -> Dict[str, Any]:
     """
     단일 실험에 대한 learning 함수
@@ -162,6 +163,7 @@ def learning(
         logger: 로거 객체 (선택적)
         training_size: Train set 크기 (기본값: 5000)
         do_refutation: Refutation 실행 여부 (기본값: False)
+        do_sensitivity_analysis: Sensitivity Analysis 실행 여부 (기본값: False)
     
     Returns:
         실험 결과 딕셔너리
@@ -185,7 +187,8 @@ def learning(
         logger=logger,
         training_size=training_size,
         tabpfn_config=tabpfn_config,
-        do_refutation=do_refutation
+        do_refutation=do_refutation,
+        do_sensitivity_analysis=do_sensitivity_analysis
     )
     
     if result["status"] == "success":
@@ -362,7 +365,8 @@ def learning_experiments(
     output_dir: Optional[Path] = None,
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
-    do_refutation: bool = False
+    do_refutation: bool = False,
+    do_sensitivity_analysis: bool = False
 ) -> List[Dict[str, Any]]:
     """
     experiment_list의 모든 조합에 대해 learning 실행
@@ -373,6 +377,7 @@ def learning_experiments(
         logger: 로거 객체 (선택적)
         output_dir: 출력 디렉토리 (선택적)
         do_refutation: Refutation 실행 여부 (기본값: False)
+        do_sensitivity_analysis: Sensitivity Analysis 실행 여부 (기본값: False)
     
     Returns:
         실험 결과 리스트
@@ -386,7 +391,8 @@ def learning_experiments(
         output_dir=output_dir,
         training_size=training_size,
         tabpfn_config=tabpfn_config,
-        do_refutation=do_refutation
+        do_refutation=do_refutation,
+        do_sensitivity_analysis=do_sensitivity_analysis
     )
 
 
@@ -541,6 +547,7 @@ def main():
     do_prediction = config.get("prediction", False)
     do_experiment = config.get("experiment", False)
     do_refutation = config.get("refutation", False)
+    do_sensitivity_analysis = config.get("sensitivity_analysis", False)
     
     # TabPFN 설정 추출
     tabpfn_config = config.get("tabpfn_config", {})
@@ -661,7 +668,8 @@ def main():
                 output_dir=output_dir_path,
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
-                do_refutation=do_refutation
+                do_refutation=do_refutation,
+                do_sensitivity_analysis=do_sensitivity_analysis
             )
         else:
             # 단일 실험 실행 (config에서 첫 번째 실험 조합 사용)
@@ -676,7 +684,8 @@ def main():
                     logger=logger,
                     training_size=training_size,
                     tabpfn_config=tabpfn_config,
-                    do_refutation=do_refutation
+                    do_refutation=do_refutation,
+                    do_sensitivity_analysis=do_sensitivity_analysis
                 )
             else:
                 print("❌ 실행할 실험이 없습니다.")

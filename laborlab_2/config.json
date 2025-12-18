@@ -12,6 +12,7 @@
   "experiment": true,
 
   "refutation": false,
+  "sensitivity_analysis": false,
   "limit_data": false,
   "limit_size": 5000,
   "training_size": 5000,
