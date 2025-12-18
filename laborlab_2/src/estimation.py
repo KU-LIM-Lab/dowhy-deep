@@ -1756,10 +1756,11 @@ def run_analysis_without_preprocessing(
             print("🔢 Categorical 변수 Ordinal Encoding 중...")
             step_start = time.time()
             
-            # Categorical 변수 찾기 (Treatment/Outcome 제외)
+            # Categorical 변수 찾기 (Treatment/Outcome 및 ID 컬럼 제외)
+            id_cols = ["JHNT_CTN", "JHNT_MBN", "JHNT_CNT"]
             categorical_columns = [
                 col for col in df_train.select_dtypes(include=['object', 'string', 'category']).columns
-                if col not in [treatment, outcome]
+                if col not in [treatment, outcome] + id_cols
             ]
             
             if categorical_columns:
@@ -1909,14 +1910,16 @@ def run_analysis_without_preprocessing(
         # 7. 예측
         print("7️⃣ 예측 중...")
         step_start = time.time()
-        essential_vars_for_pred = {treatment, outcome}
+        # ID 컬럼 정의 (예측 결과 유지를 위해)
+        id_cols = ["JHNT_CTN", "JHNT_MBN", "JHNT_CNT"]
+        essential_vars_for_pred = {treatment, outcome} | set(id_cols)
         if outcome in df_test.columns:
             df_test = df_test.copy()
             df_test[f"{outcome}_actual"] = df_test[outcome].copy()
         
         df_test_clean = utils.clean_dataframe_for_causal_model(
             df_test,
-            required_vars=list(essential_vars_for_pred) + [f"{outcome}_actual"] if f"{outcome}_actual" in df_test.columns else list(essential_vars_for_pred),
+            required_vars=list(essential_vars_for_pred) + ([f"{outcome}_actual"] if f"{outcome}_actual" in df_test.columns else []),
             logger=logger
         )
         # TabPFN 배치 크기 설정 (config에서 가져오기, 기본값: 64)
