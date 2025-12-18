@@ -2049,7 +2049,10 @@ def run_single_experiment(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    do_sensitivity_analysis: bool = False
+    do_sensitivity_analysis: bool = False,
+    refutation_simulations: int = 20,
+    sensitivity_simulations: int = 50,
+    sensitivity_grid_size: int = 5
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -2066,6 +2069,9 @@ def run_single_experiment(
         training_size (int): Train set 크기 (기본값: 5000)
         do_refutation (bool): Refutation 실행 여부 (기본값: False)
         do_sensitivity_analysis (bool): Sensitivity Analysis 실행 여부 (기본값: False)
+        refutation_simulations (int): Refutation 시뮬레이션 횟수 (기본값: 20)
+        sensitivity_simulations (int): Sensitivity Analysis 시뮬레이션 횟수 (기본값: 50)
+        sensitivity_grid_size (int): Sensitivity Analysis 그리드 크기 (기본값: 5)
     
     Returns:
         Dict[str, Any]: 실험 결과 딕셔너리
@@ -2110,7 +2116,10 @@ def run_single_experiment(
                         training_size=training_size,
                         tabpfn_config=tabpfn_config,
                         do_refutation=do_refutation,
-                        do_sensitivity_analysis=do_sensitivity_analysis
+                        do_sensitivity_analysis=do_sensitivity_analysis,
+                        refutation_simulations=refutation_simulations,
+                        sensitivity_simulations=sensitivity_simulations,
+                        sensitivity_grid_size=sensitivity_grid_size
                     )
                     
                     all_results.append(job_result)
