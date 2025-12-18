@@ -295,7 +295,17 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         result_df = data_df_clean.copy()
         # _outcome_name은 리스트일 수 있음
         outcome_name = estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name
-        result_df[outcome_name] = predictions_series
+        # 예측값이 0~1 사이의 확률인 경우 0.5를 기준으로 바이너리하게 변환
+        # (사용자 요청: 0~1 사이의 확률값을 0.5 기준으로 바이너리하게 변경)
+        if predictions_series.min() >= 0 and predictions_series.max() <= 1:
+            if logger:
+                logger.info("예측 확률값을 0.5 기준으로 바이너리(0/1) 값으로 변환합니다.")
+            print("ℹ️ 예측 확률값을 0.5 기준으로 바이너리(0/1) 값으로 변환합니다.")
+            # 원본 확률값은 _prob 접미사를 붙여 저장 (내부 메트릭 계산 용도)
+            result_df[f"{outcome_name}_prob"] = predictions_series
+            result_df[outcome_name] = (predictions_series >= 0.5).astype(int)
+        else:
+            result_df[outcome_name] = predictions_series
         
         # 실제 Y 값과 비교하여 메트릭 계산
         metrics = {}
@@ -317,7 +327,7 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
                 
                 if is_binary:
                     # 이진 분류 메트릭 계산
-                    predicted_classes = (predictions_clean > 0.5).astype(int)
+                    predicted_classes = (predictions_clean >= 0.5).astype(int)
                     metrics['accuracy'] = accuracy_score(actual_y_clean, predicted_classes)
                     metrics['f1_score'] = f1_score(actual_y_clean, predicted_classes, zero_division=0)
                     
@@ -2116,11 +2126,14 @@ def run_single_experiment(
                             is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
                             
                             if is_binary:
-                                predicted_classes = (predicted_y > 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
+                                predicted_classes = (predicted_y >= 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
                                 combined_metrics['accuracy'] = accuracy_score(actual_y, predicted_classes)
                                 combined_metrics['f1_score'] = f1_score(actual_y, predicted_classes, zero_division=0)
                                 try:
-                                    combined_metrics['auc'] = roc_auc_score(actual_y, predicted_y)
+                                    # AUC 계산을 위해 확률값 컬럼이 있으면 사용
+                                    prob_col = f"{outcome}_prob"
+                                    auc_y = combined_predictions[prob_col] if prob_col in combined_predictions.columns else predicted_y
+                                    combined_metrics['auc'] = roc_auc_score(actual_y, auc_y)
                                 except:
                                     combined_metrics['auc'] = None
                 
@@ -2364,13 +2377,16 @@ def run_inference(
                     is_binary = len(unique_values) <= 2 and all(v in [0, 1] for v in unique_values if not pd.isna(v))
                     
                     if is_binary:
-                        predicted_classes = (predicted_y > 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
+                        predicted_classes = (predicted_y >= 0.5).astype(int) if pd.api.types.is_numeric_dtype(predicted_y) else predicted_y
                         valid_mask = ~(pd.isna(actual_y) | pd.isna(predicted_classes))
                         if valid_mask.sum() > 0:
                             combined_metrics['accuracy'] = accuracy_score(actual_y[valid_mask], predicted_classes[valid_mask])
                             combined_metrics['f1_score'] = f1_score(actual_y[valid_mask], predicted_classes[valid_mask], zero_division=0)
                             try:
-                                combined_metrics['auc'] = roc_auc_score(actual_y[valid_mask], predicted_y[valid_mask])
+                                # AUC 계산을 위해 확률값 컬럼이 있으면 사용
+                                prob_col = f"{outcome}_prob"
+                                auc_y = combined_predictions[prob_col] if prob_col in combined_predictions.columns else predicted_y
+                                combined_metrics['auc'] = roc_auc_score(actual_y[valid_mask], auc_y[valid_mask])
                             except:
                                 combined_metrics['auc'] = None
             
