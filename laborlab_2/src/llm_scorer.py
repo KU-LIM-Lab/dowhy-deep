@@ -113,7 +113,8 @@ class LLMScorer:
 [지원자 자료]
 {text}
 
-[응답 형식] JSON 한 줄 ({{"score": 0-100 정수, "rationale": "간단한 이유"}})
+[응답 형식] score(0-100 정수)※rationale(간단한 이유)
+[응답 예제] 75※직무 관련 경력이 있습니다
 """
     
     def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
@@ -137,9 +138,9 @@ class LLMScorer:
             )
             
             content = resp["message"]["content"]
-            data = json.loads(content)
-            score = int(max(0, min(100, int(data.get("score", 0)))))
-            why = str(data.get("rationale", ""))[:240]
+            score = content.split("※")[0].strip()
+            why = content.split("※")[1].strip()
+            score = int(max(0, min(100, int(score))))
             return score, why
             
         except Exception as e:
@@ -172,9 +173,9 @@ class LLMScorer:
                 resp.raise_for_status()
                 result = await resp.json()
                 content = result["message"]["content"]
-                data = json.loads(content)
-                score = int(max(0, min(100, int(data.get("score", 0)))))
-                why = str(data.get("rationale", ""))[:240]
+                score = content.split("※")[0].strip()
+                why = content.split("※")[1].strip()
+                score = int(max(0, min(100, int(score))))
                 return score, why
                 
         except Exception as e:
