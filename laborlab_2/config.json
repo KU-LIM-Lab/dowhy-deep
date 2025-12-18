@@ -21,7 +21,7 @@
   "training_size": 5000,
 
   "checkpoint_dir": "data/checkpoint",
-  "job_category_file": "KECO",
+  "job_category_file": "KECO_RAW",
   "top_job_categories": 5,
 
   "tabpfn_config": {

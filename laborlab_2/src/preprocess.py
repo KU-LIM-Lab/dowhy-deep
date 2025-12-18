@@ -80,30 +80,47 @@ class Preprocessor:
         return variable_mapping
     
     def load_job_mapping(self):
-        """job_subcategories_XXXX.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
+        """job_subcategories_XXXX.csv 또는 job_KECO_S_keis_raw.csv를 로드하여 소분류코드 -> 소분류명 매핑 생성"""
         try:
             # __file__ 기준으로 경로 계산: src/preprocess.py -> laborlab_2/ -> data/
             preprocess_file = Path(__file__)  # src/preprocess.py
             laborlab_dir = preprocess_file.parent.parent  # laborlab_2/
             
-            # job_category_file에 따라 파일명 결정 (KECO, KSCO, KSIC)
+            # job_category_file에 따라 파일명 결정 (KECO, KSCO, KSIC, KECO_RAW)
             job_category_file = self.job_category_file.upper()
-            if job_category_file not in ["KECO", "KSCO", "KSIC"]:
-                print(f"⚠️ 잘못된 직종 소분류 파일명: {job_category_file}. 기본값 KSIC 사용")
-                job_category_file = "KSIC"
             
-            job_mapping_path = laborlab_dir / "data" / f"job_subcategories_{job_category_file}.csv"
+            # 신규 매핑 테이블 파일명 (job_KECO_S_keis_raw.csv) 대응
+            if job_category_file == "KECO_RAW":
+                job_mapping_path = laborlab_dir / "data" / "job_KECO_S_keis_raw.csv"
+                key_col = "JOBS_CD"
+                val_col = "JOBS_CD_KOR_NM"
+            else:
+                if job_category_file not in ["KECO", "KSCO", "KSIC"]:
+                    print(f"⚠️ 잘못된 직종 소분류 파일명: {job_category_file}. 기본값 KSIC 사용")
+                    job_category_file = "KSIC"
+                job_mapping_path = laborlab_dir / "data" / f"job_subcategories_{job_category_file}.csv"
+                key_col = "소분류코드"
+                val_col = "소분류명"
             
             if not job_mapping_path.exists():
                 print(f"⚠️ 직종 소분류 파일을 찾을 수 없습니다: {job_mapping_path}")
                 print(f"   기본값 job_subcategories_KSIC.csv 사용 시도")
                 job_mapping_path = laborlab_dir / "data" / "job_subcategories_KSIC.csv"
+                key_col = "소분류코드"
+                val_col = "소분류명"
+                job_category_file = "KSIC"
             
             job_df = pd.read_csv(job_mapping_path, encoding='utf-8')
             print(f"✅ 직종 소분류 파일 로드 완료: {job_mapping_path.name} ({len(job_df)}개 직종)")
             
-            # 소분류코드를 문자열로 변환하여 딕셔너리 생성
-            job_mapping = dict(zip(job_df['소분류코드'].astype(str).str.zfill(3), job_df['소분류명']))
+            # 소분류코드를 변환하여 딕셔너리 생성
+            if job_category_file == "KECO_RAW":
+                # 6자리로 채운 뒤 앞 3자리만 사용
+                job_mapping = {str(k).zfill(6)[:3]: v for k, v in zip(job_df[key_col], job_df[val_col])}
+            else:
+                # 기존 3자리 zfill 로직
+                job_mapping = {str(k).zfill(3): v for k, v in zip(job_df[key_col], job_df[val_col])}
+                
             return job_mapping
         except Exception as e:
             print(f"❌ 직종 소분류 파일 로드 실패: {e}")
@@ -113,8 +130,14 @@ class Preprocessor:
         """HOPE_JSCD1 코드를 직종명으로 변환"""
         if not code:
             return "미상"
-        # 코드를 문자열로 변환하고 앞에 0을 채워서 3자리로 만들기
-        code_str = str(code).zfill(3)
+        
+        if self.job_category_file.upper() == "KECO_RAW":
+            # 6자리로 채운 뒤 앞 3자리만 사용
+            code_str = str(code).zfill(6)[:3]
+        else:
+            # 기존 3자리 zfill 로직
+            code_str = str(code).zfill(3)
+            
         return self.job_code_to_name.get(code_str, f"직종코드 {code}")
 
     @staticmethod
