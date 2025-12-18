@@ -655,26 +655,26 @@ def calculate_refutation_pvalue(refutation_result, test_type="placebo", logger=N
         return None
 
 
-def run_validation_tests(model, identified_estimand, estimate, logger=None):
+def run_validation_tests(model, identified_estimand, estimate, logger=None, num_simulations=20):
     """검증 테스트를 실행하는 함수 (4개 테스트 모두 포함)"""
     if logger:
         logger.info("="*60)
-        logger.info("검증 테스트 실행 시작 (4개 테스트)")
+        logger.info(f"검증 테스트 실행 시작 (4개 테스트, 반복 횟수: {num_simulations})")
         logger.info("="*60)
     
     validation_results = {}
     
     # 1. 가상 원인 테스트 (Placebo Treatment)
-    print("1️⃣ 가상 원인 테스트 실행 중...")
+    print(f"1️⃣ 가상 원인 테스트 실행 중... (반복: {num_simulations})")
     if logger:
-        logger.info("1️⃣ 가상 원인 테스트 실행 중...")
+        logger.info(f"1️⃣ 가상 원인 테스트 실행 중... (반복: {num_simulations})")
     
     try:
         refute_placebo = model.refute_estimate(
             identified_estimand, estimate,
             method_name="placebo_treatment_refuter",
             placebo_type="permute",
-            num_simulations=20
+            num_simulations=num_simulations
         )
         validation_results['placebo'] = refute_placebo
         
@@ -706,9 +706,9 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             logger.error(f"❌ 가상 원인 테스트 실패: {e}")
     
     # 2. 미관측 교란 테스트 (Add Unobserved Common Cause)
-    print("2️⃣ 미관측 교란 테스트 실행 중...")
+    print(f"2️⃣ 미관측 교란 테스트 실행 중... (반복: {num_simulations})")
     if logger:
-        logger.info("2️⃣ 미관측 교란 테스트 실행 중...")
+        logger.info(f"2️⃣ 미관측 교란 테스트 실행 중... (반복: {num_simulations})")
     
     try:
         refute_unobserved = model.refute_estimate(
@@ -718,7 +718,7 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             confounders_effect_on_outcome="linear",
             effect_strength_on_treatment=0.10,
             effect_strength_on_outcome=0.10,
-            num_simulations=20
+            num_simulations=num_simulations
         )
         validation_results['unobserved'] = refute_unobserved
         
@@ -750,16 +750,16 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             logger.error(f"❌ 미관측 교란 테스트 실패: {e}")
     
     # 3. 부분표본 안정성 테스트 (Data Subset)
-    print("3️⃣ 부분표본 안정성 테스트 실행 중...")
+    print(f"3️⃣ 부분표본 안정성 테스트 실행 중... (반복: {num_simulations})")
     if logger:
-        logger.info("3️⃣ 부분표본 안정성 테스트 실행 중...")
+        logger.info(f"3️⃣ 부분표본 안정성 테스트 실행 중... (반복: {num_simulations})")
     
     try:
         refute_subset = model.refute_estimate(
             identified_estimand, estimate,
             method_name="data_subset_refuter",
             subset_fraction=0.8,  # 80% 서브셋 사용
-            num_simulations=20
+            num_simulations=num_simulations
         )
         validation_results['subset'] = refute_subset
         
@@ -792,15 +792,15 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
             logger.error(f"❌ 부분표본 안정성 테스트 실패: {e}")
     
     # 4. 더미 결과 테스트 (Dummy Outcome)
-    print("4️⃣ 더미 결과 테스트 실행 중...")
+    print(f"4️⃣ 더미 결과 테스트 실행 중... (반복: {num_simulations})")
     if logger:
-        logger.info("4️⃣ 더미 결과 테스트 실행 중...")
+        logger.info(f"4️⃣ 더미 결과 테스트 실행 중... (반복: {num_simulations})")
     
     try:
         refute_dummys = model.refute_estimate(
             identified_estimand, estimate,
             method_name="dummy_outcome_refuter",
-            num_simulations=20
+            num_simulations=num_simulations
         )
         refute_dummy = refute_dummys[0]
         validation_results['dummy'] = refute_dummy
@@ -900,18 +900,18 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None):
     
     return validation_results
 
-def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
+def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None, num_simulations=50, grid_size=5):
     """민감도 분석을 실행하는 함수"""
     if logger:
         logger.info("="*60)
         logger.info("민감도 분석 실행 시작")
         logger.info("="*60)
-        logger.info("효과 강도 범위: 0.0 ~ 0.5")
-        logger.info("그리드 포인트 수: 5x5 = 25개")
-        logger.info("시뮬레이션 수: 50회")
+        logger.info(f"효과 강도 범위: 0.0 ~ 0.5")
+        logger.info(f"그리드 포인트 수: {grid_size}x{grid_size} = {grid_size*grid_size}개")
+        logger.info(f"시뮬레이션 수: {num_simulations}회")
     
     try:
-        grid = np.linspace(0.0, 0.5, 5)
+        grid = np.linspace(0.0, 0.5, grid_size)
         rows = []
         total_combinations = len(grid) * len(grid)
         processed = 0
@@ -933,7 +933,7 @@ def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None):
                         confounders_effect_on_outcome="linear",
                         effect_strength_on_treatment=et,
                         effect_strength_on_outcome=eo,
-                        num_simulations=50
+                        num_simulations=num_simulations
                     )
                     rows.append((et, eo, ref.new_effect))
                 except Exception as e:
@@ -1625,7 +1625,10 @@ def run_analysis_without_preprocessing(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    do_sensitivity_analysis: bool = False
+    do_sensitivity_analysis: bool = False,
+    refutation_simulations: int = 20,
+    sensitivity_simulations: int = 50,
+    sensitivity_grid_size: int = 5
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -1643,6 +1646,9 @@ def run_analysis_without_preprocessing(
         training_size (int): Train set 크기 (기본값: 5000)
         do_refutation (bool): Refutation 실행 여부 (기본값: False)
         do_sensitivity_analysis (bool): Sensitivity Analysis 실행 여부 (기본값: False)
+        refutation_simulations (int): Refutation 시뮬레이션 횟수 (기본값: 20)
+        sensitivity_simulations (int): Sensitivity Analysis 시뮬레이션 횟수 (기본값: 50)
+        sensitivity_grid_size (int): Sensitivity Analysis 그리드 크기 (기본값: 5)
     
     Returns:
         Dict[str, Any]: 분석 결과 딕셔너리
@@ -1874,17 +1880,26 @@ def run_analysis_without_preprocessing(
         # 6-2. Refutation (선택 사항)
         validation_results = {}
         if do_refutation:
-            print("🛡️ Refutation 테스트 실행 중...")
+            print(f"🛡️ Refutation 테스트 실행 중... (횟수: {refutation_simulations})")
             step_start = time.time()
-            validation_results = run_validation_tests(model, identified_estimand, estimate, logger=logger)
+            validation_results = run_validation_tests(
+                model, identified_estimand, estimate, 
+                logger=logger, 
+                num_simulations=refutation_simulations
+            )
             step_times['Refutation'] = time.time() - step_start
         
         # 6-3. Sensitivity Analysis (선택 사항)
         sensitivity_df = pd.DataFrame()
         if do_sensitivity_analysis:
-            print("📈 민감도 분석 실행 중...")
+            print(f"📈 민감도 분석 실행 중... (횟수: {sensitivity_simulations}, 그리드: {sensitivity_grid_size})")
             step_start = time.time()
-            sensitivity_df = run_sensitivity_analysis(model, identified_estimand, estimate, logger=logger)
+            sensitivity_df = run_sensitivity_analysis(
+                model, identified_estimand, estimate, 
+                logger=logger, 
+                num_simulations=sensitivity_simulations,
+                grid_size=sensitivity_grid_size
+            )
             step_times['Sensitivity Analysis'] = time.time() - step_start
             
             # 히트맵 생성
@@ -2231,7 +2246,10 @@ def run_single_experiment(
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
                 do_refutation=do_refutation,
-                do_sensitivity_analysis=do_sensitivity_analysis
+                do_sensitivity_analysis=do_sensitivity_analysis,
+                refutation_simulations=refutation_simulations,
+                sensitivity_simulations=sensitivity_simulations,
+                sensitivity_grid_size=sensitivity_grid_size
             )
         
         end_time = datetime.now()

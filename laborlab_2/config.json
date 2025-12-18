@@ -13,6 +13,9 @@
 
   "refutation": false,
   "sensitivity_analysis": false,
+  "refutation_simulations": 20,
+  "sensitivity_simulations": 50,
+  "sensitivity_grid_size": 5,
   "limit_data": false,
   "limit_size": 5000,
   "training_size": 5000,
