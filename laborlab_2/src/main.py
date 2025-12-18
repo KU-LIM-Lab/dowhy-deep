@@ -145,7 +145,8 @@ def learning(
     experiment_id: Optional[str] = None,
     logger: Optional[Any] = None,
     training_size: int = 5000,
-    tabpfn_config: Optional[Dict[str, Any]] = None
+    tabpfn_config: Optional[Dict[str, Any]] = None,
+    do_refutation: bool = False
 ) -> Dict[str, Any]:
     """
     단일 실험에 대한 learning 함수
@@ -160,6 +161,7 @@ def learning(
         experiment_id: 실험 ID (선택적)
         logger: 로거 객체 (선택적)
         training_size: Train set 크기 (기본값: 5000)
+        do_refutation: Refutation 실행 여부 (기본값: False)
     
     Returns:
         실험 결과 딕셔너리
@@ -182,7 +184,8 @@ def learning(
         experiment_id=experiment_id,
         logger=logger,
         training_size=training_size,
-        tabpfn_config=tabpfn_config
+        tabpfn_config=tabpfn_config,
+        do_refutation=do_refutation
     )
     
     if result["status"] == "success":
@@ -358,7 +361,8 @@ def learning_experiments(
     logger: Optional[Any] = None,
     output_dir: Optional[Path] = None,
     training_size: int = 5000,
-    tabpfn_config: Optional[Dict[str, Any]] = None
+    tabpfn_config: Optional[Dict[str, Any]] = None,
+    do_refutation: bool = False
 ) -> List[Dict[str, Any]]:
     """
     experiment_list의 모든 조합에 대해 learning 실행
@@ -368,6 +372,7 @@ def learning_experiments(
         experiment_list: 실험 조합 리스트 [(graph_file, treatment, outcome, estimator), ...]
         logger: 로거 객체 (선택적)
         output_dir: 출력 디렉토리 (선택적)
+        do_refutation: Refutation 실행 여부 (기본값: False)
     
     Returns:
         실험 결과 리스트
@@ -380,7 +385,8 @@ def learning_experiments(
         logger=logger,
         output_dir=output_dir,
         training_size=training_size,
-        tabpfn_config=tabpfn_config
+        tabpfn_config=tabpfn_config,
+        do_refutation=do_refutation
     )
 
 
@@ -534,6 +540,7 @@ def main():
     do_learning = config.get("learning", False)
     do_prediction = config.get("prediction", False)
     do_experiment = config.get("experiment", False)
+    do_refutation = config.get("refutation", False)
     
     # TabPFN 설정 추출
     tabpfn_config = config.get("tabpfn_config", {})
@@ -653,7 +660,8 @@ def main():
                 logger=logger,
                 output_dir=output_dir_path,
                 training_size=training_size,
-                tabpfn_config=tabpfn_config
+                tabpfn_config=tabpfn_config,
+                do_refutation=do_refutation
             )
         else:
             # 단일 실험 실행 (config에서 첫 번째 실험 조합 사용)
@@ -667,7 +675,8 @@ def main():
                     estimator=estimator,
                     logger=logger,
                     training_size=training_size,
-                    tabpfn_config=tabpfn_config
+                    tabpfn_config=tabpfn_config,
+                    do_refutation=do_refutation
                 )
             else:
                 print("❌ 실행할 실험이 없습니다.")

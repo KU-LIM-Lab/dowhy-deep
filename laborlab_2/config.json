@@ -5,16 +5,21 @@
   "output_dir": "log",
   "no_logs": false,
   "verbose": false,
+
   "preprocess": true,
   "learning": true,
   "prediction": true,
   "experiment": true,
+
+  "refutation": false,
   "limit_data": false,
   "limit_size": 5000,
   "training_size": 5000,
+
   "checkpoint_dir": "data/checkpoint",
   "job_category_file": "KECO",
   "top_job_categories": 5,
+
   "tabpfn_config": {
     "n_estimators": 8,
     "model_type": "auto",
