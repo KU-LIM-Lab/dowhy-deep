@@ -103,10 +103,10 @@ class LLMScorer:
     def _build_prompt(self, section: str, job_name: str, job_examples: List[str], text: str) -> str:
         """LLM 프롬프트 구축"""
         def shot(s):
-            # "※" 구분자 형식으로 예시 출력
+            # "::" 구분자 형식으로 예시 출력
             score = s['output']['score']
             rationale = s['output']['rationale']
-            return f"[예시]\n직무: {s['input']['job']}\n자료:\n{s['input']['text']}\n=> {score}※{rationale}"
+            return f"[예시]\n직무: {s['input']['job']}\n자료:\n{s['input']['text']}\n=> {score}::{rationale}"
         
         examples = "\n\n".join(shot(s) for s in FEWSHOT_EXAMPLES.get(section, []))
         job_hint = f"참고 직무 예시: {', '.join(job_examples[:12])}" if job_examples else "참고 직무 예시: 없음"
@@ -120,8 +120,8 @@ class LLMScorer:
 [지원자 자료]
 {text}
 
-[응답 형식] score(0-100 정수)※rationale(간단한 이유)
-[응답 예제] 75※직무 관련 경력이 있습니다
+[응답 형식] score(0-100 정수)::rationale(간단한 이유)
+[응답 예제] 75::직무 관련 경력이 있습니다
 """
     
     def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
@@ -129,7 +129,7 @@ class LLMScorer:
         if not OLLAMA_AVAILABLE or ollama is None:
             # ollama가 설치되지 않은 경우 기본값 반환
             return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
-        
+            
         content = None
         try:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
@@ -146,8 +146,8 @@ class LLMScorer:
             )
             
             content = resp["message"]["content"]
-            score = content.split("※")[0].strip()
-            why = content.split("※")[1].strip()
+            score = content.split("::")[0].strip()
+            why = content.split("::")[1].strip()
             score = int(max(0, min(100, int(score))))
             return score, why
             
@@ -169,7 +169,7 @@ class LLMScorer:
         """점수 계산 메인 메서드 - (score, rationale) 반환 (비동기 버전)"""
         if not OLLAMA_AVAILABLE:
             return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
-        
+            
         content = None
         try:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
@@ -188,8 +188,8 @@ class LLMScorer:
                 resp.raise_for_status()
                 result = await resp.json()
                 content = result["message"]["content"]
-                score = content.split("※")[0].strip()
-                why = content.split("※")[1].strip()
+                score = content.split("::")[0].strip()
+                why = content.split("::")[1].strip()
                 score = int(max(0, min(100, int(score))))
                 return score, why
                 
