@@ -5,6 +5,7 @@ import json
 import os
 import asyncio
 import aiohttp
+import logging
 from typing import List, Tuple
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
@@ -16,6 +17,9 @@ except ImportError:
     ollama = None
 
 from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
+
+# 로거 설정
+logger = logging.getLogger(__name__)
 
 
 class LLMScorer:
@@ -99,7 +103,10 @@ class LLMScorer:
     def _build_prompt(self, section: str, job_name: str, job_examples: List[str], text: str) -> str:
         """LLM 프롬프트 구축"""
         def shot(s):
-            return f"[예시]\n직무: {s['input']['job']}\n자료:\n{s['input']['text']}\n=> {json.dumps(s['output'], ensure_ascii=False)}"
+            # "※" 구분자 형식으로 예시 출력
+            score = s['output']['score']
+            rationale = s['output']['rationale']
+            return f"[예시]\n직무: {s['input']['job']}\n자료:\n{s['input']['text']}\n=> {score}※{rationale}"
         
         examples = "\n\n".join(shot(s) for s in FEWSHOT_EXAMPLES.get(section, []))
         job_hint = f"참고 직무 예시: {', '.join(job_examples[:12])}" if job_examples else "참고 직무 예시: 없음"
@@ -122,7 +129,8 @@ class LLMScorer:
         if not OLLAMA_AVAILABLE or ollama is None:
             # ollama가 설치되지 않은 경우 기본값 반환
             return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
-            
+        
+        content = None
         try:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
@@ -144,8 +152,14 @@ class LLMScorer:
             return score, why
             
         except Exception as e:
-            # 오류 발생 시 기본값 반환
-            return 50, f"LLM API 오류: {str(e)[:200]}"
+            # 오류 발생 시 LLM 응답 내용 로깅
+            error_msg = f"LLM API 오류: {str(e)[:200]}"
+            if content is not None:
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답 내용: {content[:500]}")
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 에러: {error_msg}")
+            else:
+                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {error_msg}")
+            return 50, error_msg
     
     def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
         """점수 계산 메인 메서드 - (score, rationale) 반환 (동기 버전)"""
@@ -155,7 +169,8 @@ class LLMScorer:
         """점수 계산 메인 메서드 - (score, rationale) 반환 (비동기 버전)"""
         if not OLLAMA_AVAILABLE:
             return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
-            
+        
+        content = None
         try:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
@@ -179,5 +194,12 @@ class LLMScorer:
                 return score, why
                 
         except Exception as e:
-            return 50, f"LLM API 오류: {str(e)[:200]}"
+            # 오류 발생 시 LLM 응답 내용 로깅
+            error_msg = f"LLM API 오류: {str(e)[:200]}"
+            if content is not None:
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답 내용: {content[:500]}")
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 에러: {error_msg}")
+            else:
+                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {error_msg}")
+            return 50, error_msg
 
