@@ -6,7 +6,8 @@ import os
 import asyncio
 import aiohttp
 import logging
-from typing import List, Tuple
+import re
+from typing import List, Tuple, Optional
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
 try:
@@ -100,6 +101,86 @@ class LLMScorer:
         return 0
 
 
+    def _parse_llm_response(self, content: str, section: str) -> Tuple[Optional[int], Optional[str]]:
+        """
+        LLM 응답을 파싱하는 함수 (fallback 방식)
+        
+        Args:
+            content: LLM 응답 내용
+            section: 섹션 이름 (로깅용)
+        
+        Returns:
+            Tuple[Optional[int], Optional[str]]: (score, rationale) 또는 (None, None)
+        """
+        if not content or not content.strip():
+            return None, None
+        
+        content = content.strip()
+        
+        # 방법 1: "::" 구분자로 파싱 시도
+        try:
+            parts = content.split("::")
+            if len(parts) >= 2:
+                score_str = parts[0].strip()
+                rationale = "::".join(parts[1:]).strip()  # rationale에 "::"가 포함될 수 있음
+                
+                # 점수 추출 (숫자만)
+                score_match = re.search(r'\d+', score_str)
+                if score_match:
+                    score = int(score_match.group())
+                    score = max(0, min(100, score))
+                    return score, rationale
+        except Exception as e:
+            logger.debug(f"[{section}] '::' 구분자 파싱 실패: {e}")
+        
+        # 방법 2: JSON 형식으로 파싱 시도
+        try:
+            # JSON 객체 찾기 (중괄호로 감싸진 부분, 중첩 지원)
+            # 먼저 전체 텍스트에서 JSON 객체 시도
+            json_start = content.find('{')
+            if json_start != -1:
+                # 중괄호 매칭으로 JSON 객체 끝 찾기
+                brace_count = 0
+                json_end = json_start
+                for i in range(json_start, len(content)):
+                    if content[i] == '{':
+                        brace_count += 1
+                    elif content[i] == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            json_end = i + 1
+                            break
+                
+                if json_end > json_start:
+                    json_str = content[json_start:json_end]
+                    data = json.loads(json_str)
+                    score = data.get("score")
+                    rationale = data.get("rationale", "")
+                    if score is not None:
+                        score = max(0, min(100, int(score)))
+                        return score, rationale
+        except Exception as e:
+            logger.debug(f"[{section}] JSON 형식 파싱 실패: {e}")
+        
+        # 방법 3: 정규표현식으로 숫자 추출 (0-100 범위)
+        try:
+            # 0-100 범위의 숫자 찾기
+            score_match = re.search(r'\b([0-9]|[1-9][0-9]|100)\b', content)
+            if score_match:
+                score = int(score_match.group())
+                score = max(0, min(100, score))
+                # rationale은 점수 다음 텍스트로 추출
+                rationale_start = score_match.end()
+                rationale = content[rationale_start:].strip()
+                # 불필요한 문자 제거
+                rationale = re.sub(r'^[^\w가-힣]+', '', rationale)  # 앞의 특수문자 제거
+                if rationale:
+                    return score, rationale[:200]  # rationale 최대 200자
+        except Exception as e:
+            logger.debug(f"[{section}] 정규표현식 파싱 실패: {e}")
+        
+        return None, None
+    
     def _build_prompt(self, section: str, job_name: str, job_examples: List[str], text: str) -> str:
         """LLM 프롬프트 구축"""
         def shot(s):
@@ -146,10 +227,15 @@ class LLMScorer:
             )
             
             content = resp["message"]["content"]
-            score = content.split("::")[0].strip()
-            why = content.split("::")[1].strip()
-            score = int(max(0, min(100, int(score))))
-            return score, why
+            
+            # Fallback 방식으로 파싱 시도
+            score, why = self._parse_llm_response(content, section)
+            
+            if score is not None and why is not None:
+                return score, why
+            else:
+                # 파싱 실패 시 에러 발생시켜 except 블록으로 이동
+                raise ValueError(f"LLM 응답 파싱 실패: 예상 형식과 일치하지 않음")
             
         except Exception as e:
             # 오류 발생 시 LLM 응답 내용 로깅
@@ -188,10 +274,15 @@ class LLMScorer:
                 resp.raise_for_status()
                 result = await resp.json()
                 content = result["message"]["content"]
-                score = content.split("::")[0].strip()
-                why = content.split("::")[1].strip()
-                score = int(max(0, min(100, int(score))))
-                return score, why
+                
+                # Fallback 방식으로 파싱 시도
+                score, why = self._parse_llm_response(content, section)
+                
+                if score is not None and why is not None:
+                    return score, why
+                else:
+                    # 파싱 실패 시 에러 발생시켜 except 블록으로 이동
+                    raise ValueError(f"LLM 응답 파싱 실패: 예상 형식과 일치하지 않음")
                 
         except Exception as e:
             # 오류 발생 시 LLM 응답 내용 로깅
