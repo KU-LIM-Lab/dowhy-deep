@@ -1,13 +1,12 @@
 """
 LLM 기반 점수 계산 모듈
 """
-import json
 import os
 import asyncio
 import aiohttp
 import logging
 import re
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 # ollama는 optional dependency - 없어도 작동하도록 처리
 try:
@@ -101,93 +100,38 @@ class LLMScorer:
         return 0
 
 
-    def _parse_llm_response(self, content: str, section: str) -> Tuple[Optional[int], Optional[str]]:
+    def _parse_llm_response(self, content: str, section: str) -> Optional[int]:
         """
-        LLM 응답을 파싱하는 함수 (fallback 방식)
+        LLM 응답을 파싱하는 함수 (숫자만 추출)
         
         Args:
             content: LLM 응답 내용
             section: 섹션 이름 (로깅용)
         
         Returns:
-            Tuple[Optional[int], Optional[str]]: (score, rationale) 또는 (None, None)
+            Optional[int]: 0-100 범위의 점수 또는 None
         """
         if not content or not content.strip():
-            return None, None
+            return None
         
         content = content.strip()
         
-        # 방법 1: "::" 구분자로 파싱 시도
-        try:
-            parts = content.split("::")
-            if len(parts) >= 2:
-                score_str = parts[0].strip()
-                rationale = "::".join(parts[1:]).strip()  # rationale에 "::"가 포함될 수 있음
-                
-                # 점수 추출 (숫자만)
-                score_match = re.search(r'\d+', score_str)
-                if score_match:
-                    score = int(score_match.group())
-                    score = max(0, min(100, score))
-                    return score, rationale
-        except Exception as e:
-            logger.debug(f"[{section}] '::' 구분자 파싱 실패: {e}")
-        
-        # 방법 2: JSON 형식으로 파싱 시도
-        try:
-            # JSON 객체 찾기 (중괄호로 감싸진 부분, 중첩 지원)
-            # 먼저 전체 텍스트에서 JSON 객체 시도
-            json_start = content.find('{')
-            if json_start != -1:
-                # 중괄호 매칭으로 JSON 객체 끝 찾기
-                brace_count = 0
-                json_end = json_start
-                for i in range(json_start, len(content)):
-                    if content[i] == '{':
-                        brace_count += 1
-                    elif content[i] == '}':
-                        brace_count -= 1
-                        if brace_count == 0:
-                            json_end = i + 1
-                            break
-                
-                if json_end > json_start:
-                    json_str = content[json_start:json_end]
-                    data = json.loads(json_str)
-                    score = data.get("score")
-                    rationale = data.get("rationale", "")
-                    if score is not None:
-                        score = max(0, min(100, int(score)))
-                        return score, rationale
-        except Exception as e:
-            logger.debug(f"[{section}] JSON 형식 파싱 실패: {e}")
-        
-        # 방법 3: 정규표현식으로 숫자 추출 (0-100 범위)
+        # 정규표현식으로 숫자 추출 (0-100 범위)
         try:
             # 0-100 범위의 숫자 찾기
             score_match = re.search(r'\b([0-9]|[1-9][0-9]|100)\b', content)
             if score_match:
                 score = int(score_match.group())
-                score = max(0, min(100, score))
-                # rationale은 점수 다음 텍스트로 추출
-                rationale_start = score_match.end()
-                rationale = content[rationale_start:].strip()
-                # 불필요한 문자 제거
-                rationale = re.sub(r'^[^\w가-힣]+', '', rationale)  # 앞의 특수문자 제거
-                if rationale:
-                    return score, rationale[:200]  # rationale 최대 200자
+                return max(0, min(100, score))
         except Exception as e:
             logger.debug(f"[{section}] 정규표현식 파싱 실패: {e}")
         
-        return None, None
+        return None
     
     def _build_prompt(self, section: str, job_name: str, job_examples: List[str], text: str) -> str:
         """LLM 프롬프트 구축"""
         def shot(s):
-            # "::" 구분자 형식으로 예시 출력
-            score = s['output']['score']
-            rationale = s['output']['rationale']
-            return f"[예시]\n직무: {s['input']['job']}\n자료:\n{s['input']['text']}\n=> {score}::{rationale}"
+            return f"[예시]\n직무: {s['input']['job']}\n자료:\n{s['input']['text']}\n=> {s['output']}"
         
         examples = "\n\n".join(shot(s) for s in FEWSHOT_EXAMPLES.get(section, []))
         job_hint = f"참고 직무 예시: {', '.join(job_examples[:12])}" if job_examples else "참고 직무 예시: 없음"
@@ -201,22 +145,19 @@ class LLMScorer:
 [지원자 자료]
 {text}
 
-[응답 형식] score(0-100 정수)::rationale(간단한 이유)
-[응답 예제] 75::직무 관련 경력이 있습니다
+[응답 형식] 0-100 사이의 정수 하나만 출력 (다른 텍스트 절대 금지)
 """
     
-    def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
+    def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> int:
         """LLM을 사용한 점수 계산"""
         if not OLLAMA_AVAILABLE or ollama is None:
-            # ollama가 설치되지 않은 경우 기본값 반환
-            return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
+            return 50
             
         content = None
         try:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
             
-            # 로컬 Ollama 클라이언트 생성 (무조건 환경변수에서 가져온 호스트 사용)
             client = ollama.Client(host=self.ollama_host)
             
             resp = client.chat(
@@ -227,41 +168,34 @@ class LLMScorer:
             )
             
             content = resp["message"]["content"]
+            score = self._parse_llm_response(content, section)
             
-            # Fallback 방식으로 파싱 시도
-            score, why = self._parse_llm_response(content, section)
-            
-            if score is not None and why is not None:
-                return score, why
+            if score is not None:
+                return score
             else:
-                # 파싱 실패 시 에러 발생시켜 except 블록으로 이동
-                raise ValueError(f"LLM 응답 파싱 실패: 예상 형식과 일치하지 않음")
+                raise ValueError(f"LLM 응답 파싱 실패: {content[:100]}")
             
         except Exception as e:
-            # 오류 발생 시 LLM 응답 내용 로깅
-            error_msg = f"LLM API 오류: {str(e)[:200]}"
             if content is not None:
-                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답 내용: {content[:500]}")
-                logger.error(f"[{section}] LLM 응답 파싱 실패 - 에러: {error_msg}")
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답: {content[:200]}, 에러: {e}")
             else:
-                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {error_msg}")
-            return 50, error_msg
+                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {e}")
+            return 50
     
-    def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> Tuple[int, str]:
-        """점수 계산 메인 메서드 - (score, rationale) 반환 (동기 버전)"""
+    def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> int:
+        """점수 계산 메인 메서드 - int 반환 (동기 버전)"""
         return self._score_with_llm(section, job_name, job_examples, text)
     
-    async def score_async(self, section: str, job_name: str, job_examples: List[str], text: str, session: aiohttp.ClientSession) -> Tuple[int, str]:
-        """점수 계산 메인 메서드 - (score, rationale) 반환 (비동기 버전)"""
+    async def score_async(self, section: str, job_name: str, job_examples: List[str], text: str, session: aiohttp.ClientSession) -> int:
+        """점수 계산 메인 메서드 - int 반환 (비동기 버전)"""
         if not OLLAMA_AVAILABLE:
-            return 50, "LLM API 사용 불가 (ollama 패키지 미설치)"
+            return 50
             
         content = None
         try:
             sys_msg = {"role": "system", "content": HR_SYSTEM_PROMPT}
             user_msg = {"role": "user", "content": self._build_prompt(section, job_name, job_examples, text)}
             
-            # Ollama API 엔드포인트 URL 구성
             url = f"http://{self.ollama_host}/api/chat"
             payload = {
                 "model": "llama3.2:1b",
@@ -275,22 +209,17 @@ class LLMScorer:
                 result = await resp.json()
                 content = result["message"]["content"]
                 
-                # Fallback 방식으로 파싱 시도
-                score, why = self._parse_llm_response(content, section)
+                score = self._parse_llm_response(content, section)
                 
-                if score is not None and why is not None:
-                    return score, why
+                if score is not None:
+                    return score
                 else:
-                    # 파싱 실패 시 에러 발생시켜 except 블록으로 이동
-                    raise ValueError(f"LLM 응답 파싱 실패: 예상 형식과 일치하지 않음")
+                    raise ValueError(f"LLM 응답 파싱 실패: {content[:100]}")
                 
         except Exception as e:
-            # 오류 발생 시 LLM 응답 내용 로깅
-            error_msg = f"LLM API 오류: {str(e)[:200]}"
             if content is not None:
-                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답 내용: {content[:500]}")
-                logger.error(f"[{section}] LLM 응답 파싱 실패 - 에러: {error_msg}")
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답: {content[:200]}, 에러: {e}")
             else:
-                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {error_msg}")
-            return 50, error_msg
+                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {e}")
+            return 50
 

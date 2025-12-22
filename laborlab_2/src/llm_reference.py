@@ -10,36 +10,36 @@ HR_SYSTEM_PROMPT = """당신은 채용 담당자입니다.
 - 40~69: 부분 관련. 기초 역량은 있으나 연결고리/증거가 부족
 - 10~39: 간접적, 전환 가능성은 있으나 근거 약함
 - 0~9: 관련 근거 없음
-반드시 다음 형식으로 답변: 점수(0-100 정수)::이유(간단한 설명)
-예시: 75::직무 관련 경력이 있습니다"""
+반드시 0-100 사이의 정수 하나만 답변하세요. 다른 텍스트는 절대 포함하지 마세요.
+예시: 75"""
 
 # Few-shot 예시 데이터
 FEWSHOT_EXAMPLES = {
     "자기소개서": [
         {"input":{"job":"데이터 분석가","text":"통계학 전공, 머신러닝 프로젝트 다수 수행, Python/SQL/시각화로 성과 수치 제시"},
-         "output":{"score":95,"rationale":"핵심 역량, 실무 성과 구체적"}},
+         "output":95},
         {"input":{"job":"프론트엔드 개발자","text":"React/TypeScript 기반 대시보드 개발, 성능 최적화로 LCP 40% 개선"},
-         "output":{"score":93,"rationale":"직접 성능 개선 성과"}},
+         "output":93},
         {"input":{"job":"회계","text":"K-IFRS 재무제표 작성, 결산/세무조정, 전표 처리 자동화 경험"},
-         "output":{"score":90,"rationale":"핵심 실무 지식"}},
+         "output":90},
     ],
     "이력서": [
         {"input":{"job":"데이터 엔지니어","text":"데이터 파이프라인 운영, Spark SQL 튜닝, Kafka 스트리밍 구축"},
-         "output":{"score":92,"rationale":"프로덕션 파이프라인 경험"}},
+         "output":92},
         {"input":{"job":"마케팅 분석가","text":"퍼포먼스 캠페인 ROI 분석, 리타게팅 최적화"},
-         "output":{"score":88,"rationale":"분석/성과 근거"}},
+         "output":88},
     ],
     "직업훈련": [
         {"input":{"job":"데이터 분석가","text":"빅데이터 분석(파이썬/SQL/머신러닝) 수료, 팀 프로젝트 산출물"},
-         "output":{"score":85,"rationale":"핵심 커리큘럼 수료"}},
+         "output":85},
         {"input":{"job":"프론트엔드 개발자","text":"React/Next.js 심화, 테스트/성능 최적화 모듈"},
-         "output":{"score":82,"rationale":"현업 연계 과정"}},
+         "output":82},
     ],
     "자격증": [
         {"input":{"job":"데이터 분석가","text":"ADsP, SQLD, 빅데이터분석기사"},
-         "output":{"score":88,"rationale":"핵심 자격 보유"}},
+         "output":88},
         {"input":{"job":"회계","text":"전산회계1급, FAT"},
-         "output":{"score":86,"rationale":"직무 핵심 자격"}},
+         "output":86},
     ]
 }
 
