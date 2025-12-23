@@ -177,9 +177,9 @@ class LLMScorer:
             
         except Exception as e:
             if content is not None:
-                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답: {content[:200]}, 에러: {e}")
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답: {content[:200]}, 에러: {type(e).__name__}: {e}")
             else:
-                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {e}")
+                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {type(e).__name__}: {e}")
             return 50
     
     def score(self, section: str, job_name: str, job_examples: List[str], text: str) -> int:
@@ -218,8 +218,8 @@ class LLMScorer:
                 
         except Exception as e:
             if content is not None:
-                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답: {content[:200]}, 에러: {e}")
+                logger.error(f"[{section}] LLM 응답 파싱 실패 - 응답: {content[:200]}, 에러: {type(e).__name__}: {e}")
             else:
-                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {e}")
+                logger.error(f"[{section}] LLM API 호출 실패 - 에러: {type(e).__name__}: {e}")
             return 50
 
