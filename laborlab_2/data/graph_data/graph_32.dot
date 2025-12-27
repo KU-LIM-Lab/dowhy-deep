@@ -82,9 +82,6 @@ digraph G {
 	MATCH_L_YN -> ACQ_180_YN;
 	MATCH_M_YN -> ACQ_180_YN;
 	MATCH_S_YN -> ACQ_180_YN;
-	COMM_WAGE_TYCD	[label=상용임금유형코드,
-		style="rounded,filled"];
-	COMM_WAGE_TYCD -> ACQ_180_YN;
 	SXDS_CD	[label=성별코드,
 		style="rounded,filled"];
 	SXDS_CD -> ACCR_CD;

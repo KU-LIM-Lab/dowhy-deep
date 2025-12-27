@@ -52,9 +52,6 @@ digraph G {
 	HOPE_WAGE_SM_AMT -> MATCH_L_YN;
 	HOPE_WAGE_SM_AMT -> MATCH_M_YN;
 	HOPE_WAGE_SM_AMT -> MATCH_S_YN;
-	COMM_WAGE_TYCD	[label=상용임금유형코드,
-		style="rounded,filled"];
-	HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
 	MAJR_CD1 -> ACQ_180_YN;
 	MAJR_CD1 -> BFR_OCTR_CT;
 	MAJR_CD1 -> HOPE_JSCD2;
@@ -170,7 +167,6 @@ digraph G {
 	MATCH_M_YN -> ACQ_180_YN;
 	MATCH_S_YN -> ACQ_180_YN;
 	UEPS_RECP_YN -> ACQ_180_YN;
-	COMM_WAGE_TYCD -> ACQ_180_YN;
 	DSPT_LABR_YN -> ACQ_180_YN;
 	JHNT_PPOS_CD	[label=구직목적코드,
 		style="rounded,filled"];

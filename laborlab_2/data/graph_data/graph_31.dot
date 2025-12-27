@@ -53,9 +53,6 @@ digraph G {
 	CYC3 -> ACQ_180_YN;
 	CYC3 -> HOPE_WAGE_SM_AMT;
 	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-	COMM_WAGE_TYCD	[label=상용임금유형코드,
-		style="rounded,filled"];
-	HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
 	MAJR_CD1 -> ACQ_180_YN;
 	MAJR_CD1 -> BFR_OCTR_CT;
 	MAJR_CD1 -> CARR_MYCT1;
@@ -94,7 +91,6 @@ digraph G {
 		style="rounded,filled"];
 	AGE -> AREA_CD;
 	AREA_CD -> ACQ_180_YN;
-	COMM_WAGE_TYCD -> ACQ_180_YN;
 	EMPN_DE	[label=고용보험채용일자,
 		style="rounded,filled"];
 	EMPN_DE -> ACQ_180_YN;

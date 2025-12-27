@@ -33,12 +33,6 @@ digraph G {
 			treatment_name=HPAR_CSCY_SCOR,
 			treatment_question="거주지-희망지역 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
 			treatment_var=HPAR_CSCY_SCOR];
-		T5	[label="T5: LAST_JSCD",
-			role=treatment_meta,
-			treatment_def="과거 취득직종 차이의 효과",
-			treatment_name=LAST_JSCD,
-			treatment_question="이전 취득 직종이 다른 구직자 간 6개월 내 취업 확률 차이?",
-			treatment_var=LAST_JSCD];
 	}
 	ACQ_180_YN	[label="180일이내취업여부"];
 	AREA_CD	[label="지역코드(거주지)"];
@@ -62,8 +56,6 @@ digraph G {
 	RCIT_NMPR -> ACQ_180_YN;
 	RCIT_NMPR -> HOPE_WAGE_SM_AMT;
 	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-	LAST_JSCD	[label=고용보험취득직종];
-	LAST_JSCD -> ACQ_180_YN;
 	AGE	[label=연령];
 	AGE -> AREA_CD;
 	ACCR_CD	[label=학력코드];

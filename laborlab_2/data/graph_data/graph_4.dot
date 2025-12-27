@@ -21,12 +21,6 @@ digraph G {
 			treatment_name=HOPE_WAGE_SM_AMT,
 			treatment_question="희망임금이 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
 			treatment_var=HOPE_WAGE_SM_AMT];
-		T2	[label="T2: COMM_WAGE_TYCD",
-			role=treatment_meta,
-			treatment_def="임금형태코드 차이의 효과",
-			treatment_name=COMM_WAGE_TYCD,
-			treatment_question="임금형태(월급/시급 등)가 다른 구직자 간 6개월 내 취업 확률 차이?",
-			treatment_var=COMM_WAGE_TYCD];
 		T3	[label="T3: NTR_OTIO_MYAV_RMNT_AMT",
 			role=treatment_meta,
 			treatment_def="직종×지역 중앙입직임금 수준 차이의 효과",
@@ -49,11 +43,8 @@ digraph G {
 	ACQ_180_YN	[label="180일이내취업여부"];
 	HOPE_WAGE_SM_AMT	[label=희망임금합계금액];
 	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
-	COMM_WAGE_TYCD	[label=임금형태코드];
-	HOPE_WAGE_SM_AMT -> COMM_WAGE_TYCD;
 	AFIV_RDJT_PSBL_YN	[label=면접후재조정가능여부];
 	HOPE_WAGE_SM_AMT -> AFIV_RDJT_PSBL_YN;
-	COMM_WAGE_TYCD -> ACQ_180_YN;
 	AFIV_RDJT_PSBL_YN -> ACQ_180_YN;
 	AREA_CD	[label=지역코드];
 	AREA_CD -> ACQ_180_YN;

@@ -71,8 +71,6 @@ digraph G {
 	EMPL_STLE_CD -> MATCH_S_YN;
 	DSPT_LABR_YN	[label=파견근로여부];
 	DSPT_LABR_YN -> ACQ_180_YN;
-	COMM_WAGE_TYCD	[label=상용임금유형코드];
-	COMM_WAGE_TYCD -> ACQ_180_YN;
 	HOPE_WAGE_SM_AMT	[label=희망임금합계금액];
 	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
 	HOPE_WAGE_SM_AMT -> MATCH_L_YN;
@@ -285,8 +283,6 @@ digraph G {
 	OCTR_HOPE_JSFC_CSCY_SCOR2 -> HOPE_JSCD2;
 	ACQ_DT	[label=취업까지소요기간];
 	ACQ_DT -> ACQ_180_YN;
-	LAST_JSCD	[label=고용보험취득직종];
-	LAST_JSCD -> ACQ_180_YN;
 	EMPN_DE	[label=고용보험채용일자];
 	EMPN_DE -> ACQ_180_YN;
 	LAST_FRFT_DE	[label=고용보험상실일자];
