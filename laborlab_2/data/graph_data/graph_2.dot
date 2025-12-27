@@ -100,7 +100,4 @@ digraph G {
 	resume_score -> cover_letter_score;
 	BFR_EJAP_CT -> cover_letter_score;
 	cover_letter_score -> ACQ_180_YN;
-	typo_count	[label=오탈자수];
-	cover_letter_score -> typo_count;
-	typo_count -> ACQ_180_YN;
 }
