@@ -163,7 +163,7 @@ class LLMScorer:
             client = ollama.Client(host=self.ollama_host)
             
             resp = client.chat(
-                model="llama3.2:1b",
+                model="llama3.2:3b",
                 messages=[sys_msg, user_msg],
                 options={"temperature": 0.2},
                 stream=False
@@ -200,7 +200,7 @@ class LLMScorer:
             
             url = f"http://{self.ollama_host}/api/chat"
             payload = {
-                "model": "llama3.2:1b",
+                "model": "llama3.2:3b",
                 "messages": [sys_msg, user_msg],
                 "options": {"temperature": 0.2},
                 "stream": False
