@@ -42,8 +42,7 @@ from tqdm import tqdm
 from tqdm.asyncio import tqdm as atqdm
 
 from .llm_reference import (
-    JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS, 
-    DEFAULT_MAX_COVER_LEN, DEFAULT_COVER_EXCEED_RATIO, DEFAULT_DATE_FORMAT
+    JSON_NAMES, RESUME_SECTIONS, SUPPORTED_SECTIONS
 )
 from .llm_scorer import LLMScorer
 

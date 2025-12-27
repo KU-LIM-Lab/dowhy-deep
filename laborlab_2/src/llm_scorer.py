@@ -146,6 +146,8 @@ class LLMScorer:
 {text}
 
 [응답 형식] 0-100 사이의 정수 하나만 출력 (다른 텍스트 절대 금지)
+올바른 예시: 75, 0, 100, 50
+잘못된 예시: -5, 105, "75점", "점수는 75입니다", 75.5
 """
     
     def _score_with_llm(self, section: str, job_name: str, job_examples: List[str], text: str) -> int:
