@@ -1557,6 +1557,63 @@ def run_analysis_without_preprocessing(
         print(f"✅ Train set: {len(df_train)}건, Test set: {len(df_test)}건")
         step_times['Train/Test Split'] = time.time() - step_start
         
+        # 2-3. Treatment 변수 값 검증 및 보정: Test의 모든 treatment 값이 Train에 포함되도록 보장
+        print("🔍 Treatment 변수 값 검증 중...")
+        if treatment in df_train.columns and treatment in df_test.columns:
+            train_treatment_values = set(df_train[treatment].dropna().unique())
+            test_treatment_values = set(df_test[treatment].dropna().unique())
+            missing_in_train = test_treatment_values - train_treatment_values
+            
+            if missing_in_train:
+                missing_count = df_test[treatment].isin(missing_in_train).sum()
+                print(f"⚠️ Test 데이터에 Train에 없는 treatment 값 발견: {len(missing_in_train)}개 값, {missing_count}건")
+                print(f"   Missing values: {sorted(list(missing_in_train))[:10]}{'...' if len(missing_in_train) > 10 else ''}")
+                
+                if logger:
+                    logger.warning(
+                        f"Test 데이터에 Train에 없는 treatment 값 발견: {len(missing_in_train)}개 값, {missing_count}건. "
+                        f"해당 행을 Train으로 이동합니다."
+                    )
+                
+                # Test에서 Train에 없는 treatment 값을 가진 행을 Train으로 이동
+                rows_to_move = df_test[treatment].isin(missing_in_train)
+                moved_rows = df_test[rows_to_move].copy()
+                df_test = df_test[~rows_to_move].copy()
+                df_train = pd.concat([df_train, moved_rows], ignore_index=True)
+                
+                print(f"📊 Treatment 값 보정 완료: {len(moved_rows)}건을 Test → Train으로 이동")
+                print(f"   최종 Train set: {len(df_train)}건, Test set: {len(df_test)}건")
+                
+                if logger:
+                    logger.info(
+                        f"Treatment 값 보정: {len(moved_rows)}건을 Test에서 Train으로 이동. "
+                        f"최종 Train: {len(df_train)}건, Test: {len(df_test)}건"
+                    )
+                
+                # 재검증: 모든 treatment 값이 train에 포함되는지 확인
+                train_treatment_values_after = set(df_train[treatment].dropna().unique())
+                test_treatment_values_after = set(df_test[treatment].dropna().unique())
+                still_missing = test_treatment_values_after - train_treatment_values_after
+                
+                if still_missing:
+                    # 여전히 누락된 값이 있다면 경고 (이론적으로는 발생하지 않아야 함)
+                    print(f"⚠️ 경고: 여전히 Train에 없는 treatment 값이 있습니다: {still_missing}")
+                    if logger:
+                        logger.warning(f"여전히 Train에 없는 treatment 값: {still_missing}")
+                else:
+                    print("✅ 모든 Test의 treatment 값이 Train에 포함됨")
+            else:
+                print("✅ 모든 Test의 treatment 값이 Train에 포함됨")
+        else:
+            if treatment not in df_train.columns:
+                print(f"⚠️ Treatment 변수 '{treatment}'가 Train 데이터에 없습니다.")
+                if logger:
+                    logger.warning(f"Treatment 변수 '{treatment}'가 Train 데이터에 없습니다.")
+            if treatment not in df_test.columns:
+                print(f"⚠️ Treatment 변수 '{treatment}'가 Test 데이터에 없습니다.")
+                if logger:
+                    logger.warning(f"Treatment 변수 '{treatment}'가 Test 데이터에 없습니다.")
+        
         # 3-1. 컬럼별 타입 체크 (int/str 혼합 감지)
         print("🔍 컬럼별 타입 체크 중...")
         for col in df_train.columns:
@@ -1576,11 +1633,11 @@ def run_analysis_without_preprocessing(
             print("🔢 Categorical 변수 Ordinal Encoding 중...")
             step_start = time.time()
             
-            # Categorical 변수 찾기 (Treatment/Outcome 및 ID 컬럼 제외)
+            # Categorical 변수 찾기 (Outcome 및 ID 컬럼 제외, Treatment는 포함)
             id_cols = ["JHNT_CTN", "JHNT_MBN", "JHNT_CNT"]
             categorical_columns = [
                 col for col in df_train.select_dtypes(include=['object', 'string', 'category']).columns
-                if col not in [treatment, outcome] + id_cols
+                if col not in [outcome] + id_cols
             ]
             
             if categorical_columns:
