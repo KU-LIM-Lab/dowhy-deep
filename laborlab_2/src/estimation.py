@@ -1517,11 +1517,41 @@ def run_analysis_without_preprocessing(
         outcome_data = df_for_analysis[outcome]
         is_binary = outcome_data.nunique() <= 2 and outcome_data.dtype in ['int64', 'int32', 'bool']
         
+        # Outcome과 Treatment를 동시에 stratify하기 위한 그룹 생성
+        stratify_group = None
+        if is_binary and treatment in df_for_analysis.columns:
+            # Outcome과 Treatment의 조합을 문자열로 생성
+            stratify_group = (
+                df_for_analysis[outcome].astype(str) + '_' + 
+                df_for_analysis[treatment].astype(str)
+            )
+            
+            # 각 조합의 최소 개수 확인 (stratify는 최소 2개 필요)
+            group_counts = stratify_group.value_counts()
+            min_group_size = group_counts.min()
+            
+            if min_group_size < 2:
+                print(f"⚠️ 일부 Outcome×Treatment 조합이 1개만 있어 stratify를 사용할 수 없습니다.")
+                print(f"   최소 조합 개수: {min_group_size}개")
+                print(f"   Outcome만 stratify합니다.")
+                stratify_group = None
+            else:
+                print(f"✅ Outcome과 Treatment를 동시에 stratify합니다.")
+                print(f"   총 {len(group_counts)}개 조합, 최소 조합 개수: {min_group_size}개")
+        
         # 데이터가 training_size보다 작거나 같은 경우 8:2 비율로 split
         if total_size <= training_size:
             print(f"⚠️ 전체 데이터({total_size}건)가 training_size({training_size}건)보다 작거나 같습니다. 8:2 비율로 split합니다.")
-            if is_binary:
-                # Binary outcome인 경우 stratify 사용
+            if stratify_group is not None:
+                # Outcome과 Treatment 조합으로 stratify
+                df_train, df_test = train_test_split(
+                    df_for_analysis,
+                    test_size=0.2,
+                    random_state=42,
+                    stratify=stratify_group
+                )
+            elif is_binary:
+                # Binary outcome인 경우 outcome만 stratify
                 df_train, df_test = train_test_split(
                     df_for_analysis,
                     test_size=0.2,
@@ -1538,8 +1568,16 @@ def run_analysis_without_preprocessing(
         else:
             # training_size만큼 샘플링하여 train set 생성, 나머지는 test set
             print(f"📊 Train: {training_size}개, Test: 나머지 ({total_size - training_size}개)")
-            if is_binary:
-                # Binary outcome인 경우 stratify 사용
+            if stratify_group is not None:
+                # Outcome과 Treatment 조합으로 stratify
+                df_train, df_test = train_test_split(
+                    df_for_analysis,
+                    train_size=training_size,
+                    random_state=42,
+                    stratify=stratify_group
+                )
+            elif is_binary:
+                # Binary outcome인 경우 outcome만 stratify
                 df_train, df_test = train_test_split(
                     df_for_analysis,
                     train_size=training_size,
@@ -1576,11 +1614,11 @@ def run_analysis_without_preprocessing(
             print("🔢 Categorical 변수 Ordinal Encoding 중...")
             step_start = time.time()
             
-            # Categorical 변수 찾기 (Treatment/Outcome 및 ID 컬럼 제외)
+            # Categorical 변수 찾기 (Outcome 및 ID 컬럼 제외, Treatment는 포함)
             id_cols = ["JHNT_CTN", "JHNT_MBN", "JHNT_CNT"]
             categorical_columns = [
                 col for col in df_train.select_dtypes(include=['object', 'string', 'category']).columns
-                if col not in [treatment, outcome] + id_cols
+                if col not in [outcome] + id_cols
             ]
             
             if categorical_columns:
