@@ -70,6 +70,10 @@ digraph G {
 	ACCR_CD -> resume_score;
 	AREA_CD -> resume_score;
 	resume_score -> ACQ_180_YN;
+	items_num	[label=이력서항목개수];
+	ACCR_CD -> items_num;
+	items_num -> resume_score;
+	items_num -> ACQ_180_YN;
 	cover_letter_score	[label=자기소개서평가점수];
 	resume_score -> cover_letter_score;
 	cover_letter_score -> ACQ_180_YN;

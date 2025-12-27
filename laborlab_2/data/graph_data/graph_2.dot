@@ -100,4 +100,8 @@ digraph G {
 	resume_score -> cover_letter_score;
 	BFR_EJAP_CT -> cover_letter_score;
 	cover_letter_score -> ACQ_180_YN;
+	certification_score	[label=자격증평가점수];
+	ACCR_CD -> certification_score;
+	certification_score -> ACQ_180_YN;
+	certification_score -> resume_score;
 }

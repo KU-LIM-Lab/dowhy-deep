@@ -83,4 +83,8 @@ digraph G {
 	BFR_OCTR_CT -> training_score;
 	training_score -> ACQ_180_YN;
 	training_score -> resume_score;
+	days_last_training_to_jobseek	[label=마지막훈련경과일수];
+	BFR_OCTR_CT -> days_last_training_to_jobseek;
+	days_last_training_to_jobseek -> ACQ_180_YN;
+	days_last_training_to_jobseek -> training_score;
 }
