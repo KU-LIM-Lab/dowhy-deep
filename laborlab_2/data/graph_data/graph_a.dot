@@ -1,0 +1,188 @@
+digraph G {
+	graph [rankdir=LR];
+	node [fillcolor="#F8F9FB",
+	fontname=Helvetica,
+	shape=box,
+	style="rounded,filled"
+	];
+	subgraph cluster_treatments {
+	graph [color="#CCCCCC",
+	label="Treatments (outcome: ACQ_180_YN)",
+	style=dashed
+	];
+	node [fillcolor="#FFF7E6",
+	fontname=Helvetica,
+	shape=note,
+	style="rounded,filled"
+	];
+	T1	[label="T1: resume_score",
+	role=treatment_meta,
+	treatment_def="resume_score 수준 차이의 효과",
+	treatment_name=resume_score,
+	treatment_question="resume_score 수준이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=resume_score];
+	T2	[label="T2: cover_letter_score",
+	role=treatment_meta,
+	treatment_def="cover_letter_score 수준 차이의 효과",
+	treatment_name=cover_letter_score,
+	treatment_question="cover_letter_score 수준이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=cover_letter_score];
+	T3	[label="T3: AREA_CD",
+	role=treatment_meta,
+	treatment_def="지역코드(거주지) 수준 차이의 효과",
+	treatment_name=AREA_CD,
+	treatment_question="지역코드(거주지) 수준이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=AREA_CD];
+	T4	[label="T4: training_score",
+	role=treatment_meta,
+	treatment_def="training_score 수준 차이의 효과",
+	treatment_name=training_score,
+	treatment_question="training_score 수준이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=training_score];
+	T5	[label="T5: BFR_OCTR_CT",
+	role=treatment_meta,
+	treatment_def="BFR_OCTR_CT 수준 차이의 효과",
+	treatment_name=BFR_OCTR_CT,
+	treatment_question="BFR_OCTR_CT 수준이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=BFR_OCTR_CT];
+}
+	ACQ_180_YN	[label=180일이내취업여부];
+	AREA_CD	[label=지역코드(거주지)];
+	ACCR_CD -> ACQ_180_YN;
+	ACCR_CD -> BFR_OCTR_CT;
+	ACCR_CD -> CARR_MYCT1;
+	ACCR_CD -> CARR_MYCT2;
+	ACCR_CD -> CARR_MYCT3;
+	ACCR_CD -> HOPE_WAGE_SM_AMT;
+	ACCR_CD -> certification_score;
+	ACCR_CD -> items_num;
+	ACCR_CD -> resume_score;
+	ACCR_CD -> training_score;
+	AFIV_RDJT_PSBL_YN -> ACQ_180_YN;
+	AGE -> ACCR_CD;
+	AGE -> ACQ_180_YN;
+	AGE -> AREA_CD;
+	AGE -> BFR_EJAP_CT;
+	AGE -> BFR_OCTR_CT;
+	AGE -> BFR_UEPS_RECP_CT;
+	AGE -> BFR_WTM6_JHCR_CT;
+	AGE -> CARR_MYCT1;
+	AGE -> CARR_MYCT2;
+	AGE -> CARR_MYCT3;
+	AREA_CD -> ACQ_180_YN;
+	AREA_CD -> HPAR_CD1;
+	AREA_CD -> HPAR_CSCY_SCOR;
+	AREA_CD -> IPS_IRDS_NMPR;
+	AREA_CD -> resume_score;
+	AREA_CD -> training_score;
+	BFR_EJAP_CT -> ACQ_180_YN;
+	BFR_EJAP_CT -> cover_letter_score;
+	BFR_OCTR_CT -> ACQ_180_YN;
+	BFR_OCTR_CT -> BFR_EJAP_CT;
+	BFR_OCTR_CT -> BFR_WTM6_JHCR_CT;
+	BFR_OCTR_CT -> CARR_MYCT1;
+	BFR_OCTR_CT -> CARR_MYCT2;
+	BFR_OCTR_CT -> CARR_MYCT3;
+	BFR_OCTR_CT -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+	BFR_OCTR_CT -> days_last_training_to_jobseek;
+	BFR_OCTR_CT -> training_score;
+	BFR_UEPS_RECP_CT -> ACQ_180_YN;
+	BFR_UEPS_RECP_CT -> DLY_LABR_HOPE_YN;
+	BFR_UEPS_RECP_CT -> FRFT_AFTR_JHNT_REQR_DYCT;
+	BFR_WTM6_JHCR_CT -> ACQ_180_YN;
+	CARR_MYCT1 -> ACQ_180_YN;
+	CARR_MYCT1 -> BFR_EJAP_CT;
+	CARR_MYCT1 -> BFR_UEPS_RECP_CT;
+	CARR_MYCT1 -> BFR_WTM6_JHCR_CT;
+	CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+	CARR_MYCT1 -> resume_score;
+	CARR_MYCT2 -> ACQ_180_YN;
+	CARR_MYCT2 -> HOPE_JSCD2;
+	CARR_MYCT2 -> resume_score;
+	CARR_MYCT3 -> ACQ_180_YN;
+	CARR_MYCT3 -> resume_score;
+	DLY_LABR_HOPE_YN -> ACQ_180_YN;
+	FRFT_AFTR_JHNT_REQR_DYCT -> ACQ_180_YN;
+	HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	HOPE_WAGE_SM_AMT -> AFIV_RDJT_PSBL_YN;
+	HPAR_CD1 -> HPAR_CSCY_SCOR;
+	HPAR_CSCY_SCOR -> ACQ_180_YN;
+	IPS_IRDS_NMPR -> ACQ_180_YN;
+	IPS_IRDS_NMPR -> HOPE_WAGE_SM_AMT;
+	OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+	SXDS_CD -> ACCR_CD;
+	SXDS_CD -> ACQ_180_YN;
+	certification_score -> ACQ_180_YN;
+	certification_score -> resume_score;
+	cover_letter_score -> ACQ_180_YN;
+	days_last_training_to_jobseek -> ACQ_180_YN;
+	days_last_training_to_jobseek -> training_score;
+	items_num -> ACQ_180_YN;
+	items_num -> resume_score;
+	resume_score -> ACQ_180_YN;
+	resume_score -> cover_letter_score;
+	training_score -> ACQ_180_YN;
+	training_score -> HOPE_WAGE_SM_AMT;
+	training_score -> resume_score;
+	ACCR_STCD	[label=학력상태코드];
+	AGREE_LEVEL	[label=정보활용적극성];
+	DRV_PSBL_YN	[label=운전가능여부];
+	DSPT_LABR_YN	[label=파견근로여부];
+	EMPL_STLE_CD	[label=고용형태코드];
+	HOPE_JSCD1	[label=희망직종코드1];
+	HOPE_JSCD1_NAME	[label=희망직종명];
+	HOPE_JSCD3	[label=희망직종코드3];
+	JHNT_PPOS_CD	[label=구직목적코드];
+	KECO_CD1	[label=KECO코드1];
+	MAJR_CD1	[label=전공코드];
+	MDTN_HOPE_YN	[label=알선희망여부];
+	NTR_HOPE_WAGE_SM_AMT	[label=중앙희망임금합계금액];
+	NTR_OTIO_MYAV_RMNT_AMT	[label=중앙입직월평균보수금액];
+	OCTR_HOPE_JSFC_CSCY_SCOR2	[label=직업훈련희망직종일치도점수2];
+	RQAG_HOPE_YN	[label=재신청희망여부];
+	SFID_IEM_NUM	[label=자기소개서항목개수];
+	SFID_LTTR_NUM	[label=자기소개서글자개수];
+	SHSY_YN	[label=교대제여부];
+	AGE -> ACCR_STCD;
+	ACCR_STCD -> ACCR_CD;
+	ACCR_CD -> MAJR_CD1;
+	HOPE_JSCD1 -> HOPE_JSCD2;
+	HOPE_JSCD1 -> HOPE_JSCD3;
+	HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+	HOPE_JSCD1 -> OCTR_HOPE_JSFC_CSCY_SCOR2;
+	HOPE_JSCD1 -> CARR_MYCT1;
+	BFR_OCTR_CT -> KECO_CD1;
+	KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+	KECO_CD1 -> OCTR_HOPE_JSFC_CSCY_SCOR2;
+	SFID_IEM_NUM -> cover_letter_score;
+	SFID_LTTR_NUM -> cover_letter_score;
+	AGREE_LEVEL -> BFR_EJAP_CT;
+	AGREE_LEVEL -> BFR_WTM6_JHCR_CT;
+	NTR_OTIO_MYAV_RMNT_AMT -> HOPE_WAGE_SM_AMT;
+	NTR_HOPE_WAGE_SM_AMT -> HOPE_WAGE_SM_AMT;
+	EMPL_STLE_CD -> HOPE_WAGE_SM_AMT;
+	DRV_PSBL_YN -> HOPE_JSCD1;
+	DSPT_LABR_YN -> EMPL_STLE_CD;
+	MDTN_HOPE_YN -> BFR_EJAP_CT;
+	RQAG_HOPE_YN -> BFR_WTM6_JHCR_CT;
+	SHSY_YN -> EMPL_STLE_CD;
+	JHNT_PPOS_CD -> AGREE_LEVEL;
+	ACCR_STCD -> ACQ_180_YN;
+	MAJR_CD1 -> ACQ_180_YN;
+	HOPE_JSCD1 -> ACQ_180_YN;
+	HOPE_JSCD3 -> ACQ_180_YN;
+	KECO_CD1 -> ACQ_180_YN;
+	OCTR_HOPE_JSFC_CSCY_SCOR2 -> ACQ_180_YN;
+	SFID_IEM_NUM -> ACQ_180_YN;
+	SFID_LTTR_NUM -> ACQ_180_YN;
+	AGREE_LEVEL -> ACQ_180_YN;
+	NTR_OTIO_MYAV_RMNT_AMT -> ACQ_180_YN;
+	NTR_HOPE_WAGE_SM_AMT -> ACQ_180_YN;
+	EMPL_STLE_CD -> ACQ_180_YN;
+	DRV_PSBL_YN -> ACQ_180_YN;
+	DSPT_LABR_YN -> ACQ_180_YN;
+	MDTN_HOPE_YN -> ACQ_180_YN;
+	RQAG_HOPE_YN -> ACQ_180_YN;
+	SHSY_YN -> ACQ_180_YN;
+	JHNT_PPOS_CD -> ACQ_180_YN;
+}

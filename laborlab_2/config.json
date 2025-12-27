@@ -26,6 +26,16 @@
     "prediction_batch_size": 512
   },
   "experiment_list": [
+    ["graph_0.dot", "resume_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_0.dot", "cover_letter_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_0.dot", "AREA_CD", "ACQ_180_YN", "tabpfn"],
+    ["graph_0.dot", "training_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_0.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_a.dot", "resume_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_a.dot", "cover_letter_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_a.dot", "AREA_CD", "ACQ_180_YN", "tabpfn"],
+    ["graph_a.dot", "training_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_a.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
     ["graph_1.dot", "ACCR_CD", "ACQ_180_YN", "tabpfn"],
     ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
     ["graph_1.dot", "CARR_MYCT1", "ACQ_180_YN", "tabpfn"],
