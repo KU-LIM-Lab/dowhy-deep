@@ -12,7 +12,7 @@
   "experiment": true,
 
   "refutation": false,
-  "refutation_simulations": 20,
+  "refutation_simulations": 10,
   "limit_data": false,
   "limit_size": 5000,
   "training_size": 5000,
