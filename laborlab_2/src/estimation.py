@@ -805,9 +805,6 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None, num_
         refute_dummy = refute_dummys[0]
         validation_results['dummy'] = refute_dummy
         
-        # for dummy in refute_dummy:
-        #     logger.info(f"refute_dummy 결과1: {dummy}")
-        #     logger.info(f"refute_dummy 결과2: {dir(dummy)}")
         p_value = calculate_refutation_pvalue(refute_dummy, "dummy", logger)
         # new_effect가 0에 가까우면 통과 (0.01 이하)
         status = "통과" if abs(refute_dummy.new_effect) < 0.01 else "실패"

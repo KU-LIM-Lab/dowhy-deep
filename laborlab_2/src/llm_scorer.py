@@ -16,7 +16,7 @@ except ImportError:
     OLLAMA_AVAILABLE = False
     ollama = None
 
-from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES, TYPO_CHECK_SYSTEM_PROMPT, TYPO_CHECK_USER_PROMPT
+from .llm_reference import HR_SYSTEM_PROMPT, FEWSHOT_EXAMPLES
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -50,53 +50,10 @@ class LLMScorer:
         
     def count_typos(self, text: str) -> int:
         """오탈자 개수 계산 로직 비활성화."""
-        # 아래는 기존 오탈자 계산 로직(주석 처리)
-        # if not text or text.strip() == "":
-        #     return 0
-        # if not OLLAMA_AVAILABLE or ollama is None:
-        #     return 0
-        # try:
-        #     sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
-        #     user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
-        #     client = ollama.Client(host=self.ollama_host)
-        #     resp = client.chat(
-        #         model="llama3.2:1b",
-        #         messages=[sys_msg, user_msg],
-        #         options={"temperature": 0.1},
-        #         stream=False
-        #     )
-        #     content = resp["message"]["content"]
-        #     data = json.loads(content)
-        #     return int(max(0, int(data.get("typo_count", 0))))
-        # except Exception as e:
-        #     print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
-        #     return 0
         return 0
     
     async def count_typos_async(self, text: str, session: aiohttp.ClientSession) -> int:
         """오탈자 개수 계산 로직 비활성화 (비동기)."""
-        # 아래는 기존 오탈자 계산 로직(주석 처리)
-        # if not text or text.strip() == "":
-        #     return 0
-        # try:
-        #     sys_msg = {"role": "system", "content": TYPO_CHECK_SYSTEM_PROMPT}
-        #     user_msg = {"role": "user", "content": TYPO_CHECK_USER_PROMPT.format(text=text)}
-        #     url = f"http://{self.ollama_host}/api/chat"
-        #     payload = {
-        #         "model": "llama3.2:1b",
-        #         "messages": [sys_msg, user_msg],
-        #         "options": {"temperature": 0.1},
-        #         "stream": False
-        #     }
-        #     async with session.post(url, json=payload) as resp:
-        #         resp.raise_for_status()
-        #         result = await resp.json()
-        #         content = result["message"]["content"]
-        #         data = json.loads(content)
-        #         return int(max(0, int(data.get("typo_count", 0))))
-        # except Exception as e:
-        #     print(f"오탈자 개수 계산 실패: {type(e).__name__}: {e}")
-        #     return 0
         return 0
 
 

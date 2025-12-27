@@ -418,19 +418,10 @@ class Preprocessor:
         # 점수 계산 (semaphore로 동시 요청 제한)
         async with self.semaphore:
             score = await self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
-
-        # 오탈자 계산 로직 비활성화 (기존 로직 주석)
-        # score_task = self.llm_scorer.score_async("자기소개서", job_name, job_examples, full_text, session)
-        # typo_task = self.llm_scorer.count_typos_async(full_text, session)
-        # score, _ = await score_task
-        # typo_count = await typo_task
-        typo_count = 0
         
-        # score와 오탈자 수 반환 (오탈자는 0 고정)
         return {
             "JHNT_MBN": str(seek_id),  # 문자열로 변환
             "cover_letter_score": score  # 그래프: cover_letter_score
-            # "cover_letter_typo_count": typo_count  # 비활성화
         }
     
     async def _preprocess_cover_letter(self, data):
