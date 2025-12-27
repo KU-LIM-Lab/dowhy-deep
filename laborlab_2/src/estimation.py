@@ -1,7 +1,7 @@
 """
 DoWhy 인과효과 추정 및 검증 모듈
 
-이 모듈은 인과효과 추정, 검증 테스트, 민감도 분석 등의 기능을 제공합니다.
+이 모듈은 인과효과 추정 및 검증 테스트 기능을 제공합니다.
 """
 
 import pandas as pd
@@ -900,174 +900,13 @@ def run_validation_tests(model, identified_estimand, estimate, logger=None, num_
     
     return validation_results
 
-def run_sensitivity_analysis(model, identified_estimand, estimate, logger=None, num_simulations=50, grid_size=5):
-    """민감도 분석을 실행하는 함수"""
-    if logger:
-        logger.info("="*60)
-        logger.info("민감도 분석 실행 시작")
-        logger.info("="*60)
-        logger.info(f"효과 강도 범위: 0.0 ~ 0.5")
-        logger.info(f"그리드 포인트 수: {grid_size}x{grid_size} = {grid_size*grid_size}개")
-        logger.info(f"시뮬레이션 수: {num_simulations}회")
-    
-    try:
-        grid = np.linspace(0.0, 0.5, grid_size)
-        rows = []
-        total_combinations = len(grid) * len(grid)
-        processed = 0
-        
-        if logger:
-            logger.info(f"총 {total_combinations}개 조합 분석 시작...")
-        
-        for i, et in enumerate(grid):
-            for j, eo in enumerate(grid):
-                processed += 1
-                if logger and processed % 20 == 0:
-                    logger.info(f"진행률: {processed}/{total_combinations} ({processed/total_combinations*100:.1f}%)")
-                
-                try:
-                    ref = model.refute_estimate(
-                        identified_estimand, estimate,
-                        method_name="add_unobserved_common_cause",
-                        confounders_effect_on_treatment="binary_flip",
-                        confounders_effect_on_outcome="linear",
-                        effect_strength_on_treatment=et,
-                        effect_strength_on_outcome=eo,
-                        num_simulations=num_simulations
-                    )
-                    rows.append((et, eo, ref.new_effect))
-                except Exception as e:
-                    rows.append((et, eo, np.nan))
-                    if logger:
-                        logger.warning(f"그리드 포인트 ({et:.2f}, {eo:.2f}) 실행 실패: {e}")
-        
-        sensitivity_df = pd.DataFrame(rows, columns=[
-            "effect_strength_on_treatment", 
-            "effect_strength_on_outcome", 
-            "new_effect"
-        ])
-        
-        if logger:
-            logger.info("✅ 민감도 분석 완료")
-            logger.info(f"분석된 조합 수: {len(sensitivity_df)}")
-            
-            if not sensitivity_df.empty:
-                valid_effects = sensitivity_df.dropna()
-                logger.info(f"유효한 결과 수: {len(valid_effects)}")
-                logger.info(f"효과 범위: {valid_effects['new_effect'].min():.6f} ~ {valid_effects['new_effect'].max():.6f}")
-                
-                # 효과가 0에 가까운 지점 찾기
-                min_abs_effect = valid_effects.loc[valid_effects['new_effect'].abs().idxmin()]
-                logger.info(f"최소 절대 효과 지점: et={min_abs_effect['effect_strength_on_treatment']:.2f}, eo={min_abs_effect['effect_strength_on_outcome']:.2f}")
-                logger.info(f"최소 절대 효과값: {min_abs_effect['new_effect']:.6f}")
-                
-                # 음수 효과 비율
-                negative_effects = len(valid_effects[valid_effects['new_effect'] < 0])
-                logger.info(f"음수 효과 조합: {negative_effects}개 ({negative_effects/len(valid_effects)*100:.1f}%)")
-        
-        return sensitivity_df
-        
-    except Exception as e:
-        if logger:
-            logger.error(f"❌ 민감도 분석 실패: {e}")
-        return pd.DataFrame()
-
-def create_sensitivity_heatmap(sensitivity_df, logger=None):
-    """민감도 분석 결과를 히트맵으로 시각화하는 함수"""
-    if logger:
-        logger.info("="*60)
-        logger.info("히트맵 생성 시작")
-        logger.info("="*60)
-    
-    if sensitivity_df.empty:
-        if logger:
-            logger.warning("❌ 민감도 분석 결과가 비어있어 히트맵을 생성할 수 없습니다.")
-        return None
-    
-    try:
-        if logger:
-            logger.info("피벗 테이블 생성 중...")
-        
-        # 피벗 테이블 생성
-        pivot = sensitivity_df.pivot(
-            index="effect_strength_on_treatment",
-            columns="effect_strength_on_outcome",
-            values="new_effect"
-        ).sort_index(ascending=True)
-        
-        if logger:
-            logger.info(f"피벗 테이블 크기: {pivot.shape}")
-            logger.info("히트맵 시각화 생성 중...")
-        
-        # 히트맵 생성
-        fig, ax = plt.subplots(figsize=(10, 8), dpi=100)
-        
-        im = ax.imshow(
-            pivot.values,
-            origin="lower",
-            aspect="auto",
-            extent=[
-                pivot.columns.min(), pivot.columns.max(),
-                pivot.index.min(), pivot.index.max()
-            ],
-            cmap='RdYlBu_r'
-        )
-        
-        # 색상막대 추가
-        cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label("New Effect (after unobserved confounding)", fontsize=12)
-        
-        # 0-컨투어 라인 추가
-        X, Y = np.meshgrid(pivot.columns.values, pivot.index.values)
-        CS = ax.contour(X, Y, pivot.values, levels=[0.0], linewidths=2, colors='black')
-        ax.clabel(CS, inline=True, fmt="effect=0", fontsize=10)
-        
-        # 축 레이블 및 제목
-        ax.set_xlabel("Effect Strength on Outcome (eo)", fontsize=12)
-        ax.set_ylabel("Effect Strength on Treatment (et)", fontsize=12)
-        ax.set_title("Sensitivity Analysis: Effect of Unobserved Confounders", fontsize=14, fontweight='bold')
-        
-        plt.tight_layout()
-        
-        if logger:
-            logger.info("히트맵 저장 중...")
-        
-        # 그림 저장
-        script_dir = Path(__file__).parent.parent
-        log_dir = script_dir / "log"
-        log_dir.mkdir(exist_ok=True)
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"sensitivity_heatmap_{timestamp}.png"
-        output_path = log_dir / filename
-        
-        plt.savefig(output_path, dpi=100, bbox_inches='tight')
-        
-        if logger:
-            logger.info("✅ 히트맵 생성 성공")
-            logger.info(f"저장 경로: {output_path}")
-            
-            # 파일 정보
-            if os.path.exists(output_path):
-                file_size = os.path.getsize(output_path)
-                logger.info(f"파일 크기: {file_size:,} bytes")
-                logger.info(f"이미지 해상도: 10x8 inches, DPI: 100")
-        
-        return output_path
-        
-    except Exception as e:
-        if logger:
-            logger.error(f"❌ 히트맵 생성 실패: {e}")
-        return None
-
-def print_summary_report(estimate, validation_results, sensitivity_df):
+def print_summary_report(estimate, validation_results):
     """
     전체 분석 결과 요약 보고서를 출력하는 함수
     
     Args:
         estimate: 추정된 인과효과 객체
         validation_results (dict): 검증 결과 딕셔너리
-        sensitivity_df (pd.DataFrame): 민감도 분석 결과
     """
     print("\n" + "="*80)
     print("📋 최종 분석 결과 요약 보고서")
@@ -1130,16 +969,6 @@ def print_summary_report(estimate, validation_results, sensitivity_df):
             print(f"     - P-value: {p_value:.6f} ({'유의함' if p_value <= 0.05 else '유의하지 않음'})")
     else:
         print(f"  4. 더미 결과 테스트: 실행 실패")
-    
-    # 민감도 분석 요약
-    if not sensitivity_df.empty:
-        print(f"\n📈 민감도 분석 요약:")
-        print(f"  - 분석된 조합 수: {len(sensitivity_df)}")
-        print(f"  - 효과 범위: {sensitivity_df['new_effect'].min():.6f} ~ {sensitivity_df['new_effect'].max():.6f}")
-        
-        # 효과가 0에 가까운 지점 찾기
-        min_abs_effect = sensitivity_df.loc[sensitivity_df['new_effect'].abs().idxmin()]
-        print(f"  - 최소 절대 효과 지점: et={min_abs_effect['effect_strength_on_treatment']:.2f}, eo={min_abs_effect['effect_strength_on_outcome']:.2f}")
     
     print(f"\n✅ 전체 분석 완료!")
 
@@ -1625,10 +1454,7 @@ def run_analysis_without_preprocessing(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    do_sensitivity_analysis: bool = False,
-    refutation_simulations: int = 20,
-    sensitivity_simulations: int = 50,
-    sensitivity_grid_size: int = 5
+    refutation_simulations: int = 20
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -1645,10 +1471,7 @@ def run_analysis_without_preprocessing(
         job_category (Optional[str]): 직종소분류명 (checkpoint 저장 경로에 사용)
         training_size (int): Train set 크기 (기본값: 5000)
         do_refutation (bool): Refutation 실행 여부 (기본값: False)
-        do_sensitivity_analysis (bool): Sensitivity Analysis 실행 여부 (기본값: False)
         refutation_simulations (int): Refutation 시뮬레이션 횟수 (기본값: 20)
-        sensitivity_simulations (int): Sensitivity Analysis 시뮬레이션 횟수 (기본값: 50)
-        sensitivity_grid_size (int): Sensitivity Analysis 그리드 크기 (기본값: 5)
     
     Returns:
         Dict[str, Any]: 분석 결과 딕셔너리
@@ -1890,23 +1713,6 @@ def run_analysis_without_preprocessing(
             )
             step_times['Refutation'] = time.time() - step_start
         
-        # 6-3. Sensitivity Analysis (선택 사항)
-        sensitivity_df = pd.DataFrame()
-        if do_sensitivity_analysis:
-            print(f"📈 민감도 분석 실행 중... (횟수: {sensitivity_simulations}, 그리드: {sensitivity_grid_size})")
-            step_start = time.time()
-            sensitivity_df = run_sensitivity_analysis(
-                model, identified_estimand, estimate, 
-                logger=logger, 
-                num_simulations=sensitivity_simulations,
-                grid_size=sensitivity_grid_size
-            )
-            step_times['Sensitivity Analysis'] = time.time() - step_start
-            
-            # 히트맵 생성
-            if not sensitivity_df.empty:
-                create_sensitivity_heatmap(sensitivity_df, logger=logger)
-        
         # 7. 예측
         print("7️⃣ 예측 중...")
         step_start = time.time()
@@ -1979,15 +1785,9 @@ def run_analysis_without_preprocessing(
                 print(f"  AUC: {metrics['auc']:.4f}")
         print("="*60)
         
-        if not do_refutation and not do_sensitivity_analysis:
-            print("ℹ️  민감도 분석/Refutation 테스트는 별도로 실행하거나 config에서 활성화하세요.")
+        if not do_refutation:
+            print("ℹ️  Refutation 테스트는 별도로 실행하거나 config에서 활성화하세요.")
             print("="*60 + "\n")
-        elif not do_sensitivity_analysis and do_refutation:
-             print("ℹ️  민감도 분석은 별도로 실행하거나 config에서 활성화하세요.")
-             print("="*60 + "\n")
-        elif do_sensitivity_analysis and not do_refutation:
-             print("ℹ️  Refutation 테스트는 별도로 실행하거나 config에서 활성화하세요.")
-             print("="*60 + "\n")
         
         # 9. TabPFN 메모리 정리 (분석 완료 후)
         if estimator == 'tabpfn':
@@ -2002,7 +1802,6 @@ def run_analysis_without_preprocessing(
             "status": "success",
             "estimate": estimate,
             "validation_results": validation_results,
-            "sensitivity_df": sensitivity_df,
             "metrics": metrics,
             "excel_path": excel_path,
             "checkpoint_path": checkpoint_path,
@@ -2052,10 +1851,7 @@ def run_single_experiment(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    do_sensitivity_analysis: bool = False,
-    refutation_simulations: int = 20,
-    sensitivity_simulations: int = 50,
-    sensitivity_grid_size: int = 5
+    refutation_simulations: int = 20
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -2071,10 +1867,7 @@ def run_single_experiment(
         split_by_job_category (bool): 직종소분류별로 분리하여 실험 실행 여부
         training_size (int): Train set 크기 (기본값: 5000)
         do_refutation (bool): Refutation 실행 여부 (기본값: False)
-        do_sensitivity_analysis (bool): Sensitivity Analysis 실행 여부 (기본값: False)
         refutation_simulations (int): Refutation 시뮬레이션 횟수 (기본값: 20)
-        sensitivity_simulations (int): Sensitivity Analysis 시뮬레이션 횟수 (기본값: 50)
-        sensitivity_grid_size (int): Sensitivity Analysis 그리드 크기 (기본값: 5)
     
     Returns:
         Dict[str, Any]: 실험 결과 딕셔너리
@@ -2119,10 +1912,7 @@ def run_single_experiment(
                         training_size=training_size,
                         tabpfn_config=tabpfn_config,
                         do_refutation=do_refutation,
-                        do_sensitivity_analysis=do_sensitivity_analysis,
-                        refutation_simulations=refutation_simulations,
-                        sensitivity_simulations=sensitivity_simulations,
-                        sensitivity_grid_size=sensitivity_grid_size
+                        refutation_simulations=refutation_simulations
                     )
                     
                     all_results.append(job_result)
@@ -2237,7 +2027,6 @@ def run_single_experiment(
                 "status": "success",
                 "estimate": base_result.get("estimate"),
                 "validation_results": base_result.get("validation_results", {}),
-                "sensitivity_df": base_result.get("sensitivity_df"),
                 "metrics": combined_metrics,
                 "excel_path": excel_path,
                 "step_times": base_result.get("step_times", {}),
@@ -2258,10 +2047,7 @@ def run_single_experiment(
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
                 do_refutation=do_refutation,
-                do_sensitivity_analysis=do_sensitivity_analysis,
-                refutation_simulations=refutation_simulations,
-                sensitivity_simulations=sensitivity_simulations,
-                sensitivity_grid_size=sensitivity_grid_size
+                refutation_simulations=refutation_simulations
             )
         
         end_time = datetime.now()

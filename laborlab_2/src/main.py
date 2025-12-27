@@ -147,10 +147,7 @@ def learning(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    do_sensitivity_analysis: bool = False,
-    refutation_simulations: int = 20,
-    sensitivity_simulations: int = 50,
-    sensitivity_grid_size: int = 5
+    refutation_simulations: int = 20
 ) -> Dict[str, Any]:
     """
     단일 실험에 대한 learning 함수
@@ -166,10 +163,7 @@ def learning(
         logger: 로거 객체 (선택적)
         training_size: Train set 크기 (기본값: 5000)
         do_refutation: Refutation 실행 여부 (기본값: False)
-        do_sensitivity_analysis: Sensitivity Analysis 실행 여부 (기본값: False)
         refutation_simulations: Refutation 시뮬레이션 횟수 (기본값: 20)
-        sensitivity_simulations: Sensitivity Analysis 시뮬레이션 횟수 (기본값: 50)
-        sensitivity_grid_size: Sensitivity Analysis 그리드 크기 (기본값: 5)
     
     Returns:
         실험 결과 딕셔너리
@@ -194,10 +188,7 @@ def learning(
         training_size=training_size,
         tabpfn_config=tabpfn_config,
         do_refutation=do_refutation,
-        do_sensitivity_analysis=do_sensitivity_analysis,
-        refutation_simulations=refutation_simulations,
-        sensitivity_simulations=sensitivity_simulations,
-        sensitivity_grid_size=sensitivity_grid_size
+        refutation_simulations=refutation_simulations
     )
     
     if result["status"] == "success":
@@ -375,10 +366,7 @@ def learning_experiments(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    do_sensitivity_analysis: bool = False,
-    refutation_simulations: int = 20,
-    sensitivity_simulations: int = 50,
-    sensitivity_grid_size: int = 5
+    refutation_simulations: int = 20
 ) -> List[Dict[str, Any]]:
     """
     experiment_list의 모든 조합에 대해 learning 실행
@@ -389,10 +377,7 @@ def learning_experiments(
         logger: 로거 객체 (선택적)
         output_dir: 출력 디렉토리 (선택적)
         do_refutation: Refutation 실행 여부 (기본값: False)
-        do_sensitivity_analysis: Sensitivity Analysis 실행 여부 (기본값: False)
         refutation_simulations: Refutation 시뮬레이션 횟수 (기본값: 20)
-        sensitivity_simulations: Sensitivity Analysis 시뮬레이션 횟수 (기본값: 50)
-        sensitivity_grid_size: Sensitivity Analysis 그리드 크기 (기본값: 5)
     
     Returns:
         실험 결과 리스트
@@ -407,10 +392,7 @@ def learning_experiments(
         training_size=training_size,
         tabpfn_config=tabpfn_config,
         do_refutation=do_refutation,
-        do_sensitivity_analysis=do_sensitivity_analysis,
-        refutation_simulations=refutation_simulations,
-        sensitivity_simulations=sensitivity_simulations,
-        sensitivity_grid_size=sensitivity_grid_size
+        refutation_simulations=refutation_simulations
     )
 
 
@@ -565,10 +547,7 @@ def main():
     do_prediction = config.get("prediction", False)
     do_experiment = config.get("experiment", False)
     do_refutation = config.get("refutation", False)
-    do_sensitivity_analysis = config.get("sensitivity_analysis", False)
     refutation_simulations = config.get("refutation_simulations", 20)
-    sensitivity_simulations = config.get("sensitivity_simulations", 50)
-    sensitivity_grid_size = config.get("sensitivity_grid_size", 5)
     
     # TabPFN 설정 추출
     tabpfn_config = config.get("tabpfn_config", {})
@@ -690,10 +669,7 @@ def main():
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
                 do_refutation=do_refutation,
-                do_sensitivity_analysis=do_sensitivity_analysis,
-                refutation_simulations=refutation_simulations,
-                sensitivity_simulations=sensitivity_simulations,
-                sensitivity_grid_size=sensitivity_grid_size
+                refutation_simulations=refutation_simulations
             )
         else:
             # 단일 실험 실행 (config에서 첫 번째 실험 조합 사용)
@@ -709,10 +685,7 @@ def main():
                     training_size=training_size,
                     tabpfn_config=tabpfn_config,
                     do_refutation=do_refutation,
-                    do_sensitivity_analysis=do_sensitivity_analysis,
-                    refutation_simulations=refutation_simulations,
-                    sensitivity_simulations=sensitivity_simulations,
-                    sensitivity_grid_size=sensitivity_grid_size
+                    refutation_simulations=refutation_simulations
                 )
             else:
                 print("❌ 실행할 실험이 없습니다.")
