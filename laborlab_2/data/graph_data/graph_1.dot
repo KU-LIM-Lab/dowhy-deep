@@ -1,45 +1,51 @@
 digraph G {
 	graph [rankdir=LR];
 	node [fillcolor="#F8F9FB",
-		fontname=Helvetica,
-		shape=box,
-		style="rounded,filled"
+	fontname=Helvetica,
+	shape=box,
+	style="rounded,filled"
 	];
 	subgraph cluster_treatments {
-		graph [color="#CCCCCC",
-			label="Treatments (outcome: ACQ_180_YN)",
-			style=dashed
-		];
-		node [fillcolor="#FFF7E6",
-			fontname=Helvetica,
-			shape=note,
-			style="rounded,filled"
-		];
-		T1	[label="T1: BFR_OCTR_CT",
-			role=treatment_meta,
-			treatment_def="이전직업훈련건수 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
-			treatment_name=BFR_OCTR_CT,
-			treatment_question="이전 직업훈련을 많이 받은 사람과 거의 받지 않은 사람의 6개월 내 취업 확률 차이는?",
-			treatment_var=BFR_OCTR_CT];
-		T2	[label="T2: ACCR_CD",
-			role=treatment_meta,
-			treatment_def="학력코드(최종학력) 수준 차이가 ACQ_180_YN에 미치는 인과효과",
-			treatment_name=ACCR_CD,
-			treatment_question="학력 수준이 다른 구직자 간 6개월 내 취업 확률 차이는?",
-			treatment_var=ACCR_CD];
-		T3	[label="T3: CARR_MYCT1",
-			role=treatment_meta,
-			treatment_def="희망직종1 경력 개월 수 차이가 ACQ_180_YN에 미치는 인과효과",
-			treatment_name=CARR_MYCT1,
-			treatment_question="희망직종1 관련 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이는?",
-			treatment_var=CARR_MYCT1];
-		T5	[label="T5: OCTR_HOPE_JSFC_CSCY_SCOR1",
-			role=treatment_meta,
-			treatment_def="직업훈련과 희망직종 간 일치도 점수 수준 차이가 ACQ_180_YN에 미치는 인과효과",
-			treatment_name=OCTR_HOPE_JSFC_CSCY_SCOR1,
-			treatment_question="훈련-희망직종 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이는?",
-			treatment_var=OCTR_HOPE_JSFC_CSCY_SCOR1];
-	}
+	graph [color="#CCCCCC",
+	label="Treatments (outcome: ACQ_180_YN)",
+	style=dashed
+	];
+	node [fillcolor="#FFF7E6",
+	fontname=Helvetica,
+	shape=note,
+	style="rounded,filled"
+	];
+	T1	[label="T1: BFR_OCTR_CT",
+	role=treatment_meta,
+	treatment_def="이전직업훈련건수 수준 차이가 ACQ_180_YN(6개월 내 취업)에 미치는 인과효과",
+	treatment_name=BFR_OCTR_CT,
+	treatment_question="이전 직업훈련을 많이 받은 사람과 거의 받지 않은 사람의 6개월 내 취업 확률 차이는?",
+	treatment_var=BFR_OCTR_CT];
+	T2	[label="T2: ACCR_CD",
+	role=treatment_meta,
+	treatment_def="학력코드(최종학력) 수준 차이가 ACQ_180_YN에 미치는 인과효과",
+	treatment_name=ACCR_CD,
+	treatment_question="학력 수준이 다른 구직자 간 6개월 내 취업 확률 차이는?",
+	treatment_var=ACCR_CD];
+	T3	[label="T3: CARR_MYCT1",
+	role=treatment_meta,
+	treatment_def="희망직종1 경력 개월 수 차이가 ACQ_180_YN에 미치는 인과효과",
+	treatment_name=CARR_MYCT1,
+	treatment_question="희망직종1 관련 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이는?",
+	treatment_var=CARR_MYCT1];
+	T5	[label="T5: OCTR_HOPE_JSFC_CSCY_SCOR1",
+	role=treatment_meta,
+	treatment_def="직업훈련과 희망직종 간 일치도 점수 수준 차이가 ACQ_180_YN에 미치는 인과효과",
+	treatment_name=OCTR_HOPE_JSFC_CSCY_SCOR1,
+	treatment_question="훈련-희망직종 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이는?",
+	treatment_var=OCTR_HOPE_JSFC_CSCY_SCOR1];
+	T6	[label="T6: resume_score",
+	role=treatment_meta,
+	treatment_def="이력서평가점수 수준 차이가 ACQ_180_YN에 미치는 인과효과",
+	treatment_name=resume_score,
+	treatment_question="이력서 평가 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이는?",
+	treatment_var=resume_score];
+}
 	ACQ_180_YN	[label="180일이내취업여부"];
 	BFR_OCTR_CT	[label=이전직업훈련건수];
 	BFR_OCTR_CT -> ACQ_180_YN;
@@ -66,4 +72,15 @@ digraph G {
 	SXDS_CD -> ACCR_CD;
 	AREA_CD	[label="지역코드(거주지)"];
 	AREA_CD -> ACQ_180_YN;
+	resume_score	[label=이력서평가점수];
+	ACCR_CD -> resume_score;
+	CARR_MYCT1 -> resume_score;
+	resume_score -> ACQ_180_YN;
+	cover_letter_score	[label=자기소개서평가점수];
+	resume_score -> cover_letter_score;
+	cover_letter_score -> ACQ_180_YN;
+	training_score	[label=직업훈련평가점수];
+	BFR_OCTR_CT -> training_score;
+	training_score -> ACQ_180_YN;
+	training_score -> resume_score;
 }

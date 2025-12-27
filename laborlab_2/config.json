@@ -30,24 +30,29 @@
     "prediction_batch_size": 512
   },
   "experiment_list": [
-    ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
     ["graph_1.dot", "ACCR_CD", "ACQ_180_YN", "tabpfn"],
+    ["graph_1.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
     ["graph_1.dot", "CARR_MYCT1", "ACQ_180_YN", "tabpfn"],
     ["graph_1.dot", "OCTR_HOPE_JSFC_CSCY_SCOR1", "ACQ_180_YN", "tabpfn"],
-    ["graph_2.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
-    ["graph_2.dot", "BFR_WTM6_JHCR_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_1.dot", "resume_score", "ACQ_180_YN", "tabpfn"],
     ["graph_2.dot", "BFR_EJAP_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
     ["graph_2.dot", "BFR_UEPS_RECP_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "BFR_WTM6_JHCR_CT", "ACQ_180_YN", "tabpfn"],
+    ["graph_2.dot", "cover_letter_score", "ACQ_180_YN", "tabpfn"],
     ["graph_2.dot", "FRFT_AFTR_JHNT_REQR_DYCT", "ACQ_180_YN", "tabpfn"],
     ["graph_3.dot", "AREA_CD", "ACQ_180_YN", "tabpfn"],
     ["graph_3.dot", "HPAR_CD1", "ACQ_180_YN", "tabpfn"],
     ["graph_3.dot", "HPAR_CSCY_SCOR", "ACQ_180_YN", "tabpfn"],
-    ["graph_4.dot", "HOPE_WAGE_SM_AMT", "ACQ_180_YN", "tabpfn"],
+    ["graph_3.dot", "resume_score", "ACQ_180_YN", "tabpfn"],
     ["graph_4.dot", "AFIV_RDJT_PSBL_YN", "ACQ_180_YN", "tabpfn"],
+    ["graph_4.dot", "HOPE_WAGE_SM_AMT", "ACQ_180_YN", "tabpfn"],
+    ["graph_4.dot", "training_score", "ACQ_180_YN", "tabpfn"],
+    ["graph_5.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
     ["graph_5.dot", "CARR_MYCT1", "ACQ_180_YN", "tabpfn"],
     ["graph_5.dot", "CARR_MYCT2", "ACQ_180_YN", "tabpfn"],
     ["graph_5.dot", "CARR_MYCT3", "ACQ_180_YN", "tabpfn"],
-    ["graph_5.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"],
-    ["graph_5.dot", "OCTR_HOPE_JSFC_CSCY_SCOR1", "ACQ_180_YN", "tabpfn"]
+    ["graph_5.dot", "OCTR_HOPE_JSFC_CSCY_SCOR1", "ACQ_180_YN", "tabpfn"],
+    ["graph_5.dot", "resume_score", "ACQ_180_YN", "tabpfn"]
   ]
 }

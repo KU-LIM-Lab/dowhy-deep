@@ -1,39 +1,45 @@
 digraph G {
 	graph [rankdir=LR];
 	node [fillcolor="#F8F9FB",
-		fontname=Helvetica,
-		shape=box,
-		style="rounded,filled"
+	fontname=Helvetica,
+	shape=box,
+	style="rounded,filled"
 	];
 	subgraph cluster_treatments {
-		graph [color="#CCCCCC",
-			label="Treatments (outcome: ACQ_180_YN)",
-			style=dashed
-		];
-		node [fillcolor="#FFF7E6",
-			fontname=Helvetica,
-			shape=note,
-			style="rounded,filled"
-		];
-		T1	[label="T1: AREA_CD",
-			role=treatment_meta,
-			treatment_def="거주지역코드 차이의 효과",
-			treatment_name=AREA_CD,
-			treatment_question="거주지역이 다른 구직자 간 6개월 내 취업 확률 차이?",
-			treatment_var=AREA_CD];
-		T2	[label="T2: HPAR_CD1",
-			role=treatment_meta,
-			treatment_def="희망지역 선택 차이의 효과",
-			treatment_name=HPAR_CD1,
-			treatment_question="희망지역이 다른 구직자 간 6개월 내 취업 확률 차이?",
-			treatment_var=HPAR_CD1];
-		T3	[label="T3: HPAR_CSCY_SCOR",
-			role=treatment_meta,
-			treatment_def="희망지역일치도점수 수준 차이의 효과",
-			treatment_name=HPAR_CSCY_SCOR,
-			treatment_question="거주지-희망지역 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
-			treatment_var=HPAR_CSCY_SCOR];
-	}
+	graph [color="#CCCCCC",
+	label="Treatments (outcome: ACQ_180_YN)",
+	style=dashed
+	];
+	node [fillcolor="#FFF7E6",
+	fontname=Helvetica,
+	shape=note,
+	style="rounded,filled"
+	];
+	T1	[label="T1: AREA_CD",
+	role=treatment_meta,
+	treatment_def="거주지역코드 차이의 효과",
+	treatment_name=AREA_CD,
+	treatment_question="거주지역이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=AREA_CD];
+	T2	[label="T2: HPAR_CD1",
+	role=treatment_meta,
+	treatment_def="희망지역 선택 차이의 효과",
+	treatment_name=HPAR_CD1,
+	treatment_question="희망지역이 다른 구직자 간 6개월 내 취업 확률 차이?",
+	treatment_var=HPAR_CD1];
+	T3	[label="T3: HPAR_CSCY_SCOR",
+	role=treatment_meta,
+	treatment_def="희망지역일치도점수 수준 차이의 효과",
+	treatment_name=HPAR_CSCY_SCOR,
+	treatment_question="거주지-희망지역 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
+	treatment_var=HPAR_CSCY_SCOR];
+	T4	[label="T4: resume_score",
+	role=treatment_meta,
+	treatment_def="이력서평가점수 수준 차이의 효과",
+	treatment_name=resume_score,
+	treatment_question="이력서 평가 점수가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
+	treatment_var=resume_score];
+}
 	ACQ_180_YN	[label="180일이내취업여부"];
 	AREA_CD	[label="지역코드(거주지)"];
 	AREA_CD -> ACQ_180_YN;
@@ -60,4 +66,15 @@ digraph G {
 	AGE -> AREA_CD;
 	ACCR_CD	[label=학력코드];
 	AGE -> ACCR_CD;
+	resume_score	[label=이력서평가점수];
+	ACCR_CD -> resume_score;
+	AREA_CD -> resume_score;
+	resume_score -> ACQ_180_YN;
+	cover_letter_score	[label=자기소개서평가점수];
+	resume_score -> cover_letter_score;
+	cover_letter_score -> ACQ_180_YN;
+	training_score	[label=직업훈련평가점수];
+	AREA_CD -> training_score;
+	training_score -> ACQ_180_YN;
+	training_score -> resume_score;
 }
