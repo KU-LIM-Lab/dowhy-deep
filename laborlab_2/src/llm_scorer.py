@@ -206,8 +206,8 @@ class LLMScorer:
                 "stream": False
             }
             
-            # 각 LLM 요청마다 3분(180초) timeout 설정
-            timeout = aiohttp.ClientTimeout(total=180)
+            # 각 LLM 요청마다 30분(1800초) timeout 설정
+            timeout = aiohttp.ClientTimeout(total=1800)
             async with session.post(url, json=payload, timeout=timeout) as resp:
                 resp.raise_for_status()
                 result = await resp.json()
@@ -221,7 +221,7 @@ class LLMScorer:
                     raise ValueError(f"LLM 응답 파싱 실패: {content[:100]}")
                 
         except asyncio.TimeoutError as e:
-            logger.error(f"[{section}] LLM API 호출 타임아웃 (3분 초과) - 에러: {type(e).__name__}: {e}")
+            logger.error(f"[{section}] LLM API 호출 타임아웃 (30분 초과) - 에러: {type(e).__name__}: {e}")
             return 50
         except Exception as e:
             if content is not None:
