@@ -11,13 +11,12 @@ DoWhy 데이터 전처리 모듈
     resume_data = preprocessor.load_and_preprocess_data('resume.json', json_name='이력서')
     cover_letter_data = preprocessor.load_and_preprocess_data('cover_letter.json', json_name='자기소개서')
     
-    # Excel 파일 처리
-    excel_data = preprocessor.load_and_preprocess_data('data.xlsx', sheet_name='Sheet1')
+    # Excel 파일 처리 (sheet_name은 클래스 초기화 시 설정된 값 사용)
+    excel_data = preprocessor.load_and_preprocess_data('data.xlsx')
     
     # 방법 2: 여러 파일을 한번에 처리
     file_list = ['resume.json', 'cover_letter.json', 'training.json', 'certification.json']
-    json_names = ['이력서', '자기소개서', '직업훈련', '자격증']
-    merged_df = preprocessor.get_merged_df(file_list, json_names=json_names)
+    merged_df = preprocessor.get_merged_df(file_list)
 """
 
 import pandas as pd
@@ -729,7 +728,6 @@ class Preprocessor:
         
         Args:
             data_file (str): 데이터 파일 경로
-            sheet_name (str): 엑셀 시트명 (Excel 파일용)
             json_name (str): JSON 데이터 타입 ('이력서', '자기소개서', '직업훈련', '자격증')
             limit_data (bool): 테스트 모드로 데이터 제한 여부
             limit_size (int): 제한할 데이터 크기

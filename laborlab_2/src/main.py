@@ -6,7 +6,7 @@ LaborLab 2 - 인과추론 분석 메인 파이프라인
 1-1. (Test mode) 전처리과정이 잘 되는지를 확인하기 위해 로드된 데이터의 앞에서 5000개만 잘라서 사용
 2. 데이터 전처리
 3. 데이터 병합
-4. train test split (1:99)
+4. train test split (데이터 크기에 따라 동적 분할: training_size보다 작으면 8:2, 크면 training_size만큼 train set 생성)
 5. causal graph 로드해서 실험정의
 6. 각 실험별 estimation - refutation - prediction 진행 후 결과저장
 """
