@@ -15,32 +15,42 @@ digraph G {
 			shape=note,
 			style="rounded,filled"
 		];
-		T1	[label="T1: HOPE_WAGE_SM_AMT",
+		T1	[fillcolor="#FFF7E6",
+			label="T1: HOPE_WAGE_SM_AMT",
 			role=treatment_meta,
+			shape=note,
 			treatment_def="희망임금 수준 차이의 효과",
 			treatment_name=HOPE_WAGE_SM_AMT,
 			treatment_question="희망임금이 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
 			treatment_var=HOPE_WAGE_SM_AMT];
-		T2	[label="T2: COMM_WAGE_TYCD",
+		T2	[fillcolor="#FFF7E6",
+			label="T2: COMM_WAGE_TYCD",
 			role=treatment_meta,
+			shape=note,
 			treatment_def="임금형태코드 차이의 효과",
 			treatment_name=COMM_WAGE_TYCD,
 			treatment_question="임금형태(월급/시급 등)가 다른 구직자 간 6개월 내 취업 확률 차이?",
 			treatment_var=COMM_WAGE_TYCD];
-		T3	[label="T3: NTR_OTIO_MYAV_RMNT_AMT",
+		T3	[fillcolor="#FFF7E6",
+			label="T3: NTR_OTIO_MYAV_RMNT_AMT",
 			role=treatment_meta,
+			shape=note,
 			treatment_def="직종×지역 중앙입직임금 수준 차이의 효과",
 			treatment_name=NTR_OTIO_MYAV_RMNT_AMT,
 			treatment_question="중앙 입직임금이 높은 환경과 낮은 환경의 구직자 6개월 내 취업 확률 차이?",
 			treatment_var=NTR_OTIO_MYAV_RMNT_AMT];
-		T4	[label="T4: NTR_HOPE_WAGE_SM_AMT",
+		T4	[fillcolor="#FFF7E6",
+			label="T4: NTR_HOPE_WAGE_SM_AMT",
 			role=treatment_meta,
+			shape=note,
 			treatment_def="직종×지역 중앙희망임금 수준 차이의 효과",
 			treatment_name=NTR_HOPE_WAGE_SM_AMT,
 			treatment_question="주변 구직자들의 중앙 희망임금이 높은 환경과 낮은 환경에서의 6개월 내 취업 확률 차이?",
 			treatment_var=NTR_HOPE_WAGE_SM_AMT];
-		T5	[label="T5: AFIV_RDJT_PSBL_YN",
+		T5	[fillcolor="#FFF7E6",
+			label="T5: AFIV_RDJT_PSBL_YN",
 			role=treatment_meta,
+			shape=note,
 			treatment_def="면접후재조정가능여부 차이의 효과",
 			treatment_name=AFIV_RDJT_PSBL_YN,
 			treatment_question="임금 재조정이 가능하다고 응답한 사람과 불가능하다고 응답한 사람의 6개월 내 취업 확률 차이?",
@@ -57,13 +67,41 @@ digraph G {
 	AFIV_RDJT_PSBL_YN -> ACQ_180_YN;
 	AREA_CD	[label=지역코드];
 	AREA_CD -> ACQ_180_YN;
+	training_score	[label=직업훈련평가점수];
+	AREA_CD -> training_score;
 	ACCR_CD	[label=학력코드];
 	ACCR_CD -> ACQ_180_YN;
 	ACCR_CD -> HOPE_WAGE_SM_AMT;
 	CARR_MYCT1	[label=경력월수1];
 	ACCR_CD -> CARR_MYCT1;
+	resume_score	[label=이력서평가점수];
+	ACCR_CD -> resume_score;
+	items_num	[label=이력서항목개수];
+	ACCR_CD -> items_num;
+	ACCR_CD -> training_score;
+	certification_score	[label=자격증평가점수];
+	ACCR_CD -> certification_score;
 	CARR_MYCT1 -> ACQ_180_YN;
 	CARR_MYCT1 -> HOPE_WAGE_SM_AMT;
+	CARR_MYCT1 -> resume_score;
+	CARR_MYCT1 -> training_score;
+	CARR_MYCT1 -> certification_score;
 	AGE	[label=연령];
 	AGE -> ACCR_CD;
+	resume_score -> ACQ_180_YN;
+	resume_score -> HOPE_WAGE_SM_AMT;
+	cover_letter_score	[label=자기소개서평가점수];
+	resume_score -> cover_letter_score;
+	items_num -> ACQ_180_YN;
+	items_num -> resume_score;
+	training_score -> ACQ_180_YN;
+	training_score -> HOPE_WAGE_SM_AMT;
+	training_score -> resume_score;
+	days_last_training_to_jobseek	[label=마지막훈련경과일수];
+	training_score -> days_last_training_to_jobseek;
+	days_last_training_to_jobseek -> ACQ_180_YN;
+	certification_score -> ACQ_180_YN;
+	certification_score -> HOPE_WAGE_SM_AMT;
+	certification_score -> resume_score;
+	cover_letter_score -> ACQ_180_YN;
 }
