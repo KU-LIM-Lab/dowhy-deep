@@ -1095,7 +1095,7 @@ def load_checkpoint(checkpoint_file, logger=None):
         raise
 
 
-def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, logger=None):
+def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, experiment_id=None, logger=None):
     """
     주어진 조건에 맞는 checkpoint 파일을 찾는 함수
     
@@ -1105,6 +1105,7 @@ def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, l
         treatment (str): 처치 변수명
         outcome (str): 결과 변수명
         estimator (str): 추정 방법
+        experiment_id (str, optional): 실험 ID (지정하면 추가로 확인)
         logger: 로거 객체
     
     Returns:
@@ -1130,16 +1131,36 @@ def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, l
             metadata_treatment = metadata.get("treatment", "")
             metadata_outcome = metadata.get("outcome", "")
             metadata_estimator = metadata.get("estimator_type", "").lower().replace("estimator", "")
+            metadata_experiment_id = metadata.get("experiment_id", "")
             target_estimator = estimator.lower().replace("_", "")
             
-            if (metadata_graph == graph_name and
-                metadata_treatment == treatment and 
-                metadata_outcome == outcome and
-                metadata_estimator == target_estimator):
+            # 기본 조건 확인
+            matches_basic = (metadata_graph == graph_name and
+                           metadata_treatment == treatment and 
+                           metadata_outcome == outcome and
+                           metadata_estimator == target_estimator)
+            
+            # experiment_id가 제공된 경우 번호 부분만 추출하여 비교
+            if experiment_id is not None:
+                # experiment_id에서 번호 부분 추출 (exp_0001 형식)
+                import re
+                exp_num_match = re.search(r'exp_(\d{4})', experiment_id)
+                metadata_exp_num_match = re.search(r'exp_(\d{4})', metadata_experiment_id)
                 
+                if exp_num_match and metadata_exp_num_match:
+                    # 번호 부분만 비교
+                    exp_num = exp_num_match.group(1)
+                    metadata_exp_num = metadata_exp_num_match.group(1)
+                    if exp_num != metadata_exp_num:
+                        continue
+                else:
+                    # exp_XXXX 형식이 아니면 전체 비교 (하위 호환성)
+                    if metadata_experiment_id != experiment_id:
+                        continue
+            
+            if matches_basic:
                 # experiment_id에서 checkpoint 파일명 생성
-                experiment_id = metadata.get("experiment_id", "")
-                checkpoint_file = checkpoint_path / f"checkpoint_{experiment_id}.pkl"
+                checkpoint_file = checkpoint_path / f"checkpoint_{metadata_experiment_id}.pkl"
                 
                 if checkpoint_file.exists():
                     if logger:
@@ -1152,7 +1173,10 @@ def find_checkpoint(checkpoint_dir, graph_name, treatment, outcome, estimator, l
             continue
     
     if logger:
-        logger.warning(f"조건에 맞는 checkpoint를 찾을 수 없습니다: graph={graph_name}, treatment={treatment}, outcome={outcome}, estimator={estimator}")
+        warning_msg = f"조건에 맞는 checkpoint를 찾을 수 없습니다: graph={graph_name}, treatment={treatment}, outcome={outcome}, estimator={estimator}"
+        if experiment_id:
+            warning_msg += f", experiment_id={experiment_id}"
+        logger.warning(warning_msg)
     return None
 
 
@@ -2206,7 +2230,8 @@ def run_inference(
                     treatment,
                     outcome,
                     estimator,
-                    logger
+                    experiment_id=experiment_id,
+                    logger=logger
                 )
                 
                 if not checkpoint_file:
