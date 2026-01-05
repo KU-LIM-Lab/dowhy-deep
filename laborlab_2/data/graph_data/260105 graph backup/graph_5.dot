@@ -1,0 +1,140 @@
+digraph G {
+	graph [dpi=200,
+		fontname="Noto Sans CJK KR",
+		fontsize=12,
+		rankdir=LR
+	];
+	node [fillcolor="#F8F9FB",
+		fontname="Noto Sans CJK KR",
+		fontsize=11,
+		shape=box,
+		style="rounded,filled"
+	];
+	edge [arrowsize=0.7,
+		color="#333333"
+	];
+	subgraph cluster_treatments {
+		graph [color="#CCCCCC",
+			label="Treatments (outcome: ACQ_180_YN)",
+			style=dashed
+		];
+		node [fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			shape=note,
+			style="rounded,filled"
+		];
+		T1	[fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			label="T1: CARR_MYCT1",
+			role=treatment_meta,
+			shape=note,
+			treatment_def="희망직종1 경력월수 수준 차이의 효과",
+			treatment_name=CARR_MYCT1,
+			treatment_question="희망직종1 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=CARR_MYCT1];
+		T2	[fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			label="T2: CARR_MYCT2",
+			role=treatment_meta,
+			shape=note,
+			treatment_def="희망직종2 경력월수 수준 차이의 효과",
+			treatment_name=CARR_MYCT2,
+			treatment_question="희망직종2 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=CARR_MYCT2];
+		T3	[fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			label="T3: CARR_MYCT3",
+			role=treatment_meta,
+			shape=note,
+			treatment_def="희망직종3 경력월수 수준 차이의 효과",
+			treatment_name=CARR_MYCT3,
+			treatment_question="희망직종3 경력이 긴 사람과 짧은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=CARR_MYCT3];
+		T4	[fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			label="T4: BFR_OCTR_CT",
+			role=treatment_meta,
+			shape=note,
+			treatment_def="이전직업훈련건수 수준 차이의 효과",
+			treatment_name=BFR_OCTR_CT,
+			treatment_question="이전 직업훈련을 많이 받은 사람과 적게 받은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=BFR_OCTR_CT];
+		T5	[fillcolor="#FFF7E6",
+			fontname=Helvetica,
+			label="T5: OCTR_HOPE_JSFC_CSCY_SCOR1",
+			role=treatment_meta,
+			shape=note,
+			treatment_def="훈련-희망직종 일치도 점수 수준 차이의 효과",
+			treatment_name=OCTR_HOPE_JSFC_CSCY_SCOR1,
+			treatment_question="훈련과 희망직종의 일치도가 높은 사람과 낮은 사람의 6개월 내 취업 확률 차이?",
+			treatment_var=OCTR_HOPE_JSFC_CSCY_SCOR1];
+	}
+	ACQ_180_YN	[fontname=Helvetica,
+		label="180일이내취업여부"];
+	CARR_MYCT1	[fontname=Helvetica,
+		label=경력월수1];
+	CARR_MYCT1 -> ACQ_180_YN;
+	resume_score	[fontname=Helvetica,
+		label=이력서평가점수];
+	CARR_MYCT1 -> resume_score;
+	items_num	[fontname=Helvetica,
+		label=이력서항목개수];
+	CARR_MYCT1 -> items_num;
+	certification_score	[fontname=Helvetica,
+		label=자격증평가점수];
+	CARR_MYCT1 -> certification_score;
+	cover_letter_score	[fontname=Helvetica,
+		label=자기소개서평가점수];
+	CARR_MYCT1 -> cover_letter_score;
+	CARR_MYCT2	[fontname=Helvetica,
+		label=경력월수2];
+	CARR_MYCT2 -> ACQ_180_YN;
+	HOPE_JSCD2	[fontname=Helvetica,
+		label=희망직종코드2];
+	CARR_MYCT2 -> HOPE_JSCD2;
+	OCTR_HOPE_JSFC_CSCY_SCOR1	[fontname=Helvetica,
+		label=직업훈련희망직종일치도점수1];
+	HOPE_JSCD2 -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+	CARR_MYCT3	[fontname=Helvetica,
+		label=경력월수3];
+	CARR_MYCT3 -> ACQ_180_YN;
+	BFR_OCTR_CT	[fontname=Helvetica,
+		label=이전직업훈련건수];
+	BFR_OCTR_CT -> ACQ_180_YN;
+	BFR_OCTR_CT -> CARR_MYCT1;
+	BFR_OCTR_CT -> CARR_MYCT2;
+	BFR_OCTR_CT -> CARR_MYCT3;
+	BFR_OCTR_CT -> OCTR_HOPE_JSFC_CSCY_SCOR1;
+	training_score	[fontname=Helvetica,
+		label=직업훈련평가점수];
+	BFR_OCTR_CT -> training_score;
+	days_last_training_to_jobseek	[fontname=Helvetica,
+		label=마지막훈련경과일수];
+	BFR_OCTR_CT -> days_last_training_to_jobseek;
+	OCTR_HOPE_JSFC_CSCY_SCOR1 -> ACQ_180_YN;
+	AGE	[fontname=Helvetica,
+		label=연령];
+	AGE -> ACQ_180_YN;
+	AGE -> CARR_MYCT1;
+	AGE -> CARR_MYCT2;
+	AGE -> CARR_MYCT3;
+	ACCR_CD	[fontname=Helvetica,
+		label=학력코드];
+	AGE -> ACCR_CD;
+	ACCR_CD -> ACQ_180_YN;
+	ACCR_CD -> CARR_MYCT1;
+	ACCR_CD -> CARR_MYCT2;
+	ACCR_CD -> CARR_MYCT3;
+	ACCR_CD -> BFR_OCTR_CT;
+	ACCR_CD -> resume_score;
+	ACCR_CD -> items_num;
+	ACCR_CD -> training_score;
+	ACCR_CD -> certification_score;
+	ACCR_CD -> cover_letter_score;
+	resume_score -> ACQ_180_YN;
+	items_num -> resume_score;
+	training_score -> ACQ_180_YN;
+	days_last_training_to_jobseek -> ACQ_180_YN;
+	certification_score -> ACQ_180_YN;
+	cover_letter_score -> ACQ_180_YN;
+}
