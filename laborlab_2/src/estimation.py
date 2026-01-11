@@ -45,7 +45,7 @@ logging.getLogger("dowhy.causal_estimator").setLevel(logging.INFO)
 logging.getLogger("dowhy.causal_estimators.tabpfn_estimator").setLevel(logging.INFO)
 logging.getLogger("tabpfn").setLevel(logging.INFO)
 
-def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None):
+def predict_conditional_expectation(estimate, data_df, treatment_value=None, logger=None, prediction_thresholds=None):
     """
     E(Y|A, X) 조건부 기대값 예측
     
@@ -54,10 +54,11 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         data_df: 예측할 데이터프레임
         treatment_value: 처치 값 (None이면 실제 값 사용)
         logger: 로거 객체
+        prediction_thresholds: threshold 리스트 (None이거나 빈 리스트면 기본값 0.5 사용)
     
     Returns:
         tuple: (metrics_dict, data_df_with_predictions)
-            - metrics_dict: {'accuracy': float, 'f1_score': float, 'auc': float} 또는 None
+            - metrics_dict: {'accuracy': float, 'f1_score': float, 'auc': float, 'best_threshold': float} 또는 None
             - data_df_with_predictions: outcome 열에 예측값이 채워진 데이터프레임
     """
     if not hasattr(estimate, 'estimator'):
@@ -295,27 +296,72 @@ def predict_conditional_expectation(estimate, data_df, treatment_value=None, log
         result_df = data_df_clean.copy()
         # _outcome_name은 리스트일 수 있음
         outcome_name = estimate._outcome_name[0] if isinstance(estimate._outcome_name, list) else estimate._outcome_name
-        # 예측값이 0~1 사이의 확률인 경우 0.5를 기준으로 바이너리하게 변환
-        # (사용자 요청: 0~1 사이의 확률값을 0.5 기준으로 바이너리하게 변경)
-        if predictions_series.min() >= 0 and predictions_series.max() <= 1:
-            if logger:
-                logger.info("예측 확률값을 0.5 기준으로 바이너리(0/1) 값으로 변환합니다.")
-            print("ℹ️ 예측 확률값을 0.5 기준으로 바이너리(0/1) 값으로 변환합니다.")
-            # 원본 확률값은 _prob 접미사를 붙여 저장 (내부 메트릭 계산 용도)
+        
+        # threshold 리스트 처리
+        is_probability = predictions_series.min() >= 0 and predictions_series.max() <= 1
+        best_threshold = 0.5  # 기본값
+        best_f1_score = None
+        
+        if is_probability:
+            # 원본 확률값은 _prob 접미사를 붙여 저장
             result_df[f"{outcome_name}_prob"] = predictions_series
-            result_df[outcome_name] = (predictions_series >= 0.5).astype(int)
+            
+            # threshold 리스트가 있고 비어있지 않으면 각 threshold에 대해 f1_score 계산
+            if prediction_thresholds and len(prediction_thresholds) > 0:
+                if outcome_name in data_df_clean.columns:
+                    actual_y = data_df_clean[outcome_name]
+                    threshold_results = []
+                    
+                    print(f"\n📊 Threshold별 F1-Score 계산 중... ({len(prediction_thresholds)}개 threshold)")
+                    for threshold in prediction_thresholds:
+                        predicted_classes = (predictions_series >= threshold).astype(int)
+                        threshold_metrics = utils.calculate_metrics(actual_y, predicted_classes, prob_y=predictions_series, logger=logger)
+                        threshold_f1_score = threshold_metrics.get('f1_score')
+                        threshold_accuracy = threshold_metrics.get('accuracy')
+                        
+                        if threshold_f1_score is not None:
+                            threshold_results.append({
+                                'threshold': threshold,
+                                'f1_score': threshold_f1_score,
+                                'accuracy': threshold_accuracy
+                            })
+                            print(f"  Threshold {threshold:.3f}: F1-Score = {threshold_f1_score:.4f}, Accuracy = {threshold_accuracy:.4f}")
+                    
+                    # 가장 높은 f1_score를 가진 threshold 선택
+                    if threshold_results:
+                        best_result = max(threshold_results, key=lambda x: x['f1_score'])
+                        best_threshold = best_result['threshold']
+                        best_f1_score = best_result['f1_score']
+                        best_accuracy = best_result.get('accuracy', None)
+                        print(f"\n✅ 최적 Threshold: {best_threshold:.3f} (F1-Score: {best_f1_score:.4f}, Accuracy: {best_accuracy:.4f if best_accuracy is not None else 'N/A'})")
+                        if logger:
+                            logger.info(f"최적 Threshold: {best_threshold:.3f} (F1-Score: {best_f1_score:.4f}, Accuracy: {best_accuracy:.4f if best_accuracy is not None else 'N/A'})")
+                else:
+                    # 실제 Y 값이 없으면 기본값 0.5 사용
+                    print("⚠️ 실제 Y 값이 없어 threshold 비교를 수행할 수 없습니다. 기본값 0.5를 사용합니다.")
+                    if logger:
+                        logger.warning(f"실제 Y 값({outcome_name})을 찾을 수 없어 threshold 비교를 수행할 수 없습니다.")
+            
+            # 선택된 threshold로 바이너리 변환
+            result_df[outcome_name] = (predictions_series >= best_threshold).astype(int)
+            if logger:
+                logger.info(f"예측 확률값을 {best_threshold:.3f} 기준으로 바이너리(0/1) 값으로 변환합니다.")
+            print(f"ℹ️ 예측 확률값을 {best_threshold:.3f} 기준으로 바이너리(0/1) 값으로 변환합니다.")
         else:
             result_df[outcome_name] = predictions_series
         
-        # 실제 Y 값과 비교하여 메트릭 계산
-        metrics = {'accuracy': None, 'f1_score': None, 'auc': None}
+        # 실제 Y 값과 비교하여 메트릭 계산 (최종 선택된 threshold 사용)
+        metrics = {'accuracy': None, 'f1_score': None, 'auc': None, 'best_threshold': best_threshold}
         if outcome_name in data_df_clean.columns:
             actual_y = data_df_clean[outcome_name]
-            metrics = utils.calculate_metrics(actual_y, predictions_series, logger=logger)
+            # 최종 선택된 threshold로 계산한 메트릭
+            final_predicted = result_df[outcome_name]
+            metrics = utils.calculate_metrics(actual_y, final_predicted, prob_y=predictions_series if is_probability else None, logger=logger)
+            metrics['best_threshold'] = best_threshold
             
             if metrics.get('accuracy') is not None:
                 if logger:
-                    logger.info(f"예측 완료: Accuracy={metrics['accuracy']:.4f}, F1={metrics['f1_score']:.4f}, AUC={metrics.get('auc', 'N/A')}")
+                    logger.info(f"예측 완료: Threshold={best_threshold:.3f}, Accuracy={metrics['accuracy']:.4f}, F1={metrics['f1_score']:.4f}, AUC={metrics.get('auc', 'N/A')}")
             else:
                 if logger:
                     # NaN 제거 후 데이터가 있는 경우만 평균 계산
@@ -1475,7 +1521,8 @@ def run_analysis_without_preprocessing(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    refutation_simulations: int = 20
+    refutation_simulations: int = 20,
+    prediction_thresholds: Optional[List[float]] = None
 ) -> Dict[str, Any]:
     """
     전처리된 데이터를 사용하여 인과추론 분석을 수행하는 함수
@@ -1789,7 +1836,7 @@ def run_analysis_without_preprocessing(
         )
         # TabPFN 배치 크기 설정 (config에서 가져오기, 기본값: 64)
         metrics, df_with_predictions = predict_conditional_expectation(
-            estimate, df_test_clean, logger=logger
+            estimate, df_test_clean, logger=logger, prediction_thresholds=prediction_thresholds
         )
         step_times['예측'] = time.time() - step_start
         
@@ -1910,7 +1957,8 @@ def run_single_experiment(
     training_size: int = 5000,
     tabpfn_config: Optional[Dict[str, Any]] = None,
     do_refutation: bool = False,
-    refutation_simulations: int = 20
+    refutation_simulations: int = 20,
+    prediction_thresholds: Optional[List[float]] = None
 ) -> Dict[str, Any]:
     """
     단일 실험을 실행합니다
@@ -1971,7 +2019,8 @@ def run_single_experiment(
                         training_size=training_size,
                         tabpfn_config=tabpfn_config,
                         do_refutation=do_refutation,
-                        refutation_simulations=refutation_simulations
+                        refutation_simulations=refutation_simulations,
+                        prediction_thresholds=prediction_thresholds
                     )
                     
                     all_results.append(job_result)
@@ -2106,7 +2155,8 @@ def run_single_experiment(
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
                 do_refutation=do_refutation,
-                refutation_simulations=refutation_simulations
+                refutation_simulations=refutation_simulations,
+                prediction_thresholds=prediction_thresholds
             )
         
         end_time = datetime.now()
@@ -2133,6 +2183,7 @@ def run_single_experiment(
             "accuracy": metrics.get("accuracy") if metrics else None,
             "f1_score": metrics.get("f1_score") if metrics else None,
             "auc": metrics.get("auc") if metrics else None,
+            "best_threshold": metrics.get("best_threshold") if metrics else None,
             "excel_path": result.get("excel_path"),
             "train_size": result.get("train_size"),
             "test_size": result.get("test_size"),

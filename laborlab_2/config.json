@@ -6,14 +6,14 @@
   "no_logs": false,
   "verbose": false,
   "preprocess": true,
-  "learning": true,
+  "learning": false,
   "prediction": true,
   "experiment": true,
   "refutation": false,
   "refutation_simulations": 10,
   "limit_data": false,
   "limit_size": 5000,
-  "training_size": 5000,
+  "training_size": 1000,
   "checkpoint_dir": "data/checkpoint",
   "job_category_file": "KECO_RAW",
   "top_job_categories": 5,
@@ -25,11 +25,8 @@
     "max_num_classes": 10,
     "prediction_batch_size": 512
   },
+  "prediction_thresholds": [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8],
   "experiment_list": [
-    ["graph_b.dot", "resume_score", "ACQ_180_YN", "tabpfn"],
-    ["graph_b.dot", "cover_letter_score", "ACQ_180_YN", "tabpfn"],
-    ["graph_b.dot", "AREA_CD", "ACQ_180_YN", "tabpfn"],
-    ["graph_b.dot", "training_score", "ACQ_180_YN", "tabpfn"],
-    ["graph_b.dot", "BFR_OCTR_CT", "ACQ_180_YN", "tabpfn"]
+    ["graph_b.dot", "resume_score", "ACQ_180_YN", "tabpfn"]
   ]
 }

@@ -188,7 +188,8 @@ def learning(
         training_size=training_size,
         tabpfn_config=tabpfn_config,
         do_refutation=do_refutation,
-        refutation_simulations=refutation_simulations
+        refutation_simulations=refutation_simulations,
+        prediction_thresholds=kwargs.get('prediction_thresholds')
     )
     
     if result["status"] == "success":
@@ -392,7 +393,8 @@ def learning_experiments(
         training_size=training_size,
         tabpfn_config=tabpfn_config,
         do_refutation=do_refutation,
-        refutation_simulations=refutation_simulations
+        refutation_simulations=refutation_simulations,
+        prediction_thresholds=prediction_thresholds
     )
 
 
@@ -552,6 +554,11 @@ def main():
     # TabPFN 설정 추출
     tabpfn_config = config.get("tabpfn_config", {})
     
+    # Prediction thresholds 설정 추출
+    prediction_thresholds = config.get("prediction_thresholds", [])
+    if prediction_thresholds and len(prediction_thresholds) > 0:
+        print(f"📊 Prediction thresholds 설정: {prediction_thresholds}")
+    
     # 절대 경로로 변환
     data_dir_path = script_dir / data_dir
     output_dir_path = script_dir / output_dir
@@ -669,7 +676,8 @@ def main():
                 training_size=training_size,
                 tabpfn_config=tabpfn_config,
                 do_refutation=do_refutation,
-                refutation_simulations=refutation_simulations
+                refutation_simulations=refutation_simulations,
+                prediction_thresholds=prediction_thresholds
             )
         else:
             # 단일 실험 실행 (config에서 첫 번째 실험 조합 사용)
