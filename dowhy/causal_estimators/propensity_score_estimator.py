@@ -96,8 +96,8 @@ class PropensityScoreEstimator(CausalEstimator):
         self.reset_encoders()  # Forget any existing encoders
         self._set_effect_modifiers(data, effect_modifier_names)
 
-        self.logger.debug("Back-door variables used:" + ",".join(self._target_estimand.get_backdoor_variables()))
-        self._observed_common_causes_names = self._target_estimand.get_backdoor_variables()
+        self.logger.debug("Adjustment set variables used:" + ",".join(self._target_estimand.get_adjustment_set()))
+        self._observed_common_causes_names = self._target_estimand.get_adjustment_set()
 
         if self._observed_common_causes_names:
             self._observed_common_causes = data[self._observed_common_causes_names]
@@ -130,6 +130,12 @@ class PropensityScoreEstimator(CausalEstimator):
             self.propensity_score_model.fit(self._observed_common_causes, treatment_reshaped)
 
         return self
+
+    def predict_proba(self, data):
+        """Estimate propensity scores on given data using the class's current propensity score model."""
+        data = data[self._observed_common_causes_names]
+        data = self._encode(data, "observed_common_causes")
+        return self.propensity_score_model.predict_proba(data)
 
     def estimate_propensity_score_column(self, data):
         try:

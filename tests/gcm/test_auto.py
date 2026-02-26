@@ -9,13 +9,17 @@ from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostin
 from sklearn.linear_model import ElasticNetCV, LassoCV, LinearRegression, LogisticRegression, RidgeCV
 from sklearn.naive_bayes import GaussianNB
 from sklearn.pipeline import Pipeline
+from sklearn.tree import DecisionTreeClassifier
 
+from dowhy import gcm
 from dowhy.gcm import (
     AdditiveNoiseModel,
     DiscreteAdditiveNoiseModel,
     EmpiricalDistribution,
+    InvertibleStructuralCausalModel,
     ProbabilisticCausalModel,
     StructuralCausalModel,
+    counterfactual_samples,
     draw_samples,
     fit,
 )
@@ -37,15 +41,80 @@ def _generate_non_linear_regression_data():
 
 
 def _generate_linear_classification_data():
-    X = np.random.normal(0, 1, (1000, 5))
+    X = np.random.normal(0, 1, (100, 5))
     Y = (np.sum(X * np.random.uniform(-5, 5, X.shape[1]), axis=1) > 0).astype(str)
 
     return X, Y
 
 
-def _generate_non_classification_data():
+def _generate_non_linear_classification_data():
     X = np.random.normal(0, 1, (1000, 5))
     Y = (np.sum(np.exp(X), axis=1) > np.median(np.sum(np.exp(X), axis=1))).astype(str)
+
+    return X, Y
+
+
+def _generate_linear_multiclass_classification_data_with_mixed_features():
+    """Generate multi-class classification data with mixed categorical and numerical features (linear relationship)."""
+    n_samples = 100
+
+    # Numerical features
+    num_feat1 = np.random.normal(0, 1, n_samples)
+    num_feat2 = np.random.normal(0, 1, n_samples)
+
+    # Categorical features
+    cat_feat1 = np.random.choice(["TypeA", "TypeB"], n_samples)
+    cat_feat2 = np.random.choice(["Group1", "Group2", "Group3"], n_samples)
+
+    # Create target variable based on linear combination of features
+    # Convert categorical to numerical for decision making
+    cat1_numeric = np.where(cat_feat1 == "TypeA", 1, -1)
+    cat2_numeric = np.where(cat_feat2 == "Group1", 2, np.where(cat_feat2 == "Group2", 0, -2))
+
+    # Linear combination to determine class
+    decision_value = 2 * num_feat1 + 1.5 * num_feat2 + 0.8 * cat1_numeric + 0.5 * cat2_numeric
+
+    # Convert to 3 classes
+    Y = np.where(decision_value > 1, "Class_A", np.where(decision_value > -1, "Class_B", "Class_C"))
+
+    # Combine features
+    X = np.column_stack([num_feat1, num_feat2, cat_feat1, cat_feat2])
+
+    return X, Y
+
+
+def _generate_non_linear_multiclass_classification_data_with_mixed_features():
+    """Generate multi-class classification data with mixed categorical and numerical features (non-linear relationship)."""
+    n_samples = 1000
+
+    # Numerical features
+    num_feat1 = np.random.normal(0, 1, n_samples)
+    num_feat2 = np.random.normal(0, 1, n_samples)
+
+    # Categorical features
+    cat_feat1 = np.random.choice(["TypeA", "TypeB"], n_samples)
+    cat_feat2 = np.random.choice(["Group1", "Group2", "Group3"], n_samples)
+
+    # Create target variable based on non-linear combination of features
+    # Convert categorical to numerical for decision making
+    cat1_numeric = np.where(cat_feat1 == "TypeA", 1, -1)
+    cat2_numeric = np.where(cat_feat2 == "Group1", 2, np.where(cat_feat2 == "Group2", 0, -2))
+
+    # Non-linear combination: use exponentials and products
+    decision_value = (
+        np.exp(num_feat1 * 0.5)
+        + np.sin(num_feat2 * 2)
+        + num_feat1 * num_feat2 * 0.3
+        + cat1_numeric * np.exp(num_feat2 * 0.2)
+        + cat2_numeric * np.cos(num_feat1)
+    )
+
+    # Convert to 3 classes based on percentiles
+    p33, p67 = np.percentile(decision_value, [33, 67])
+    Y = np.where(decision_value > p67, "Class_A", np.where(decision_value > p33, "Class_B", "Class_C"))
+
+    # Combine features
+    X = np.column_stack([num_feat1, num_feat2, cat_feat1, cat_feat2])
 
     return X, Y
 
@@ -145,7 +214,7 @@ def test_given_linear_classification_problem_when_auto_assign_causal_models_with
 
 @flaky(max_runs=3)
 def test_given_non_linear_classification_problem_when_auto_assign_causal_models_with_good_quality_returns_non_linear_model():
-    X, Y = _generate_non_classification_data()
+    X, Y = _generate_non_linear_classification_data()
 
     causal_model = ProbabilisticCausalModel(
         nx.DiGraph([("X0", "Y"), ("X1", "Y"), ("X2", "Y"), ("X3", "Y"), ("X4", "Y")])
@@ -161,7 +230,7 @@ def test_given_non_linear_classification_problem_when_auto_assign_causal_models_
 
 @flaky(max_runs=3)
 def test_given_non_linear_classification_problem_when_auto_assign_causal_models_with_better_quality_returns_non_linear_model():
-    X, Y = _generate_non_classification_data()
+    X, Y = _generate_non_linear_classification_data()
 
     causal_model = ProbabilisticCausalModel(
         nx.DiGraph([("X0", "Y"), ("X1", "Y"), ("X2", "Y"), ("X3", "Y"), ("X4", "Y")])
@@ -381,7 +450,7 @@ Note that 'discrete' here refers to numerical values with an order. If the data 
 
 If non-root node and the data is categorical:
 A functional causal model based on a classifier, i.e., X_i = f(PA_i, N_i).
-Here, N_i follows a uniform distribution on [0, 1] and is used to randomly sample a class (category) using the conditional probability distribution produced by a classification model.Here, different model classes are evaluated using the (negative) F1 score and the best performing model class is selected.
+Here, N_i follows a uniform distribution on [0, 1] and is used to randomly sample a class (category) using the conditional probability distribution produced by a classification model. Here, different model classes are evaluated using the log loss metric and the best performing model class is selected.
 
 In total, 6 nodes were analyzed:
 
@@ -456,7 +525,7 @@ Note that 'discrete' here refers to numerical values with an order. If the data 
 
 If non-root node and the data is categorical:
 A functional causal model based on a classifier, i.e., X_i = f(PA_i, N_i).
-Here, N_i follows a uniform distribution on [0, 1] and is used to randomly sample a class (category) using the conditional probability distribution produced by a classification model.Here, different model classes are evaluated using the (negative) F1 score and the best performing model class is selected.
+Here, N_i follows a uniform distribution on [0, 1] and is used to randomly sample a class (category) using the conditional probability distribution produced by a classification model. Here, different model classes are evaluated using the log loss metric and the best performing model class is selected.
 
 In total, 6 nodes were analyzed:
 
@@ -480,7 +549,7 @@ Node Y is a non-root node with categorical data. Assigning 'Classifier FCM based
         in summary_string
     )
     assert "This represents the causal relationship as Y := f(X0,X1,X2,X3,X4,N)." in summary_string
-    assert "For the model selection, the following models were evaluated on the (negative) F1 metric:" in summary_string
+    assert "For the model selection, the following models were evaluated on the log loss metric:" in summary_string
     assert (
         """===Note===
 Note, based on the selected auto assignment quality, the set of evaluated models changes.
@@ -501,3 +570,125 @@ def test_given_imbalanced_classes_when_auto_assign_mechanism_then_handles_as_exp
     Y = np.append(Y, "RareClass")
 
     assign_causal_mechanisms(StructuralCausalModel(nx.DiGraph([("X", "Y")])), pd.DataFrame({"X": X, "Y": Y}))
+
+
+@flaky(max_runs=2)
+def test_given_missing_data_only_numerical_when_auto_assign_mechanism_with_experimental_feature_then_handles_as_expected():
+    X = np.random.normal(0, 5, 5000)
+    Y = 2 * X + 10 + np.random.normal(0, 0.05, 5000)
+    Z = X + Y + 20 + np.random.normal(0, 0.05, 5000)
+
+    data = pd.DataFrame({"X": X, "Y": Y, "Z": Z})
+
+    mask = np.random.random(data.shape) >= 0.25  # 25% missing data
+    mask[:, 1] = 1  # Ensure that the categorical feature is not missing as this is not supported yet.
+
+    data_with_nas = data.mask(~mask)
+    causal_model = InvertibleStructuralCausalModel(nx.DiGraph([("X", "Y"), ("Y", "Z"), ("X", "Z")]))
+
+    with pytest.raises(ValueError):
+        # Raise error when experimental flag is not turned on
+        assign_causal_mechanisms(causal_model, data_with_nas)
+
+    assign_causal_mechanisms(causal_model, data_with_nas, experimental_allow_nans=True)
+    fit(causal_model, data_with_nas)
+
+    drawn_samples = gcm.draw_samples(causal_model, 5000)
+
+    assert drawn_samples["X"].mean() == approx(0, abs=1)
+    assert drawn_samples["Y"].mean() == approx(10, abs=2)
+    assert drawn_samples["Z"].mean() == approx(30, abs=3)
+
+    interventional_drawn_samples = gcm.interventional_samples(
+        causal_model, {"X": lambda x: 10}, num_samples_to_draw=100
+    )
+    assert interventional_drawn_samples["X"].to_numpy() == approx(np.array([10] * 100))
+    assert interventional_drawn_samples["Y"].mean() == approx(30, abs=5)
+    assert interventional_drawn_samples["Z"].mean() == approx(60, abs=5)
+
+    counterfactual_computed_samples = counterfactual_samples(
+        causal_model, {"X": lambda x: 10}, noise_data=pd.DataFrame({"X": [10], "Y": [1], "Z": [10]})
+    )
+    assert counterfactual_computed_samples["X"][0] == 10
+    assert counterfactual_computed_samples["Y"][0] == approx(30, abs=5)
+    assert counterfactual_computed_samples["Z"][0] == approx(70, abs=5)
+
+    # Just check if it doesn't raise errors.
+    gcm.intrinsic_causal_influence(causal_model, "Z")
+    gcm.attribute_anomalies(causal_model, "Y", data_with_nas.iloc[:5])
+
+
+@flaky(max_runs=2)
+def test_given_missing_data_mixed_numerical_and_categorical_when_auto_assign_mechanism_with_experimental_feature_then_handles_as_expected():
+    X = np.random.normal(0, 5, 5000)
+    Y = []
+    Z = []
+
+    for x in X:
+        if x < 0:
+            Y.append("Class 0")
+        else:
+            Y.append("Class 1")
+
+    for i in range(X.shape[0]):
+        Z.append(X[i] + (-10 if Y[i] == "Class 0" else 10) + np.random.normal(0, 0.1))
+
+    data = pd.DataFrame({"X": X, "Y": Y, "Z": Z})
+
+    mask = np.random.random(data.shape) >= 0.25  # 25% missing data
+    mask[:, 1] = 1  # Ensure that the categorical feature is not missing as this is not supported yet.
+
+    data_with_nas = data.mask(~mask)
+    causal_model = InvertibleStructuralCausalModel(nx.DiGraph([("X", "Y"), ("Y", "Z"), ("X", "Z")]))
+
+    with pytest.raises(ValueError):
+        # Raise error when experimental flag is not turned on
+        assign_causal_mechanisms(causal_model, data_with_nas)
+
+    assign_causal_mechanisms(causal_model, data_with_nas, experimental_allow_nans=True)
+    fit(causal_model, data_with_nas)
+
+    drawn_samples = gcm.draw_samples(causal_model, 5000)
+
+    assert drawn_samples["X"].mean() == approx(0, abs=1)
+    assert np.sum(drawn_samples["Y"] == "Class 0") == approx(X.shape[0] // 2, abs=500)
+    assert drawn_samples["Z"].mean() == approx(0, abs=1)
+
+    interventional_drawn_samples = gcm.interventional_samples(causal_model, {"X": lambda x: 10}, num_samples_to_draw=10)
+    assert interventional_drawn_samples["X"].to_numpy() == approx(np.array([10] * 10))
+    assert np.sum(interventional_drawn_samples["Y"] == "Class 1") == approx(10, abs=3)
+    assert np.mean(interventional_drawn_samples["Z"].to_numpy()) == approx(20, abs=5)
+
+    counterfactual_computed_samples = counterfactual_samples(
+        causal_model, {"X": lambda x: 10}, noise_data=pd.DataFrame({"X": [10], "Y": [1], "Z": [10]})
+    )
+    assert counterfactual_computed_samples["X"][0] == 10
+    assert counterfactual_computed_samples["Y"][0] == "Class 1"
+    assert counterfactual_computed_samples["Z"][0] == approx(30, abs=5)
+
+    # Just check if it doesn't raise errors.
+    gcm.intrinsic_causal_influence(causal_model, "Z")
+
+
+@flaky(max_runs=3)
+def test_given_linear_multiclass_mixed_features_when_auto_assign_causal_models_with_good_quality_returns_linear_model():
+    X, Y = _generate_linear_multiclass_classification_data_with_mixed_features()
+
+    causal_model = ProbabilisticCausalModel(nx.DiGraph([("X0", "Y"), ("X1", "Y"), ("X2", "Y"), ("X3", "Y")]))
+    data = {"X" + str(i): X[:, i] for i in range(X.shape[1])}
+    data.update({"Y": Y})
+    assign_causal_mechanisms(causal_model, pd.DataFrame(data), quality=AssignmentQuality.GOOD)
+    assert isinstance(causal_model.causal_mechanism("Y").classifier_model.sklearn_model, LogisticRegression)
+
+
+@flaky(max_runs=3)
+def test_given_non_linear_multiclass_mixed_features_when_auto_assign_causal_models_with_good_quality_returns_non_linear_model():
+    X, Y = _generate_non_linear_multiclass_classification_data_with_mixed_features()
+
+    causal_model = ProbabilisticCausalModel(nx.DiGraph([("X0", "Y"), ("X1", "Y"), ("X2", "Y"), ("X3", "Y")]))
+    data = {"X" + str(i): X[:, i] for i in range(X.shape[1])}
+    data.update({"Y": Y})
+    assign_causal_mechanisms(causal_model, pd.DataFrame(data), quality=AssignmentQuality.GOOD)
+    assert isinstance(
+        causal_model.causal_mechanism("Y").classifier_model.sklearn_model, DecisionTreeClassifier
+    ) or isinstance(causal_model.causal_mechanism("Y").classifier_model.sklearn_model, HistGradientBoostingClassifier)

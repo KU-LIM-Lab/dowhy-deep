@@ -120,7 +120,7 @@ class Econml(CausalEstimator):
         self._econml_fit_params = kwargs
         self._fit_params = kwargs
 
-        self._observed_common_causes_names = self._target_estimand.get_backdoor_variables().copy()
+        self._observed_common_causes_names = self._target_estimand.get_adjustment_set().copy()
 
         # Enforcing this ordering is necessary to feed through the propensity values from dataset
         self._observed_common_causes_names = [
@@ -134,7 +134,7 @@ class Econml(CausalEstimator):
                 effect_modifier_names = self._effect_modifier_names.copy()
             w_diff_x = [w for w in self._observed_common_causes_names if w not in effect_modifier_names]
             if len(w_diff_x) > 0:
-                self.logger.warn(
+                self.logger.warning(
                     "Concatenating common_causes and effect_modifiers and providing a single list of variables to metalearner estimator method, "
                     + self.estimator.__class__.__name__
                     + ". EconML metalearners accept a single X argument."

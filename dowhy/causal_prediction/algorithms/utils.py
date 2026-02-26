@@ -1,32 +1,20 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
-""" 
-    The functions in this file are borrowed from DomainBed: https://github.com/facebookresearch/DomainBed
-        @inproceedings{gulrajani2021in,
-         title={In Search of Lost Domain Generalization},
-         author={Ishaan Gulrajani and David Lopez-Paz},
-         booktitle={International Conference on Learning Representations},
-         year={2021},
-        }
+"""
+The functions in this file are borrowed from DomainBed: https://github.com/facebookresearch/DomainBed
+    @inproceedings{gulrajani2021in,
+     title={In Search of Lost Domain Generalization},
+     author={Ishaan Gulrajani and David Lopez-Paz},
+     booktitle={International Conference on Learning Representations},
+     year={2021},
+    }
 """
 
 import torch
 
 
-def my_cdist(x1, x2):
-    x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
-    x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
-    res = torch.addmm(x2_norm.transpose(-2, -1), x1, x2.transpose(-2, -1), alpha=-2).add_(x1_norm)
-    return res.clamp_min_(1e-30)
-
-
 def gaussian_kernel(x, y, gamma):
-    D = my_cdist(x, y)
-    K = torch.zeros_like(D)
-
-    K.add_(torch.exp(D.mul(-gamma)))
-
-    return K
+    return torch.exp(torch.cdist(x, y, p=2.0).pow(2).clamp_min_(1e-30).mul(-gamma))
 
 
 def mmd_compute(x, y, kernel_type, gamma):

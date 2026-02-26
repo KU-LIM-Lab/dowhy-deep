@@ -11,7 +11,6 @@ from sklearn import metrics
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
-from sklearn.preprocessing import MultiLabelBinarizer
 
 from dowhy.gcm import config
 from dowhy.gcm.causal_mechanisms import AdditiveNoiseModel, ClassifierFCM, DiscreteAdditiveNoiseModel
@@ -30,6 +29,7 @@ from dowhy.gcm.ml import (
 )
 from dowhy.gcm.ml.classification import (
     create_ada_boost_classifier,
+    create_decision_tree_classifier,
     create_extra_trees_classifier,
     create_gaussian_nb_classifier,
     create_knn_classifier,
@@ -55,8 +55,9 @@ from dowhy.gcm.util.general import (
 from dowhy.graph import get_ordered_predecessors, is_root_node
 
 _LIST_OF_POTENTIAL_CLASSIFIERS_GOOD = [
-    partial(create_logistic_regression_classifier, max_iter=10000),
     create_hist_gradient_boost_classifier,
+    partial(create_logistic_regression_classifier, max_iter=10000),
+    create_decision_tree_classifier,
 ]
 _LIST_OF_POTENTIAL_REGRESSORS_GOOD = [
     create_linear_regressor,
@@ -79,6 +80,18 @@ _LIST_OF_POTENTIAL_REGRESSORS_BETTER = _LIST_OF_POTENTIAL_REGRESSORS_GOOD + [
     create_extra_trees_regressor,
     create_knn_regressor,
     create_ada_boost_regressor,
+]
+
+_LIST_OF_REGRESSOR_SUPPORTING_MISSING_DATA_GOOD = [create_hist_gradient_boost_regressor]
+_LIST_OF_REGRESSOR_SUPPORTING_MISSING_DATA_BETTER = _LIST_OF_REGRESSOR_SUPPORTING_MISSING_DATA_GOOD + [
+    create_random_forest_regressor,
+    create_extra_trees_regressor,
+]
+
+_LIST_OF_CLASSIFIER_SUPPORTING_MISSING_DATA_GOOD = [create_hist_gradient_boost_classifier]
+_LIST_OF_CLASSIFIER_SUPPORTING_MISSING_DATA_BETTER = _LIST_OF_CLASSIFIER_SUPPORTING_MISSING_DATA_GOOD + [
+    create_random_forest_classifier,
+    create_extra_trees_classifier,
 ]
 
 
@@ -140,9 +153,8 @@ class AutoAssignmentSummary:
         summary_strings.append(
             "A functional causal model based on a classifier, i.e., X_i = f(PA_i, N_i).\n"
             "Here, N_i follows a uniform distribution on [0, 1] and is used to randomly sample a "
-            "class (category) using the conditional probability distribution produced by a "
-            "classification model."
-            "Here, different model classes are evaluated using the (negative) F1 score and the best"
+            "class (category) using the conditional probability distribution produced by a classification model. "
+            "Here, different model classes are evaluated using the log loss metric and the best"
             " performing model class is selected."
         )
         summary_strings.append("\nIn total, %d nodes were analyzed:" % len(list(self._nodes)))
@@ -175,6 +187,7 @@ def assign_causal_mechanisms(
     based_on: pd.DataFrame,
     quality: AssignmentQuality = AssignmentQuality.GOOD,
     override_models: bool = False,
+    experimental_allow_nans: bool = False,
 ) -> AutoAssignmentSummary:
     """Automatically assigns appropriate causal mechanisms to nodes. If causal mechanisms are already assigned to nodes
     and override_models is set to False, this function only validates the assignments with respect to the graph
@@ -210,7 +223,7 @@ def assign_causal_mechanisms(
     A functional causal model based on a classifier, i.e., X_i = f(PA_i, N_i).
     Here, N_i follows a uniform distribution on [0, 1] and is used to randomly sample a class (category) using the
     conditional probability distribution produced by a classification model. Here, different model classes are evaluated
-    using the (negative) F1 score and the best performing model class is selected.
+    using the log loss metric and the best performing model class is selected.
 
     The current model zoo is:
 
@@ -277,8 +290,17 @@ def assign_causal_mechanisms(
     :param override_models: If set to True, existing mechanism assignments are replaced with automatically selected
                             ones. If set to False, the assigned mechanisms are only validated with respect to the graph
                             structure.
+    :param experimental_allow_nans: If True, allows missing data for numerical variables. This is an experimental
+                                    feature. Not all GCM methods support missing data yet.
     :return: A summary object containing details about the model selection process.
     """
+    if not experimental_allow_nans and pd.isna(based_on).any().any():
+        raise ValueError(
+            "Data contains NaN! This is currently only supported when setting experimental_allow_nans to "
+            "True and only for missing data in numerical features. Note that not all GCM features "
+            "support missing data yet!"
+        )
+
     auto_assignment_summary = AutoAssignmentSummary()
 
     for node in nx.topological_sort(causal_model.graph):
@@ -379,6 +401,16 @@ def assign_causal_mechanism_node(
 def select_model(
     X: np.ndarray, Y: np.ndarray, model_selection_quality: AssignmentQuality
 ) -> Tuple[Union[PredictionModel, ClassificationModel], List[Tuple[Callable[[], PredictionModel], float, str]]]:
+    y_is_categorical = is_categorical(Y)
+
+    if not y_is_categorical:
+        y_nan_mask = pd.isna(Y.reshape(-1))
+
+        X = X[~y_nan_mask]
+        Y = Y[~y_nan_mask]
+
+    x_has_nans = pd.isna(X).any().any()
+
     if model_selection_quality == AssignmentQuality.BEST:
         try:
             from dowhy.gcm.ml.autogluon import AutoGluonClassifier, AutoGluonRegressor
@@ -393,22 +425,30 @@ def select_model(
                 "optional AutoGluon dependency."
             )
     elif model_selection_quality == AssignmentQuality.GOOD:
-        list_of_regressor = list(_LIST_OF_POTENTIAL_REGRESSORS_GOOD)
-        list_of_classifier = list(_LIST_OF_POTENTIAL_CLASSIFIERS_GOOD)
+        if x_has_nans:
+            list_of_regressor = list(_LIST_OF_REGRESSOR_SUPPORTING_MISSING_DATA_GOOD)
+            list_of_classifier = list(_LIST_OF_CLASSIFIER_SUPPORTING_MISSING_DATA_GOOD)
+        else:
+            list_of_regressor = list(_LIST_OF_POTENTIAL_REGRESSORS_GOOD)
+            list_of_classifier = list(_LIST_OF_POTENTIAL_CLASSIFIERS_GOOD)
         model_selection_splits = 5
     elif model_selection_quality == AssignmentQuality.BETTER:
-        list_of_regressor = list(_LIST_OF_POTENTIAL_REGRESSORS_BETTER)
-        list_of_classifier = list(_LIST_OF_POTENTIAL_CLASSIFIERS_BETTER)
+        if x_has_nans:
+            list_of_regressor = list(_LIST_OF_REGRESSOR_SUPPORTING_MISSING_DATA_BETTER)
+            list_of_classifier = list(_LIST_OF_CLASSIFIER_SUPPORTING_MISSING_DATA_BETTER)
+        else:
+            list_of_regressor = list(_LIST_OF_POTENTIAL_REGRESSORS_BETTER)
+            list_of_classifier = list(_LIST_OF_POTENTIAL_CLASSIFIERS_BETTER)
         model_selection_splits = 5
     else:
         raise ValueError("Invalid model selection quality.")
 
-    if auto_apply_encoders(X, auto_fit_encoders(X)).shape[1] <= 5:
+    if not x_has_nans and auto_apply_encoders(X, auto_fit_encoders(X)).shape[1] <= 5:
         # Avoid too many features
         list_of_regressor += [create_polynom_regressor]
         list_of_classifier += [partial(create_polynom_logistic_regression_classifier, max_iter=10000)]
 
-    if is_categorical(Y):
+    if y_is_categorical:
         best_model, model_performances = find_best_model(
             list_of_classifier, X, Y, model_selection_splits=model_selection_splits
         )
@@ -433,8 +473,8 @@ def has_linear_relationship(X: np.ndarray, Y: np.ndarray, max_num_samples: int =
         for i in range(all_classes.size):
             # Making sure that there are at least 2 samples from one class (here, simply duplicate the point).
             if counts[i] == 1:
-                X = np.row_stack([X, X[indices[i], :]])
-                Y = np.row_stack([Y, Y[indices[i], :]])
+                X = np.vstack([X, X[indices[i], :]])
+                Y = np.vstack([Y, Y[indices[i], :]])
 
         x_train, x_test, y_train, y_test = train_test_split(
             X, Y, train_size=num_trainings_samples, test_size=num_test_samples, stratify=Y
@@ -488,19 +528,12 @@ def find_best_model(
     metric_name = "given"
 
     if metric is None:
-        metric_name = "(negative) F1"
         if is_classification_problem:
-            metric = lambda y_true, y_preds: -metrics.f1_score(
-                y_true, y_preds, average="macro", zero_division=0
-            )  # Higher score is better
+            metric_name = "log loss"
+            metric = metrics.log_loss  # Lower score is better (better calibrated probabilities)
         else:
             metric_name = "mean squared error (MSE)"
             metric = metrics.mean_squared_error
-
-    labelBinarizer = None
-    if is_classification_problem:
-        labelBinarizer = MultiLabelBinarizer()
-        labelBinarizer.fit(Y)
 
     if is_classification_problem:
         if len(np.unique(Y)) == 1:
@@ -519,20 +552,29 @@ def find_best_model(
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ConvergenceWarning)
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
             for train_indices, test_indices in kfolds:
-                if is_classification_problem and len(np.unique(Y[train_indices[:max_samples_per_split]])) == 1:
-                    continue
+                if is_classification_problem:
+                    unique_training_labels = np.unique(Y[train_indices[:max_samples_per_split]])
+                    unique_test_labels = np.unique(Y[test_indices[:max_samples_per_split]])
+                    if len(unique_training_labels) == 1 or len(unique_test_labels) == 1:
+                        continue
 
                 model_instance = prediction_model_factory()
                 model_instance.fit(X[train_indices[:max_samples_per_split]], Y[train_indices[:max_samples_per_split]])
 
                 y_true = Y[test_indices[:max_samples_per_split]]
-                y_pred = model_instance.predict(X[test_indices[:max_samples_per_split]])
-                if labelBinarizer is not None:
-                    y_true = labelBinarizer.transform(y_true)
-                    y_pred = labelBinarizer.transform(y_pred)
 
-                average_result.append(metric(y_true, y_pred))
+                if is_classification_problem:
+                    # For classification, use probabilities for log loss calculation
+                    y_pred_proba = model_instance.predict_probabilities(X[test_indices[:max_samples_per_split]])
+                    # Convert string labels to label indices for log_loss
+                    label_to_idx = {label: idx for idx, label in enumerate(unique_test_labels)}
+                    y_true_indices = np.array([label_to_idx[label] for label in y_true.flatten()])
+                    average_result.append(metric(y_true_indices, y_pred_proba))
+                else:
+                    y_pred = model_instance.predict(X[test_indices[:max_samples_per_split]])
+                    average_result.append(metric(y_true, y_pred))
 
         if len(average_result) == 0:
             return float("inf")

@@ -17,6 +17,12 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
+# version compatibility for breaking change in networkx 3.5
+try:
+    from networkx.algorithms.d_separation import is_d_separator as d_separated
+except ImportError:
+    from networkx.algorithms.d_separation import d_separated
+
 import dowhy.gcm.config as config
 from dowhy.gcm.independence_test import kernel_based
 from dowhy.gcm.util import plot
@@ -179,7 +185,7 @@ def validate_tpa(
     causal_graph_reference: DirectedGraph,
     include_unconditional: bool = True,
 ) -> Dict[str, int]:
-    """
+    r"""
     Graphical criterion to evaluate which pairwise parental d-separations (parental triples) in `causal_graph` are
     violated, assuming `causal_graph_reference` is the ground truth graph. If none are violated, then both graphs lie
     in the same Markov equivalence class.
@@ -201,7 +207,7 @@ def validate_tpa(
     triples = _get_parental_triples(causal_graph, include_unconditional)
     for node, non_desc, parents in triples:
         validation_summary[FalsifyConst.N_TESTS] += 1
-        if not nx.d_separated(causal_graph_reference, {node}, {non_desc}, set(parents)):
+        if not d_separated(causal_graph_reference, {node}, {non_desc}, set(parents)):
             validation_summary[FalsifyConst.N_VIOLATIONS] += 1
     return validation_summary
 

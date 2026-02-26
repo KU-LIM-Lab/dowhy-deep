@@ -677,10 +677,15 @@ def nmse(y_true: np.ndarray, y_pred: np.ndarray, squared: bool = False) -> float
     y_pred = y_pred.reshape(-1)
 
     y_std = np.std(y_true)
-    if y_std == 0:
-        return mean_squared_error(y_true, y_pred, squared=squared)
+    mse = mean_squared_error(y_true, y_pred)
 
-    return mean_squared_error(y_true, y_pred, squared=squared) / (np.var(y_true) if squared else y_std)
+    if not squared:
+        mse = np.sqrt(mse)
+
+    if y_std == 0:
+        return mse
+
+    return mse / (np.var(y_true) if squared else y_std)
 
 
 def crps(
@@ -703,7 +708,7 @@ def crps(
     """
 
     def empirical_crps(generated_Y, observed_y):
-        """Estimates \int (F(x) - 1_{x >= y})**2 dx = E[|X - y|] - 1/2 E[|X - X'|]
+        r"""Estimates \int (F(x) - 1_{x >= y})**2 dx = E[|X - y|] - 1/2 E[|X - X'|]
 
         Here, X is generated_Y and y is observed_y. The X' are another set of generated_Y, however, we can also take
         the difference over all combinations to estimate the expectation."""

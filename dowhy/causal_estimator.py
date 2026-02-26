@@ -250,7 +250,7 @@ class CausalEstimator:
         # Making sure that effect_modifier_names is a list
         effect_modifier_names = parse_state(effect_modifier_names)
         if not all(em in self._effect_modifier_names for em in effect_modifier_names):
-            self.logger.warn(
+            self.logger.warning(
                 "At least one of the provided effect modifiers was not included while fitting the estimator. You may get incorrect results. To resolve, fit the estimator again by providing the updated effect modifiers in estimate_effect()."
             )
         # Making a copy since we are going to be changing effect modifier names
@@ -263,7 +263,8 @@ class CausalEstimator:
                 data[prefix + str(em)] = pd.qcut(data[em], num_quantiles, duplicates="drop")
                 effect_modifier_names[i] = prefix + str(em)
         # Grouping by effect modifiers and computing effect separately
-        by_effect_mods = data.groupby(effect_modifier_names)
+        # Adding observed=True to avoid a FutureWarning in pandas (see #1316)
+        by_effect_mods = data.groupby(effect_modifier_names, observed=True)
 
         def cond_est_fn(x):
             return self._do(self._treatment_value, x) - self._do(self._control_value, x)
@@ -960,6 +961,7 @@ class RealizedEstimand(object):
         self.treatment_variable = identified_estimand.treatment_variable
         self.outcome_variable = identified_estimand.outcome_variable
         self.backdoor_variables = identified_estimand.get_backdoor_variables()
+        self.general_adjustment_variables = identified_estimand.get_general_adjustment_variables()
         self.instrumental_variables = identified_estimand.instrumental_variables
         self.estimand_type = identified_estimand.estimand_type
         self.estimand_expression = None

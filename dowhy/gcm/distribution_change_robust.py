@@ -1,7 +1,7 @@
 """
 This module implements the estimators for causal change attribution in the following paper:
 Quintas-Martinez, V., Bahadori, M. T., Santiago, E., Mu, J., Janzing, D., and Heckerman, D.
-Multiply-Robust Causal Change Attribution, Proceedings of the 41st International Conference on 
+Multiply-Robust Causal Change Attribution, Proceedings of the 41st International Conference on
 Machine Learning, Vienna, Austria. PMLR 235, 2024.
 https://arxiv.org/abs/2404.08839
 """
@@ -208,7 +208,7 @@ class ThetaC:
         calibrator: Optional[PredictionModel] = None,
         crop: float = 1e-3,
     ) -> None:
-        """
+        r"""
         This helper function uses the classifiers (and, if appropriate, the probability calibrators)
         to compute the weights alpha_k (defined in Theorem 2.4 of the paper),
         which are then stored in self.alpha_dict.
